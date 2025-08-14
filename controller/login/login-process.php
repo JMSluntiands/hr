@@ -22,7 +22,7 @@ if ($row = $result->fetch_assoc()) {
     echo json_encode([
         "status" => "success",
         "message" => "Login successful",
-        "role" => $row['role']
+        "role" => $row['userrole']
     ]);
 } else {
     echo json_encode(["status" => "error", "message" => "Invalid email or password"]);
