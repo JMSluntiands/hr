@@ -41,7 +41,7 @@
         <div class="mb-4">
           <label for="email" class="block text-sm font-medium">Email</label>
           <input id="email" type="email" placeholder="Enter your email"
-            class="mt-1 w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-luntianOrange text-gray-900">
+            class="mt-1 w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-luntianOrange text-gray-900" autocomplete="OFF">
         </div>
         <div class="mb-4 relative">
           <label for="password" class="block text-sm font-medium">Password</label>
