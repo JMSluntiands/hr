@@ -1,7 +1,7 @@
 <div class="header">
   <div class="header-left">
-    <a href="index" class="logo">
-      <img src="assets/img/honekawa.png" alt="Logo" />
+    <a href="index" class="logo d-flex justify-content-center items-center">
+      <img src="../img/logo-light.png" alt="Logo" />
     </a>
     <a href="index" class="logo logo-small">
       <img src="assets/img/honekawa.png" alt="Logo" width="30" height="30" />

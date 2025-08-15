@@ -147,5 +147,14 @@
       body.dark-mode .user-header .user-text p.text-muted {
         color: #ccc !important;
       }
+
+      .header-left {
+        display: flex;
+        align-items: center; /* vertical center */
+        justify-content: center; /* horizontal center */
+      }
+      .header-left img {
+        display: block;
+      }
     </style>
   </head>
