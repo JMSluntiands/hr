@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+  <?php include_once 'include/header.php' ?>
+  <body>
+    <div class="main-wrapper">
+      <!-- Navbar -->
+      <?php include_once 'include/navbar.php' ?>
+      
+
+      <!-- Sidebar -->
+      <?php include_once 'include/sidebar.php' ?>
+      
+
+      <div class="page-wrapper">
+        <div class="content container-fluid">
+
+          <div class="page-header">
+            <div class="row">
+              <div class="col-sm-12">
+                <div class="page-sub-header">
+                  <h3 class="page-title">Welcome <?php echo $users_name ?>!</h3>
+                  <ul class="breadcrumb">
+                    <li class="breadcrumb-item">
+                      <a href="index">Home</a>
+                    </li>
+                    <li class="breadcrumb-item active">Job Management</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-sm-12">
+              <div class="card">
+                <div class="card-header">
+                  <h5 class="card-title mb-2 text-white">Job List</h5>
+                  <span id="jobCount" class="text-muted">Total Records: 0</span>
+                </div>
+                <div class="card-body">
+                  <div class="table-responsive">
+                    <table class="datatable table table-stripped" id="jobTable">
+                      <thead>
+                        <tr>
+                          <th>LOG DATE</th>
+                          <th>REFERENCE #</th>
+                          <th>CLIENT REF #</th>
+                          <th>PRIORITY</th>
+                          <th>JOB TYPE</th>
+                          <th>ACCOUNT CLIENT</th>
+                          <th>JOB ADDRESS</th>
+                          <th>JOB STATUS</th>
+                          <th>STAFF</th>
+                          <th>CHECKER</th>
+                          <th>DEADLINE</th>
+                          <th>PLAN COMPLEXITY</th>
+                          <th>FRATE FILE</th>
+                        </tr>
+                      </thead>
+                      <tbody id="jobBody">
+                        <!-- Data will be inserted here -->
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <?php include_once 'include/footer.php' ?>
+  </body>
+  <script src="../function/job/list.js"></script>
+</html>

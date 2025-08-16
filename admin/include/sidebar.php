@@ -10,12 +10,8 @@
 
         <!-- Admin Management -->
         <li class="menu-title"><span>Admin Management</span></li>
-        <li class="submenu">
-          <a href="#"><i class="si si-briefcase"></i> <span>Job Management</span> <span class="menu-arrow"></span></a>
-          <ul class="removeActive">
-            <li><a href="category">Create Category</a></li>
-            <li><a href="category_list">Category List</a></li>
-          </ul>
+        <li>
+          <a href="job"><i class="si si-briefcase"></i> <span>Job Management</span></a>
         </li>
         
         <!-- Setting -->

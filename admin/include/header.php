@@ -156,5 +156,44 @@
       .header-left img {
         display: block;
       }
+
+      /* Dark mode for cards */
+      body.dark-mode .card {
+        background-color: #2b2b2b;
+        border: 1px solid #444;
+        color: #e0e0e0;
+        box-shadow: none;
+      }
+
+      body.dark-mode .card-header {
+        background-color: #333;
+        border-bottom: 1px solid #444;
+        color: #fff;
+      }
+
+      body.dark-mode .card-body {
+        background-color: #2b2b2b;
+        color: #ddd;
+      }
+
+      body.dark-mode .card-footer {
+        background-color: #333;
+        border-top: 1px solid #444;
+        color: #ccc;
+      }
+
+      /* Dark mode for page-header text only */
+      body.dark-mode .page-header .page-title {
+        color: #fff !important;
+      }
+
+      body.dark-mode .page-header .breadcrumb-item a {
+        color: #ccc !important;
+      }
+
+      body.dark-mode .page-header .breadcrumb-item.active {
+        color: #fff !important;
+      }
+
     </style>
   </head>
