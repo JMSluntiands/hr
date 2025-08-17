@@ -34,27 +34,26 @@
             <div class="col-sm-12">
               <div class="card">
                 <div class="card-header">
-                  <h5 class="card-title mb-2 text-white">Job List</h5>
+                  <div class="d-flex justify-content-between items-center">
+                    <div>
+                      <h5 class="card-title mb-2 text-white">Job List</h5>
                   <span id="jobCount" class="text-muted">Total Records: 0</span>
+                    </div>
+                    <div>
+                      <button class="btn text-white btn-danger">New Job</button>
+                    </div>
+                  </div>
                 </div>
                 <div class="card-body">
                   <div class="table-responsive">
                     <table class="datatable table table-stripped" id="jobTable">
                       <thead>
                         <tr>
+                          <th>ACTION</th>
                           <th>LOG DATE</th>
                           <th>REFERENCE #</th>
                           <th>CLIENT REF #</th>
                           <th>PRIORITY</th>
-                          <th>JOB TYPE</th>
-                          <th>ACCOUNT CLIENT</th>
-                          <th>JOB ADDRESS</th>
-                          <th>JOB STATUS</th>
-                          <th>STAFF</th>
-                          <th>CHECKER</th>
-                          <th>DEADLINE</th>
-                          <th>PLAN COMPLEXITY</th>
-                          <th>FRATE FILE</th>
                         </tr>
                       </thead>
                       <tbody id="jobBody">

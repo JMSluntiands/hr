@@ -14,7 +14,7 @@ $(document).ready(function () {
     ],
     columnDefs: [
       { responsivePriority: 1, targets: 0 }, // pinakaimportante (Job Ref)
-      { responsivePriority: 2, targets: -1 } // Actions or Status
+      { responsivePriority: 2, targets: -1 } // Actions
     ]
   });
 
@@ -38,6 +38,23 @@ $(document).ready(function () {
         if (response.data.length > 0) {
           response.data.forEach(item => {
             table.row.add([
+              // Column 5: Action Buttons (View, Edit, Delete, Duplicate)
+              `
+              <div class="btn-group d-flex items-center h-full" role="group">
+                <button class="btn btn-sm btn-info text-white" title="View" onclick="viewJob('${item.id}')">
+                  <i class="fa fa-eye"></i>
+                </button>
+                <button class="btn btn-sm btn-warning text-white" title="Edit" onclick="editJob('${item.id}')">
+                  <i class="fa fa-edit"></i>
+                </button>
+                <button class="btn btn-sm btn-danger" title="Delete" onclick="deleteJob('${item.id}')">
+                  <i class="fa fa-trash"></i>
+                </button>
+                <button class="btn btn-sm btn-secondary" title="Duplicate" onclick="duplicateJob('${item.id}')">
+                  <i class="fa fa-copy"></i>
+                </button>
+              </div>
+              `,
               // Column 1: Job Reference + Client
               `
               <strong>${item.job_reference_no}</strong><br>
@@ -46,7 +63,7 @@ $(document).ready(function () {
 
               // Column 2: Job Info (priority + complexity)
               `
-              <span class="badge bg-primary">${item.priority}</span><br>
+              <span class="badge bg-warning">${item.priority}</span><br>
               <small>Complexity: ${item.plan_complexity}</small>
               `,
 
@@ -62,7 +79,9 @@ $(document).ready(function () {
                 ${item.job_status}
               </span><br>
               <small>${item.log_date}</small>
-              `
+              `,
+
+
             ]).draw(false);
           });
         } else {
@@ -81,3 +100,9 @@ $(document).ready(function () {
 
   loadJob();
 });
+
+// Sample functions (to be implemented)
+function viewJob(id) { alert("View Job: " + id); }
+function editJob(id) { alert("Edit Job: " + id); }
+function deleteJob(id) { alert("Delete Job: " + id); }
+function duplicateJob(id) { alert("Duplicate Job: " + id); }
