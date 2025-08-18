@@ -17,6 +17,7 @@
               j.job_type, 
               j.priority, 
               j.plan_complexity, 
+              j.job_status,
               s.name AS staff_name, 
               c.name AS checker_name
           FROM jobs j
@@ -35,22 +36,27 @@
 
   $data = [];
   while ($row = $result->fetch_assoc()) {
-    $data[] = [
-      "job_id" => $row['job_id'],
-      "log_date" => $row['log_date'],
-      "job_reference_no" => $row['job_reference_no'],
-      "client_reference_no" => $row['client_reference_no'],
-      "priority" => $row['priority'],
-      "client_account" => $row['client_account'],
-      "job_address" => $row['job_address'],
-      "job_status" => $row['job_status'],
-      "client_code" => $row['client_code'],
-      "staff_name" => $row['staff_name'],
-      "checker_name" => $row['checker_name'],
-      "plan_complexity" => $row['plan_complexity'],
-      "client_code" => $row['client_code'],
-    ];
-  }
+  $dateTime = new DateTime($row['log_date']);
+  $formattedDate = $dateTime->format("F j, Y g:i A"); 
+  // Example output: August 18, 2025 10:34 AM
+
+  $data[] = [
+    "job_id" => $row['job_id'],
+    "log_date" => $formattedDate,  // already formatted
+    "job_reference_no" => $row['job_reference_no'],
+    "client_reference_no" => $row['client_reference_no'],
+    "priority" => $row['priority'],
+    "client_account" => $row['client_account_name'], // ✅ ayusin name
+    "job_address" => $row['client_account_address'],        // ✅ ayusin name
+    "job_status" => $row['job_status'],
+    "client_code" => $row['client_code'],
+    "staff_name" => $row['staff_name'],
+    "checker_name" => $row['checker_name'],
+    "plan_complexity" => $row['plan_complexity'],
+    "status" => $row['job_status'],
+  ];
+}
+
 
   $response = ["data" => $data, "count" => count($data)];
 
