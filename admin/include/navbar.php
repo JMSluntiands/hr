@@ -24,9 +24,9 @@
     <li class="nav-item dropdown has-arrow new-user-menus">
       <a href="#" class="dropdown-toggle nav-link" data-bs-toggle="dropdown">
         <span class="user-img">
-          <img class="rounded-circle" src="assets/img/default.png" width="31" alt="User" />
+          <img class="rounded-circle" src="../assets/img/default.png" width="31" alt="User" />
           <div class="user-text">
-            <h6><?php echo $_SESSION['username'] ?></h6>
+            <h6><?php echo $_SESSION['role'] ?></h6>
             <p class="text-muted mb-0"><?php echo $_SESSION['role'] ?></p>
           </div>
         </span>
@@ -34,14 +34,14 @@
       <div class="dropdown-menu">
         <div class="user-header">
           <div class="avatar avatar-sm">
-            <img src="assets/img/default.png" alt="User Image" class="avatar-img rounded-circle" />
+            <img src="../assets/img/default.png" alt="User Image" class="avatar-img rounded-circle" />
           </div>
           <div class="user-text">
-            <h6><?php echo $_SESSION['username'] ?></h6>
+            <h6><?php echo $_SESSION['role'] ?></h6>
             <p class="text-muted mb-0"><?php echo $_SESSION['role'] ?></p>
           </div>
         </div>
-        <a class="dropdown-item" href="../logout">Logout</a>
+        <a class="dropdown-item" href="../controller/logout">Logout</a>
       </div>
     </li>
   </ul>
