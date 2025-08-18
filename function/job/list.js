@@ -1,4 +1,4 @@
-$(document).ready(function () {
+ $(document).ready(function () {
   let table = $("#jobTable").DataTable({
     responsive: true,
     autoWidth: false,
@@ -68,8 +68,10 @@ $(document).ready(function () {
               </button>
             </div>
             `,
+
+              // Column 1: Log Date
               `
-            <td class="d-flex justify-content-center align-items-center">
+            <td class="d-flex justify-content-center align-items-center w-100 h-100">
               <span>${formattedDate}</span>
             </td>
             `,
