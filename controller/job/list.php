@@ -11,7 +11,7 @@
               j.client_reference_no, 
               j.ncc_compliance, 
               ca.client_account_name, 
-              ca.address_client, 
+              ca.client_account_address, 
               jr.job_request_id, 
               jr.job_request_type, 
               j.job_type, 
