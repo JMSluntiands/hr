@@ -53,7 +53,7 @@
                           <th>Log Date</th>
                           <th>Client</th>
                           <th>Reference</th>
-                          <th>Client Reference</th>
+                          <th>Client Ref</th>
                           <th>Assigned</th>
                           <th>Status</th>
                           <th>Completion Date</th>

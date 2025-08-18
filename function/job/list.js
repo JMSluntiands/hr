@@ -62,7 +62,7 @@ $(document).ready(function () {
             table.row.add([
               // Column 1: Action Buttons
               `
-              <div class="btn-group d-flex align-items-center" role="group">
+              <div class="d-flex justify-content-center align-items-center gap-1">
                 <button class="btn btn-sm btn-info text-white" title="View" onclick="viewJob('${item.id}')">
                   <i class="fa fa-eye"></i>
                 </button>
@@ -76,10 +76,11 @@ $(document).ready(function () {
                   <i class="fa fa-copy"></i>
                 </button>
               </div>
+
               `,
 
               // Column 2: Log Date
-              `<div class="d-flex justify-content-center items-center w-100 h-100">
+              `<div class="d-flex justify-content-center align-items-center w-100 h-100">
                 <span>${formattedDate}</span>
               </div>`,
 
@@ -91,7 +92,7 @@ $(document).ready(function () {
 
               // Column 4: Address + Client Ref
               `
-              <div class="d-flex justify-content-center items-center w-100 h-100"><strong>${item.client_code}${item.job_reference_no}</strong></div>
+              <div class="d-flex justify-content-center items-center w-100 h-100"><strong>${item.start_ref}${item.job_reference_no}</strong></div>
               `,
               `
               <span><strong>${item.client_reference_no}</strong></span>
