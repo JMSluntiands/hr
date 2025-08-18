@@ -11,7 +11,7 @@
               j.client_reference_no, 
               j.ncc_compliance, 
               ca.client_account_name, 
-              ca.address_client, 
+              ca.client_account_address, 
               jr.job_request_id, 
               jr.job_request_type, 
               j.job_type, 
@@ -47,7 +47,7 @@
     "client_reference_no" => $row['client_reference_no'],
     "priority" => $row['priority'],
     "client_account" => $row['client_account_name'], // ✅ ayusin name
-    "job_address" => $row['address_client'],        // ✅ ayusin name
+    "job_address" => $row['client_account_address'],        // ✅ ayusin name
     "job_status" => $row['job_status'],
     "client_code" => $row['client_code'],
     "staff_name" => $row['staff_name'],

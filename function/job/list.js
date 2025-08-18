@@ -84,7 +84,7 @@ $(document).ready(function () {
 
               // Column 3: Address + Client Ref
               `
-            <span>Ref #: <strong>LBS${item.job_reference_no}</strong></span><br>
+            <span>Ref #: <strong>${item.client_code}${item.job_reference_no}</strong></span><br>
             <span>Client Ref #: <strong>${item.client_reference_no}</strong></span>
             `,
 
