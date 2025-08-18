@@ -55,6 +55,7 @@
                           <th>Code</th>
                           <th>Assigned</th>
                           <th>Status</th>
+                          <th>Completion Date</th>
                         </tr>
                       </thead>
                       <tbody id="jobBody">

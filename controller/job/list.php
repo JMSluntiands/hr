@@ -17,6 +17,7 @@
               j.job_type, 
               j.priority, 
               j.plan_complexity, 
+              j.last_update, 
               j.job_status,
               s.name AS staff_name, 
               c.name AS checker_name
@@ -38,6 +39,9 @@
   while ($row = $result->fetch_assoc()) {
   $dateTime = new DateTime($row['log_date']);
   $formattedDate = $dateTime->format("F j, Y g:i A"); 
+  $updateTime = new DateTime($row['last_update']);
+  $last_update = $updateTime->format("F j, Y g:i A"); 
+
   // Example output: August 18, 2025 10:34 AM
 
   $data[] = [
@@ -53,6 +57,7 @@
     "staff_name" => $row['staff_name'],
     "checker_name" => $row['checker_name'],
     "plan_complexity" => $row['plan_complexity'],
+    "last_update" => $last_update,
     "status" => $row['job_status'],
   ];
 }

@@ -1,4 +1,4 @@
- $(document).ready(function () {
+$(document).ready(function () {
   let table = $("#jobTable").DataTable({
     responsive: true,
     autoWidth: false,
@@ -37,67 +37,81 @@
 
         if (response.data.length > 0) {
           response.data.forEach(item => {
-            // Format date
+            // format log_date
             let formattedDate = "";
             if (item.log_date) {
               let dateObj = new Date(item.log_date);
               let optionsDate = { year: "numeric", month: "long", day: "numeric" };
               let optionsTime = { hour: "numeric", minute: "numeric", hour12: true };
-
               let datePart = dateObj.toLocaleDateString("en-US", optionsDate);
               let timePart = dateObj.toLocaleTimeString("en-US", optionsTime);
-
               formattedDate = `${datePart}<br>${timePart}`;
             }
 
+            // format last_update
+            let formattedUpdate = "";
+            if (item.last_update) {
+              let updateObj = new Date(item.last_update);
+              let optionsDate = { year: "numeric", month: "long", day: "numeric" };
+              let optionsTime = { hour: "numeric", minute: "numeric", hour12: true };
+              let datePart = updateObj.toLocaleDateString("en-US", optionsDate);
+              let timePart = updateObj.toLocaleTimeString("en-US", optionsTime);
+              formattedUpdate = `${datePart}<br>${timePart}`;
+            }
+
             table.row.add([
-              // Column 5: Action Buttons
+              // Column 1: Action Buttons
               `
-            <div class="btn-group d-flex items-center h-full" role="group">
-              <button class="btn btn-sm btn-info text-white" title="View" onclick="viewJob('${item.id}')">
-                <i class="fa fa-eye"></i>
-              </button>
-              <button class="btn btn-sm btn-warning text-white" title="Edit" onclick="editJob('${item.id}')">
-                <i class="fa fa-edit"></i>
-              </button>
-              <button class="btn btn-sm btn-danger" title="Delete" onclick="deleteJob('${item.id}')">
-                <i class="fa fa-trash"></i>
-              </button>
-              <button class="btn btn-sm btn-secondary" title="Duplicate" onclick="duplicateJob('${item.id}')">
-                <i class="fa fa-copy"></i>
-              </button>
-            </div>
-            `,
+              <div class="btn-group d-flex align-items-center" role="group">
+                <button class="btn btn-sm btn-info text-white" title="View" onclick="viewJob('${item.id}')">
+                  <i class="fa fa-eye"></i>
+                </button>
+                <button class="btn btn-sm btn-warning text-white" title="Edit" onclick="editJob('${item.id}')">
+                  <i class="fa fa-edit"></i>
+                </button>
+                <button class="btn btn-sm btn-danger" title="Delete" onclick="deleteJob('${item.id}')">
+                  <i class="fa fa-trash"></i>
+                </button>
+                <button class="btn btn-sm btn-secondary" title="Duplicate" onclick="duplicateJob('${item.id}')">
+                  <i class="fa fa-copy"></i>
+                </button>
+              </div>
+              `,
 
-              // Column 1: Log Date
-              `
-            <td class="d-flex justify-content-center align-items-center w-100 h-100">
-              <span>${formattedDate}</span>
-            </td>
-            `,
+              // Column 2: Log Date
+              `<div class="d-flex justify-content-center align-items-center w-100 h-100">
+                <span>${formattedDate}</span>
+              </div>`,
 
-              // Column 2: Job Info
+              // Column 3: Job Info
               `
-            <span class="badge bg-warning">${item.job_request_id}</span><br>
-            <small>Complexity: ${item.client_code}</small>
-            `,
+              <span class="badge bg-warning">${item.job_request_id}</span><br>
+              <small>Complexity: ${item.client_code}</small>
+              `,
 
-              // Column 3: Address + Client Ref
+              // Column 4: Address + Client Ref
               `
-            <span>Ref #: <strong>${item.client_code}${item.job_reference_no}</strong></span><br>
-            <span>Client Ref #: <strong>${item.client_reference_no}</strong></span>
-            `,
+              <span>Ref #: <strong>${item.client_code}${item.job_reference_no}</strong></span><br>
+              <span>Client Ref #: <strong>${item.client_reference_no}</strong></span>
+              `,
 
-              // Column 4: Status + Date
+              // Column 5: Staff / Checker
               `
-            <small>Staff: ${item.staff_name}</small><br>
-            <small>Checker: ${item.checker_name}</small>
-            `,
+              <small>Staff: ${item.staff_name}</small><br>
+              <small>Checker: ${item.checker_name}</small>
+              `,
+
+              // Column 6: Status
               `
-            <span class="badge ${item.job_status === "Completed" ? "bg-success" : "bg-secondary"}">
-              ${item.job_status}
-            </span><br>
-            `,
+              <span class="badge ${item.job_status === "Completed" ? "bg-success" : "bg-secondary"}">
+                ${item.job_status}
+              </span>
+              `,
+
+              // Column 7: Last Update
+              `<div class="d-flex justify-content-center align-items-center w-100 h-100">
+                <span>${formattedUpdate}</span>
+              </div>`,
             ]).draw(false);
           });
 
