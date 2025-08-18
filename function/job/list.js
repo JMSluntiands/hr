@@ -57,30 +57,31 @@ $(document).ready(function () {
               `,
               // Column 1: Job Reference + Client
               `
-              <strong>${item.job_reference_no}</strong><br>
-              <small class="text-muted">${item.client_account} (${item.client_code})</small>
+              <strong>${item.log_date}</strong><br>
               `,
 
               // Column 2: Job Info (priority + complexity)
               `
-              <span class="badge bg-warning">${item.priority}</span><br>
-              <small>Complexity: ${item.plan_complexity}</small>
+              <span class="badge bg-warning">${item.job_request_id}</span><br>
+              <small>Complexity: ${item.client_code}</small>
               `,
 
               // Column 3: Address + Client Ref
               `
-              ${item.job_address || "-"}<br>
-              <small>Client Ref: ${item.client_reference_no || "N/A"}</small>
+              <span class="badge bg-warning">${item.job_reference_no}</span><br>
+              <span class="badge bg-warning">${item.client_reference_no}</span>
               `,
 
               // Column 4: Status + Date
               `
+              <small>Complexity: ${item.staff_id}</small><br>
+              <small>${item.checker_id}</small>
+              `,
+              `
               <span class="badge ${item.job_status === "Completed" ? "bg-success" : "bg-secondary"}">
                 ${item.job_status}
               </span><br>
-              <small>${item.log_date}</small>
               `,
-
 
             ]).draw(false);
           });

@@ -17,12 +17,20 @@ $("#loginButton").click(function () {
       }).showToast();
 
       if (response.status === "success") {
-        if (response.role === "admin") {
-          window.location.href = "admin_dashboard.php";
-        } else if (response.role === "user") {
-          window.location.href = "user_dashboard.php";
-        } else if (response.role === "super admin") {
-          window.location.href = "super_admin_dashboard.php";
+        // Role → Redirect Map
+        let roleRedirects = {
+          "LBS": "admin/index",
+          "BPH": "admin/index",
+          "B1": "admin/index",
+          "BLUINQ": "admin/index",
+          "LUNTIAN": "admin/index"
+        };
+
+        // Check kung may redirect para sa role
+        if (roleRedirects[response.role]) {
+          setTimeout(() => {
+            window.location.href = roleRedirects[response.role];
+          }, 1000); // delay para makita muna yung toast
         }
       }
     },
@@ -37,5 +45,4 @@ $("#loginButton").click(function () {
       }).showToast();
     }
   });
-
 });

@@ -49,11 +49,12 @@
                     <table class="datatable table table-stripped" id="jobTable">
                       <thead>
                         <tr>
-                          <th>ACTION</th>
-                          <th>LOG DATE</th>
-                          <th>REFERENCE #</th>
-                          <th>CLIENT REF #</th>
-                          <th>PRIORITY</th>
+                          <th>Action</th>
+                          <th>Log Date</th>
+                          <th>Client</th>
+                          <th>Code</th>
+                          <th>Assigned</th>
+                          <th>Status</th>
                         </tr>
                       </thead>
                       <tbody id="jobBody">

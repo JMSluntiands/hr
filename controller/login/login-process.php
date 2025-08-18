@@ -18,11 +18,11 @@ $result = $query->get_result();
 
 if ($row = $result->fetch_assoc()) {
     $_SESSION['user_id'] = $row['id'];
-    $_SESSION['role'] = $row['userrole'];
+    $_SESSION['role'] = $row['client_name'];
     echo json_encode([
         "status" => "success",
         "message" => "Login successful",
-        "role" => $row['userrole']
+        "role" => $row['client_name']
     ]);
 } else {
     echo json_encode(["status" => "error", "message" => "Invalid email or password"]);

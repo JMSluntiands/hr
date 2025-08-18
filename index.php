@@ -1,6 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <?php
+      session_start();
+
+        // Kung naka-login na
+        if (isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
+          $roleRedirects = [
+              "LBS"     => "admin/index",
+              "BPH"     => "admin/index",
+              "B1"      => "admin/index",
+              "BLUINQ"  => "admin/index",
+              "LUNTIAN" => "admin/index"
+          ];
+
+          // Redirect sa tamang admin page
+          if (array_key_exists($_SESSION['role'], $roleRedirects)) {
+              header("Location: " . $roleRedirects[$_SESSION['role']]);
+              exit;
+          }
+        }
+      ?>
+
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Login - Luntian</title>

@@ -1,4 +1,5 @@
 <head>
+  <?php include '../controller/auth.php' ?>
     <meta charset="utf-8" />
     <meta
       name="viewport"
