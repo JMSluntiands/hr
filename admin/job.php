@@ -52,7 +52,8 @@
                           <th>Action</th>
                           <th>Log Date</th>
                           <th>Client</th>
-                          <th>Code</th>
+                          <th>Reference</th>
+                          <th>Client Reference</th>
                           <th>Assigned</th>
                           <th>Status</th>
                           <th>Completion Date</th>

@@ -79,20 +79,22 @@ $(document).ready(function () {
               `,
 
               // Column 2: Log Date
-              `<div class="d-flex justify-content-center align-items-center w-100 h-100">
+              `<div class="d-flex justify-content-center items-center w-100 h-100">
                 <span>${formattedDate}</span>
               </div>`,
 
               // Column 3: Job Info
               `
-              <span class="badge bg-warning">${item.job_request_id}</span><br>
+              <span class="badge bg-warning">${item.client_account_name}</span><br>
               <small>Complexity: ${item.client_code}</small>
               `,
 
               // Column 4: Address + Client Ref
               `
-              <span>Ref #: <strong>${item.client_code}${item.job_reference_no}</strong></span><br>
-              <span>Client Ref #: <strong>${item.client_reference_no}</strong></span>
+              <div class="d-flex justify-content-center items-center w-100 h-100"><strong>${item.client_code}${item.job_reference_no}</strong></div>
+              `,
+              `
+              <span><strong>${item.client_reference_no}</strong></span>
               `,
 
               // Column 5: Staff / Checker

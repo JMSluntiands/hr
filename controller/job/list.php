@@ -42,15 +42,18 @@
   $updateTime = new DateTime($row['last_update']);
   $last_update = $updateTime->format("F j, Y g:i A"); 
 
+  $job_ref = $row['job_reference_no'];
+  $job_ref = substr($job_ref, 0, -2); // tanggalin last 2 characters
+
   // Example output: August 18, 2025 10:34 AM
 
   $data[] = [
     "job_id" => $row['job_id'],
     "log_date" => $formattedDate,  // already formatted
-    "job_reference_no" => $row['job_reference_no'],
+    "job_reference_no" => $job_ref,
     "client_reference_no" => $row['client_reference_no'],
     "priority" => $row['priority'],
-    "client_account" => $row['client_account_name'], // ✅ ayusin name
+    "client_account_name" => $row['client_account_name'], // ✅ ayusin name
     "job_address" => $row['client_account_address'],        // ✅ ayusin name
     "job_status" => $row['job_status'],
     "client_code" => $row['client_code'],
