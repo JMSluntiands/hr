@@ -68,10 +68,8 @@ $(document).ready(function () {
               </button>
             </div>
             `,
-
-              // Column 1: Log Date
               `
-            <td class="d-flex justify-content-center align-items-center w-100 h-100">
+            <td class="d-flex justify-content-center align-items-center">
               <span>${formattedDate}</span>
             </td>
             `,
