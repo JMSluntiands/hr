@@ -68,14 +68,14 @@ $(document).ready(function () {
 
               // Column 3: Address + Client Ref
               `
-              <span class="badge bg-warning">${item.job_reference_no}</span><br>
-              <span class="badge bg-warning">${item.client_reference_no}</span>
+              <span>Ref #: <strong>${item.job_reference_no}</strong></span><br>
+              <span>Client Ref #: <strong>${item.client_reference_no}</strong></span>
               `,
 
               // Column 4: Status + Date
               `
-              <small>Complexity: ${item.staff_id}</small><br>
-              <small>${item.checker_id}</small>
+              <small>Staff: ${item.staff_name}</small><br>
+              <small>Checker: ${item.checker_name}</small>
               `,
               `
               <span class="badge ${item.job_status === "Completed" ? "bg-success" : "bg-secondary"}">
