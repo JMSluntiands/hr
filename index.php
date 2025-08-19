@@ -82,7 +82,7 @@
           </button>
         </div>
         <div class="flex justify-end mb-4">
-          <a href="#" class="text-sm text-luntianOrange hover:underline disabled">Forgot password?</a>
+          <a href="#" class="text-sm text-luntianOrange hover:underline">Forgot password?</a>
         </div>
         <button class="w-full bg-luntianOrange hover:bg-[#e38b03] text-white font-medium p-3 rounded-lg" id="loginButton">Login</button>
       </div>
