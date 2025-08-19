@@ -86,7 +86,7 @@ $(document).ready(function () {
 
               // Column 3: Job Info
               `
-              <span class="badge bg-warning">${item.client_account_name}</span><br>
+              <span style="font-size: 12px">${item.client_account_name}</span><br>
               <small>Complexity: ${item.client_code}</small>
               `,
 
@@ -106,9 +106,18 @@ $(document).ready(function () {
 
               // Column 6: Status
               `
-              <span class="badge ${item.job_status === "Completed" ? "bg-success" : "bg-secondary"}">
+              <span 
+                class="badge text-dark" 
+                style="background-color: ${item.priority === "Top" ? "#FFCFA4" :
+                item.priority === "High (1 day)" ? "#FFD8CF" :
+                  item.priority === "Standard (2 days)" ? "#FFD8CF" :
+                    item.priority === "Standard (3 days)" ? "#E0D2FF" :
+                      "#6c757d" // default gray
+              }"
+              >
                 ${item.job_status}
               </span>
+
               `,
 
               // Column 7: Last Update

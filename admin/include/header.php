@@ -34,7 +34,6 @@
     <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
 
     <style>
-      /* Ensure Select2 matches your input styles */
       .select2-container--default .select2-selection--single {
         height: 50px !important;
         border: 1px solid #e5e5e5 !important;
@@ -72,7 +71,6 @@
         color: #ffffff;
       }
 
-      /* Dark Mode Styles */
       body.dark-mode {
         background-color: #1e1e1e;
         color: #e0e0e0;
@@ -134,12 +132,10 @@
         border: none;
       }
 
-      /* Dark mode for header-left */
       body.dark-mode .header-left {
         background-color: #2b2b2b;
       }
 
-      /* Dark mode for user-header in dropdown */
       body.dark-mode .user-header {
         background-color: #2b2b2b;
         color: #fff;
@@ -151,14 +147,13 @@
 
       .header-left {
         display: flex;
-        align-items: center; /* vertical center */
-        justify-content: center; /* horizontal center */
+        align-items: center;
+        justify-content: center;
       }
       .header-left img {
         display: block;
       }
 
-      /* Dark mode for cards */
       body.dark-mode .card {
         background-color: #2b2b2b;
         border: 1px solid #444;
@@ -183,7 +178,6 @@
         color: #ccc;
       }
 
-      /* Dark mode for page-header text only */
       body.dark-mode .page-header .page-title {
         color: #fff !important;
       }
@@ -193,6 +187,48 @@
       }
 
       body.dark-mode .page-header .breadcrumb-item.active {
+        color: #fff !important;
+      }
+
+      body.dark-mode .dataTables_wrapper .pagination .page-item .page-link {
+        background-color: #2b2b2b;
+        color: #ddd;
+        border: 1px solid #555;
+      }
+
+      body.dark-mode .dataTables_wrapper .pagination .page-item .page-link:hover {
+        background-color: #444;
+        color: #fff;
+        border-color: #666;
+      }
+
+      body.dark-mode .dataTables_wrapper .pagination .page-item.active .page-link {
+        background-color: #4caf50;
+        border-color: #4caf50;
+        color: #fff;
+      }
+
+      body.dark-mode .dataTables_wrapper .pagination .page-item.disabled .page-link {
+        background-color: #2b2b2b;
+        color: #777;
+        border-color: #555;
+      }
+
+      .card-title {
+        color: #000;
+      }
+
+      body.dark-mode .card-title {
+        color: #fff !important;
+      }
+
+      body.dark-mode .new-user-menus .user-text h6,
+      body.dark-mode .new-user-menus .user-text p {
+        color: #fff !important;
+      }
+
+      body.dark-mode .dropdown-menu .user-text h6,
+      body.dark-mode .dropdown-menu .user-text p {
         color: #fff !important;
       }
 

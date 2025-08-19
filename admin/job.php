@@ -36,7 +36,7 @@
                 <div class="card-header">
                   <div class="d-flex justify-content-between items-center">
                     <div>
-                      <h5 class="card-title mb-2 text-white">Job List</h5>
+                      <h5 class="card-title mb-2">Job List</h5>
                   <span id="jobCount" class="text-muted">Total Records: 0</span>
                     </div>
                     <div>

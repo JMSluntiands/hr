@@ -62,7 +62,7 @@
     "checker_name" => $row['checker_name'],
     "plan_complexity" => $row['plan_complexity'],
     "last_update" => $last_update,
-    "status" => $row['job_status'],
+    "priority" => $row['priority'],
   ];
 }
 
