@@ -40,7 +40,7 @@
                   <span id="jobCount" class="text-muted">Total Records: 0</span>
                     </div>
                     <div>
-                      <button class="btn text-white btn-danger">New Job</button>
+                      <button class="btn text-white btn-danger" data-bs-toggle="modal" data-bs-target="#newJobModal">New Job</button>
                     </div>
                   </div>
                 </div>
@@ -74,6 +74,7 @@
     </div>
 
     <?php include_once 'include/footer.php' ?>
+    <?php include_once '../modal/job/new_job.php' ?>
   </body>
   <script src="../function/job/list.js"></script>
 </html>

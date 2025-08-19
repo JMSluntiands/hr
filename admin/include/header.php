@@ -1,5 +1,8 @@
 <head>
-  <?php include '../controller/auth.php' ?>
+  <?php 
+    include '../controller/auth.php'; 
+    include '../database/db.php';
+  ?>
     <meta charset="utf-8" />
     <meta
       name="viewport"
@@ -230,6 +233,65 @@
       body.dark-mode .dropdown-menu .user-text h6,
       body.dark-mode .dropdown-menu .user-text p {
         color: #fff !important;
+      }
+
+      body.dark-mode .modal-content {
+        background-color: #2b2b2b;
+        color: #e0e0e0;
+        border: 1px solid #444;
+      }
+
+      body.dark-mode .modal-header,
+      body.dark-mode .modal-footer {
+        background-color: #333;
+        border-color: #444;
+        color: #fff;
+      }
+
+      body.dark-mode .modal-title {
+        color: #fff;
+      }
+
+      body.dark-mode .btn-close {
+        filter: invert(1) grayscale(100%) brightness(200%);
+      }
+
+      body.dark-mode .form-control,
+      body.dark-mode .form-select,
+      body.dark-mode textarea {
+        background-color: #333;
+        color: #fff;
+        border: 1px solid #555;
+      }
+
+      body.dark-mode .form-control:focus,
+      body.dark-mode .form-select:focus,
+      body.dark-mode textarea:focus {
+        background-color: #444;
+        color: #fff;
+        border-color: #777;
+        box-shadow: none;
+      }
+
+      body.dark-mode .form-label {
+        color: #ddd;
+      }
+
+      /* Default (Light Mode) */
+      .modal-custom-header {
+        background-color: #0d6efd; /* Bootstrap primary */
+        color: #fff;
+      }
+
+      /* Dark Mode Override */
+      body.dark-mode .modal-custom-header {
+        background-color: #333 !important;
+        border-bottom: 1px solid #444;
+        color: #fff;
+      }
+
+      .select2-container {
+        z-index: 2000 !important; /* mas mataas sa Bootstrap modal (1050) */
       }
 
     </style>

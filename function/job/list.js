@@ -18,6 +18,32 @@ $(document).ready(function () {
     ]
   });
 
+  $('#jobRequest').select2({
+    placeholder: "Select or search job request",
+    width: '100%',
+    dropdownParent: $('#newJobModal'),
+    minimumInputLength: 1,
+    ajax: {
+      url: "../controller/job/job_select",
+      dataType: "json",
+      delay: 250,
+      data: function (params) {
+        return { q: params.term };
+      },
+      processResults: function (data) {
+        return {
+          results: data.map(function (item) {
+            return {
+              id: item.id,
+              text: item.text
+            };
+          })
+        };
+      }
+    }
+  });
+
+
   // Load job data
   function loadJob() {
     $("#jobBody").html(`<tr><td colspan="7" class="text-center">Loading...</td></tr>`);
@@ -108,10 +134,10 @@ $(document).ready(function () {
               `
               <span 
                 class="badge text-dark" 
-                style="background-color: ${item.priority === "Top" ? "#FFCFA4" :
-                item.priority === "High (1 day)" ? "#FFD8CF" :
-                  item.priority === "Standard (2 days)" ? "#FFD8CF" :
-                    item.priority === "Standard (3 days)" ? "#E0D2FF" :
+                style="background-color: ${item.priority === "Top" ? "#F74639" :
+                item.priority === "High (1 day)" ? "#FFA775" :
+                  item.priority === "Standard (2 days)" ? "#FF71CF" :
+                    item.priority === "Standard (3 days)" ? "#CF7AFA" :
                       "#6c757d" // default gray
               }"
               >
