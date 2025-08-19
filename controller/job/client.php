@@ -5,7 +5,7 @@ $searchTerm = isset($_GET['q']) ? $_GET['q'] : "";
 $searchTerm = "%" . $searchTerm . "%";
 
 // Prepare and execute the statement
-$stmt = $conn->prepare("SELECT * FROM job_requests WHERE job_request_type LIKE ?");
+$stmt = $conn->prepare("SELECT * FROM client_accounts WHERE client_account_name LIKE ?");
 $stmt->bind_param("s", $searchTerm);
 $stmt->execute();
 
@@ -14,8 +14,8 @@ $result = $stmt->get_result();
 $data = [];
 while ($row = $result->fetch_assoc()) {
     $data[] = [
-        "text" => $row['job_request_type'],
-        "id" => $row['job_request_id'] // Use database primary key ID
+        "text" => $row['client_account_name'],
+        "id" => $row['client_account_id'] // Use database primary key ID
     ];
 }
 

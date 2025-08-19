@@ -1,9 +1,11 @@
 $(document).ready(function () {
+  // 🔹 Init DataTable
   let table = $("#jobTable").DataTable({
     responsive: true,
     autoWidth: false,
     destroy: true,
     dom: 'Bfrtip',
+    data: [], // manual loading
     buttons: [
       {
         extend: 'excelHtml5',
@@ -13,15 +15,16 @@ $(document).ready(function () {
       }
     ],
     columnDefs: [
-      { responsivePriority: 1, targets: 0 }, // pinakaimportante (Job Ref)
-      { responsivePriority: 2, targets: -1 } // Actions
+      { responsivePriority: 1, targets: 0 },
+      { responsivePriority: 2, targets: -1 }
     ]
   });
 
+  // 🔹 Init Select2 for Job Request
   $('#jobRequest').select2({
     placeholder: "Select or search job request",
     width: '100%',
-    dropdownParent: $('#newJobModal'),
+    dropdownParent: $('#newJobModal .modal-content'),
     minimumInputLength: 1,
     ajax: {
       url: "../controller/job/job_select",
@@ -33,145 +36,151 @@ $(document).ready(function () {
       processResults: function (data) {
         return {
           results: data.map(function (item) {
-            return {
-              id: item.id,
-              text: item.text
-            };
+            return { id: item.id, text: item.text };
           })
         };
       }
     }
   });
 
+  // 🔹 Init Select2 for Client
+  $('#clientID').select2({
+    placeholder: "Select or search Client",
+    width: '100%',
+    dropdownParent: $('#newJobModal .modal-content'),
+    minimumInputLength: 1,
+    ajax: {
+      url: "../controller/job/client",
+      dataType: "json",
+      delay: 250,
+      data: function (params) {
+        return { q: params.term };
+      },
+      processResults: function (data) {
+        return {
+          results: data.map(function (item) {
+            return { id: item.id, text: item.text };
+          })
+        };
+      }
+    }
+  });
 
-  // Load job data
+  console.log("Init JobRequest:", $('#jobRequest').length);
+  console.log("Init Client:", $('#clientID').length);
+
+  // 🔹 Submit New Job Form
+  $("#newJobForm").on("submit", function (e) {
+    e.preventDefault();
+
+    $.ajax({
+      url: "../controller/job/job_save",
+      type: "POST",
+      data: $(this).serialize(),
+      dataType: "json",
+      success: function (response) {
+        if (response.status === "success") {
+          toastr.success(response.message, "Success");
+          $("#newJobModal").modal("hide");
+          $("#newJobForm")[0].reset();
+          $('#jobRequest').val(null).trigger('change');
+          $('#clientID').val(null).trigger('change');
+
+          // 🔄 refresh job list
+          loadJob();
+        } else {
+          toastr.error(response.message, "Error");
+        }
+      },
+      error: function () {
+        toastr.error("Something went wrong. Please try again.", "Error");
+      }
+    });
+  });
+
+  // 🔹 Load Jobs
   function loadJob() {
-    $("#jobBody").html(`<tr><td colspan="7" class="text-center">Loading...</td></tr>`);
-
     $.ajax({
       url: "../controller/job/list",
       type: "GET",
       dataType: "json",
       success: function (response) {
+        console.log("Response from server:", response);
+
         if (!response.data || !Array.isArray(response.data)) {
-          console.error("Invalid response format:", response);
           toastr.error("Invalid response format from server.", "Error");
           return;
         }
 
+        function formatDateTime(datetimeStr) {
+          if (!datetimeStr) return "";
+          let dateObj = new Date(datetimeStr);
+          let optionsDate = { year: "numeric", month: "long", day: "numeric" };
+          let optionsTime = { hour: "numeric", minute: "numeric", hour12: true };
+          let datePart = dateObj.toLocaleDateString("en-US", optionsDate);
+          let timePart = dateObj.toLocaleTimeString("en-US", optionsTime);
+          return `${datePart}<br>${timePart}`; // ✅ two lines
+        }
+
+
         table.clear().draw();
 
-        if (response.data.length > 0) {
-          response.data.forEach(item => {
-            // format log_date
-            let formattedDate = "";
-            if (item.log_date) {
-              let dateObj = new Date(item.log_date);
-              let optionsDate = { year: "numeric", month: "long", day: "numeric" };
-              let optionsTime = { hour: "numeric", minute: "numeric", hour12: true };
-              let datePart = dateObj.toLocaleDateString("en-US", optionsDate);
-              let timePart = dateObj.toLocaleTimeString("en-US", optionsTime);
-              formattedDate = `${datePart}<br>${timePart}`;
-            }
+        response.data.forEach(item => {
+          table.row.add([
+            // Action buttons
+            `
+            <div class="d-flex justify-content-center align-items-center gap-1">
+              <button class="btn btn-sm btn-info text-white" title="View" onclick="viewJob('${item.job_id}')"><i class="fa fa-eye"></i></button>
+              <button class="btn btn-sm btn-warning text-white" title="Edit" onclick="editJob('${item.job_id}')"><i class="fa fa-edit"></i></button>
+              <button class="btn btn-sm btn-danger" title="Delete" onclick="deleteJob('${item.job_id}')"><i class="fa fa-trash"></i></button>
+              <button class="btn btn-sm btn-secondary" title="Duplicate" onclick="duplicateJob('${item.job_id}')"><i class="fa fa-copy"></i></button>
+            </div>
+            `,
 
-            // format last_update
-            let formattedUpdate = "";
-            if (item.last_update) {
-              let updateObj = new Date(item.last_update);
-              let optionsDate = { year: "numeric", month: "long", day: "numeric" };
-              let optionsTime = { hour: "numeric", minute: "numeric", hour12: true };
-              let datePart = updateObj.toLocaleDateString("en-US", optionsDate);
-              let timePart = updateObj.toLocaleTimeString("en-US", optionsTime);
-              formattedUpdate = `${datePart}<br>${timePart}`;
-            }
+            // ✅ Log Date
+            `<div class="text-center">${formatDateTime(item.log_date)}</div>`,
 
-            table.row.add([
-              // Column 1: Action Buttons
-              `
-              <div class="d-flex justify-content-center align-items-center gap-1">
-                <button class="btn btn-sm btn-info text-white" title="View" onclick="viewJob('${item.id}')">
-                  <i class="fa fa-eye"></i>
-                </button>
-                <button class="btn btn-sm btn-warning text-white" title="Edit" onclick="editJob('${item.id}')">
-                  <i class="fa fa-edit"></i>
-                </button>
-                <button class="btn btn-sm btn-danger" title="Delete" onclick="deleteJob('${item.id}')">
-                  <i class="fa fa-trash"></i>
-                </button>
-                <button class="btn btn-sm btn-secondary" title="Duplicate" onclick="duplicateJob('${item.id}')">
-                  <i class="fa fa-copy"></i>
-                </button>
-              </div>
+            // Client
+            `<span style="font-size: 12px">${item.client_account_name}</span><br><small>Complex</small>`,
 
-              `,
+            // Reference
+            `<strong>${item.start_ref}${item.job_reference_no}</strong>`,
 
-              // Column 2: Log Date
-              `<div class="d-flex justify-content-center align-items-center w-100 h-100">
-                <span>${formattedDate}</span>
-              </div>`,
+            // Client Ref
+            `<span><strong>${item.client_reference_no}</strong></span>`,
 
-              // Column 3: Job Info
-              `
-              <span style="font-size: 12px">${item.client_account_name}</span><br>
-              <small>Complexity: ${item.client_code}</small>
-              `,
+            // Staff / Checker
+            `<small>Staff: ${item.staff_name ?? ""}</small><br><small>Checker: ${item.checker_name ?? ""}</small>`,
 
-              // Column 4: Address + Client Ref
-              `
-              <div class="d-flex justify-content-center items-center w-100 h-100"><strong>${item.start_ref}${item.job_reference_no}</strong></div>
-              `,
-              `
-              <span><strong>${item.client_reference_no}</strong></span>
-              `,
+            // Status
+            `
+            <span class="badge text-dark" 
+              style="background-color: ${item.priority === "Top" ? "#F74639" :
+              item.priority === "High (1 day)" ? "#FFA775" :
+                item.priority === "Standard (2 days)" ? "#FF71CF" :
+                  item.priority === "Standard (3 days)" ? "#CF7AFA" : "#6c757d"}">
+              ${item.job_status}
+            </span>
+            `,
 
-              // Column 5: Staff / Checker
-              `
-              <small>Staff: ${item.staff_name}</small><br>
-              <small>Checker: ${item.checker_name}</small>
-              `,
+            // ✅ Completion Date
+            `<div class="text-center">${formatDateTime(item.completion_date)}</div>`
+          ]).draw(false);
+        });
 
-              // Column 6: Status
-              `
-              <span 
-                class="badge text-dark" 
-                style="background-color: ${item.priority === "Top" ? "#F74639" :
-                item.priority === "High (1 day)" ? "#FFA775" :
-                  item.priority === "Standard (2 days)" ? "#FF71CF" :
-                    item.priority === "Standard (3 days)" ? "#CF7AFA" :
-                      "#6c757d" // default gray
-              }"
-              >
-                ${item.job_status}
-              </span>
-
-              `,
-
-              // Column 7: Last Update
-              `<div class="d-flex justify-content-center align-items-center w-100 h-100">
-                <span>${formattedUpdate}</span>
-              </div>`,
-            ]).draw(false);
-          });
-
-        } else {
-          $("#jobBody").html(`<tr><td colspan="7" class="text-center text-muted">No records found.</td></tr>`);
-        }
 
         $("#jobCount").text("Total Records: " + response.count);
       },
       error: function (xhr) {
         table.clear().draw();
-        $("#jobBody").html(`<tr><td colspan="7" class="text-center text-danger">Error loading data.</td></tr>`);
         toastr.error("Error fetching data: " + xhr.responseText, "Error");
       }
     });
   }
 
+  // 🔄 Initial load
   loadJob();
-});
 
-// Sample functions (to be implemented)
-function viewJob(id) { alert("View Job: " + id); }
-function editJob(id) { alert("Edit Job: " + id); }
-function deleteJob(id) { alert("Delete Job: " + id); }
-function duplicateJob(id) { alert("Duplicate Job: " + id); }
+  // 🔄 Optional: auto refresh every 30s
+  // setInterval(loadJob, 30000);
+});

@@ -78,9 +78,17 @@
               </select>
             </div>
 
-            <div class="col-md-12">
+            <div class="col-md-6">
               <label class="form-label">Job Request</label>
               <select name="jobRequest" id="jobRequest" class=" select2"></select>
+            </div>
+
+            <div class="col-md-6">
+              <div class="mb-3">
+  <label for="clientID" class="form-label">Client</label>
+  <select id="clientID" name="clientID" class="form-control"></select>
+</div>
+
             </div>
 
             <div class="col-md-12">

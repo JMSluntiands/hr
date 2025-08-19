@@ -291,8 +291,12 @@
       }
 
       .select2-container {
-        z-index: 2000 !important; /* mas mataas sa Bootstrap modal (1050) */
+        z-index: 9999 !important; /* para lumutang sa ibabaw ng modal */
       }
+      .select2-dropdown {
+        z-index: 99999 !important;
+      }
+
 
     </style>
   </head>

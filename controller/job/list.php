@@ -11,7 +11,6 @@
               j.client_reference_no, 
               j.ncc_compliance, 
               ca.client_account_name, 
-              ca.client_account_address, 
               jr.job_request_id, 
               jr.job_request_type, 
               j.job_type, 
@@ -39,7 +38,7 @@
   while ($row = $result->fetch_assoc()) {
   $dateTime = new DateTime($row['log_date']);
   $formattedDate = $dateTime->format("F j, Y g:i A"); 
-  $updateTime = new DateTime($row['last_update']);
+  $updateTime = new DateTime($row['completion_date']);
   $last_update = $updateTime->format("F j, Y g:i A"); 
 
   $job_ref = $row['client_code'];
@@ -55,12 +54,12 @@
     "client_reference_no" => $row['client_reference_no'],
     "priority" => $row['priority'],
     "client_account_name" => $row['client_account_name'], // ✅ ayusin name
-    "job_address" => $row['client_account_address'],        // ✅ ayusin name
     "job_status" => $row['job_status'],
     "client_code" => $row['client_code'],
     "staff_name" => $row['staff_name'],
     "checker_name" => $row['checker_name'],
     "plan_complexity" => $row['plan_complexity'],
+    "completion_date" => $row['completion_date'],
     "last_update" => $last_update,
     "priority" => $row['priority'],
   ];
