@@ -37,9 +37,9 @@
                   <div class="d-flex justify-content-between items-center">
                     <div>
                       <h5 class="card-title mb-2">Job List</h5>
-                  <span id="jobCount" class="text-muted">Total Records: 0</span>
+                      <span id="jobCount" class="text-muted">Total Records: 0</span>
                     </div>
-                    <div>
+                    <div class="">
                       <button class="btn text-white btn-danger" data-bs-toggle="modal" data-bs-target="#newJobModal">New Job</button>
                     </div>
                   </div>

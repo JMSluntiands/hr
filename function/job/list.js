@@ -7,17 +7,41 @@ $(document).ready(function () {
     dom: 'Bfrtip',
     data: [], // manual loading
     buttons: [
-      {
-        extend: 'excelHtml5',
-        title: 'Job List',
-        text: 'Export to Excel',
-        className: 'btn btn-success btn-sm'
-      }
+      // {
+      //   extend: 'excelHtml5',
+      //   title: 'Job List',
+      //   text: 'Export to Excel',
+      //   className: 'btn btn-success btn-sm form-control'
+      // }
     ],
     columnDefs: [
       { responsivePriority: 1, targets: 0 },
       { responsivePriority: 2, targets: -1 }
     ]
+  });
+
+  // 🔹 Add Job Status Filter Dropdown before Export Button
+  let statusFilter = `
+    <select id="statusFilter" class="form-select form-select-sm d-inline-block mb-2 p-1" style="width:200px;">
+      <option value="">Filtered by Status</option>
+      <option value="Allocated">Allocated</option>
+      <option value="Accepted">Accepted</option>
+      <option value="Processing">Processing</option>
+      <option value="For Checking">For Checking</option>
+      <option value="Completed">Completed</option>
+      <option value="Awaiting Further Information">Awaiting Further Information</option>
+      <option value="Pending">Pending</option>
+      <option value="For Discussion">For Discussion</option>
+      <option value="Revision Requested">Revision Requested</option>
+      <option value="Revised">Revised</option>
+    </select>
+  `;
+  $(".dt-buttons").prepend(statusFilter);
+
+  // 🔹 Status Filter Logic (column 6 = Status)
+  $(document).on("change", "#statusFilter", function () {
+    let val = $(this).val();
+    table.column(6).search(val ? '^' + val + '$' : '', true, false).draw();
   });
 
   // 🔹 Init Select2 for Job Request
@@ -122,7 +146,6 @@ $(document).ready(function () {
           return `${datePart}<br>${timePart}`; // ✅ two lines
         }
 
-
         table.clear().draw();
 
         response.data.forEach(item => {
@@ -167,7 +190,6 @@ $(document).ready(function () {
             `<div class="text-center">${formatDateTime(item.completion_date)}</div>`
           ]).draw(false);
         });
-
 
         $("#jobCount").text("Total Records: " + response.count);
       },
