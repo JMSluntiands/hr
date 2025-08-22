@@ -49,7 +49,7 @@ $(document).ready(function () {
     placeholder: "Select or search job request",
     width: '100%',
     dropdownParent: $('#newJobModal .modal-content'),
-    minimumInputLength: 1,
+    minimumResultsForSearch: 2, // 🚫 disable search box
     ajax: {
       url: "../controller/job/job_select",
       dataType: "json",
@@ -77,7 +77,7 @@ $(document).ready(function () {
     placeholder: "Select or search Client",
     width: '100%',
     dropdownParent: $('#newJobModal .modal-content'),
-    minimumInputLength: 1,
+    minimumResultsForSearch: 2,
     ajax: {
       url: "../controller/job/client",
       dataType: "json",
@@ -209,17 +209,21 @@ $(document).ready(function () {
   loadJob();
 
   $('.compliance').select2({
-    width: '100%'
+    width: '100%',
+    minimumResultsForSearch: Infinity,
   });
   $('.priority').select2({
-    width: '100%'
+    width: '100%',
+    minimumResultsForSearch: Infinity,
   });
 
   $('.checked').select2({
-    width: '100%'
+    width: '100%',
+    minimumResultsForSearch: Infinity,
   });
   $('.assign').select2({
-    width: '100%'
+    width: '100%',
+    minimumResultsForSearch: Infinity,
   });
 
 });
