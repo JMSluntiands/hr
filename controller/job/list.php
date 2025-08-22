@@ -1,6 +1,14 @@
 <?php
   include_once '../../database/db.php';
 
+  session_start();
+  $user_client = $_SESSION['role'] ?? '';
+
+  $client = mysqli_query($conn, "SELECT * FROM clients WHERE client_name = '$user_client'");
+  $fetch_client = mysqli_fetch_array($client);
+
+  $usersID = $fetch_client['client_code'];
+
   header("Content-Type: application/json"); // Set response type
 
   $sql = "SELECT DISTINCT 
@@ -28,7 +36,8 @@
           LEFT JOIN client_accounts ca 
               ON j.client_account_id = ca.client_account_id
           LEFT JOIN job_requests jr 
-              ON j.job_request_id = jr.job_request_id;
+              ON j.job_request_id = jr.job_request_id
+          WHERE j.client_code = '$usersID'
 ";
   $stmt = $conn->prepare($sql);
   $stmt->execute();
