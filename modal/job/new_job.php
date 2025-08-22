@@ -10,7 +10,7 @@
       </div>
 
       <!-- Modal Body -->
-      <form id="newJobForm">
+      <form id="newJobForm" enctype="multipart/form-data">
         <div class="modal-body">
           <div class="row g-3">
 
@@ -99,13 +99,21 @@
             </div>
 
             <div class="col-md-12">
-              <label class="form-label">Upload Plans</label>
-              <input type="file" name="reference" class="form-control" required>
+              <label class="form-label d-flex justify-content-between">
+                Upload Plans 
+                <span class="badge bg-secondary" id="plansCount">0 files</span>
+              </label>
+              <input type="file" class="form-control" id="uploadPlans" multiple accept="application/pdf" name="plans[]">
+              <div id="plansPreview" class="mt-2"></div>
             </div>
 
             <div class="col-md-12">
-              <label class="form-label">Upload Document</label>
-              <input type="file" name="reference" class="form-control" required>
+              <label class="form-label d-flex justify-content-between">
+                Upload Document
+                <span class="badge bg-secondary" id="docsCount">0 files</span>
+              </label>
+              <input type="file" class="form-control" id="uploadDocs" multiple accept="application/pdf" name="docs[]">
+              <div id="docsPreview" class="mt-2"></div>
             </div>
 
             <div class="col-md-6">

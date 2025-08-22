@@ -308,5 +308,17 @@
       .form-control {
         height: 50px !important;
       }
+
+      .file-row {
+        background-color: #f8f9fa;
+        color: #212529;
+      }
+
+      /* Dark mode style */
+      body.dark-mode .file-row {
+        background-color: #2c2c2c;
+        color: #f1f1f1;
+      }
+      
     </style>
   </head>

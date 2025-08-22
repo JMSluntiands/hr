@@ -12,6 +12,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $jobRequest = $_POST['jobRequest'] ?? '';
     $address    = $_POST['address'] ?? '';
     $clientID   = $_POST['clientID'] ?? '';
+    $notes      = $_POST['notes'] ?? '';
+    $status     = $_POST['status'] ?? 'Allocated';
+
 
     // Kunin client name/role sa session
     $user_client = $_SESSION['role'] ?? '';
@@ -77,49 +80,142 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // Insert Job
-    $sql = "INSERT INTO jobs (
-                client_code,
-                job_reference_no,
-                client_reference_no,
-                staff_id,
-                checker_id,
-                ncc_compliance,
-                priority,
-                job_request_id,
-                address_client,
-                log_date,
-                job_type,
-                job_status,
-                client_account_id
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, 'Pending', ?)";
+$sql = "INSERT INTO jobs (
+            client_code,
+            job_reference_no,
+            client_reference_no,
+            staff_id,
+            checker_id,
+            ncc_compliance,
+            priority,
+            job_request_id,
+            address_client,
+            log_date,
+            job_type,
+            job_status,
+            client_account_id,
+            notes,
+            upload_files,
+            upload_project_files
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, ?, ?, ?, ?, ?)";
 
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param(
-        "ssssssssssi",
-        $client_code,
-        $reference,
-        $client_ref,
-        $assigned,
-        $checked,
-        $compliance,
-        $priority,
-        $jobRequest,
-        $address,
-        $job_request_type,
-        $clientID
-    );
+$stmt = $conn->prepare($sql);
 
-    if ($stmt->execute()) {
-        echo json_encode([
-            "status"  => "success",
-            "message" => "New job has been created successfully"
-        ]);
-    } else {
-        echo json_encode([
-            "status"  => "error",
-            "message" => "Database error: " . $stmt->error
-        ]);
+// file arrays for DB
+$plansSaved = [];
+$docsSaved  = [];
+
+// ✅ File upload handling
+$uploadDir = "../../document/" . $reference . "/";
+if (!file_exists($uploadDir)) {
+    mkdir($uploadDir, 0777, true);
+}
+
+$plansSaved = [];
+$docsSaved  = [];
+
+// Save Plans
+if (!empty($_FILES['plans']['name'])) {
+    foreach ($_FILES['plans']['name'] as $key => $filename) {
+        if (empty($filename) || $_FILES['plans']['error'][$key] == 4) continue;
+
+        $tmpName = $_FILES['plans']['tmp_name'][$key];
+        $error   = $_FILES['plans']['error'][$key];
+
+        $safeName = time() . "_" . preg_replace("/[^A-Za-z0-9_\.-]/", "_", $filename);
+        $targetFile = $uploadDir . $safeName;
+
+        if ($error !== UPLOAD_ERR_OK) {
+            echo json_encode([
+                "status" => "error",
+                "message" => "Upload error ($filename): code $error"
+            ]);
+            exit;
+        }
+
+        if (move_uploaded_file($tmpName, $targetFile)) {
+            $plansSaved[] = $safeName;
+        } else {
+            echo json_encode([
+                "status" => "error",
+                "message" => "move_uploaded_file failed: tmp=$tmpName → target=$targetFile"
+            ]);
+            exit;
+        }
     }
+}
+
+// Save Docs
+if (!empty($_FILES['docs']['name'])) {
+    foreach ($_FILES['docs']['name'] as $key => $filename) {
+        if (empty($filename) || $_FILES['docs']['error'][$key] == 4) continue;
+
+        $tmpName = $_FILES['docs']['tmp_name'][$key];
+        $error   = $_FILES['docs']['error'][$key];
+
+        $safeName = time() . "_" . preg_replace("/[^A-Za-z0-9_\.-]/", "_", $filename);
+        $targetFile = $uploadDir . $safeName;
+
+        if ($error !== UPLOAD_ERR_OK) {
+            echo json_encode([
+                "status" => "error",
+                "message" => "Upload error ($filename): code $error"
+            ]);
+            exit;
+        }
+
+        if (move_uploaded_file($tmpName, $targetFile)) {
+            $docsSaved[] = $safeName;
+        } else {
+            echo json_encode([
+                "status" => "error",
+                "message" => "move_uploaded_file failed: tmp=$tmpName → target=$targetFile"
+            ]);
+            exit;
+        }
+    }
+}
+
+file_put_contents("debug_upload.txt", print_r($_FILES, true));
+
+
+// encode arrays to JSON for DB
+$plansJson = json_encode($plansSaved);
+$docsJson  = json_encode($docsSaved);
+
+
+$stmt->bind_param(
+    "sssssssssssisss",  // 15 placeholders
+    $client_code,
+    $reference,
+    $client_ref,
+    $assigned,
+    $checked,
+    $compliance,
+    $priority,
+    $jobRequest,
+    $address,
+    $job_request_type,
+    $status,
+    $clientID,      // int
+    $notes,
+    $plansJson,
+    $docsJson
+);
+
+
+if ($stmt->execute()) {
+    echo json_encode([
+        "status"  => "success",
+        "message" => "New job has been created successfully, files uploaded."
+    ]);
+} else {
+    echo json_encode([
+        "status"  => "error",
+        "message" => "Database error: " . $stmt->error
+    ]);
+}
+
 
     $stmt->close();
 }

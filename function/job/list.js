@@ -104,10 +104,28 @@ $(document).ready(function () {
   $("#newJobForm").on("submit", function (e) {
     e.preventDefault();
 
+    // ✅ Filter out any empty or invalid files
+    plansFiles = plansFiles.filter(file => file && file.name);
+    docsFiles = docsFiles.filter(file => file && file.name);
+
+    let formData = new FormData(this);
+
+    // ✅ Append valid plans
+    for (let i = 0; i < plansFiles.length; i++) {
+      formData.append("plans[]", plansFiles[i]);
+    }
+
+    // ✅ Append valid docs
+    for (let i = 0; i < docsFiles.length; i++) {
+      formData.append("docs[]", docsFiles[i]);
+    }
+
     $.ajax({
-      url: "../controller/job/job_save",
+      url: "../controller/job/job_save.php",
       type: "POST",
-      data: $(this).serialize(),
+      data: formData,
+      contentType: false,
+      processData: false,
       dataType: "json",
       success: function (response) {
         if (response.status === "success") {
@@ -116,8 +134,15 @@ $(document).ready(function () {
           $("#newJobForm")[0].reset();
           $('#jobRequest').val(null).trigger('change');
           $('#clientID').val(null).trigger('change');
+          $("#uploadPlans").val("");
+          $("#uploadDocs").val("");
+          $("#plansPreview").html("");
+          $("#docsPreview").html("");
 
-          // 🔄 refresh job list
+          // ✅ Reset file arrays
+          plansFiles = [];
+          docsFiles = [];
+
           loadJob();
         } else {
           toastr.error(response.message, "Error");
@@ -226,4 +251,57 @@ $(document).ready(function () {
     minimumResultsForSearch: Infinity,
   });
 
+  let plansFiles = [];
+  let docsFiles = [];
+
+  // Refresh preview + update badge
+  function refreshPreview(fileArray, previewContainer, countContainer) {
+    let $preview = $("#" + previewContainer);
+    $preview.empty();
+
+    $.each(fileArray, function (i, file) {
+      let $row = $(`
+        <div class="d-flex align-items-center border p-2 mb-1 rounded file-row">
+          <i class="fa fa-file-pdf text-danger me-2 fs-4"></i>
+          <span class="flex-grow-1">${file.name}</span>
+          <button type="button" class="btn btn-sm btn-danger remove-file" data-index="${i}" data-target="${previewContainer}">
+            <i class="fa fa-times"></i>
+          </button>
+        </div>
+      `);
+      $preview.append($row);
+    });
+
+    // update badge text
+    $("#" + countContainer).text(fileArray.length + " file(s)");
+  }
+
+  // Handle file input changes
+  $("#uploadPlans").on("change", function (e) {
+    let files = Array.from(e.target.files);
+    plansFiles = plansFiles.concat(files);
+    refreshPreview(plansFiles, "plansPreview", "plansCount");
+    $(this).val(""); // reset para makapili ulit
+  });
+
+  $("#uploadDocs").on("change", function (e) {
+    let files = Array.from(e.target.files);
+    docsFiles = docsFiles.concat(files);
+    refreshPreview(docsFiles, "docsPreview", "docsCount");
+    $(this).val("");
+  });
+
+  // Handle remove click
+  $(document).on("click", ".remove-file", function () {
+    let index = $(this).data("index");
+    let target = $(this).data("target");
+
+    if (target === "plansPreview") {
+      plansFiles.splice(index, 1);
+      refreshPreview(plansFiles, "plansPreview", "plansCount");
+    } else if (target === "docsPreview") {
+      docsFiles.splice(index, 1);
+      refreshPreview(docsFiles, "docsPreview", "docsCount");
+    }
+  });
 });
