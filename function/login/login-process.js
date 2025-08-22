@@ -3,7 +3,7 @@ $("#loginButton").click(function () {
   let password = $("#password").val().trim();
 
   $.ajax({
-    url: "controller/login/login-process",
+    url: "controller/login/login-process.php",
     method: "POST",
     data: { email: email, password: password },
     dataType: "json",
