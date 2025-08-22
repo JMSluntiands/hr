@@ -38,10 +38,14 @@ $(document).ready(function () {
   `;
   $(".dt-buttons").prepend(statusFilter);
 
-  // 🔹 Status Filter Logic (column 6 = Status)
+  $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
+    let selected = $('#statusFilter').val();
+    let status = $(table.cell(dataIndex, 6).node()).text().trim();
+    return selected === "" || status === selected;
+  });
+
   $(document).on("change", "#statusFilter", function () {
-    let val = $(this).val();
-    table.column(6).search(val ? '^' + val + '$' : '', true, false).draw();
+    table.draw();
   });
 
   // 🔹 Init Select2 for Job Request
