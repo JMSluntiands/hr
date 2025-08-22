@@ -67,7 +67,12 @@ $(document).ready(function () {
     }
   });
 
-  // 🔹 Init Select2 for Client
+  let defaultJobRequest = { id: "EA_LBS_1SDB", text: "1S DB Base Model- 1S Design Builder Model" };
+
+  let optionJob = new Option(defaultJobRequest.text, defaultJobRequest.id, true, true);
+  $('#jobRequest').append(optionJob).trigger('change');
+
+
   $('#clientID').select2({
     placeholder: "Select or search Client",
     width: '100%',
@@ -90,10 +95,12 @@ $(document).ready(function () {
     }
   });
 
-  console.log("Init JobRequest:", $('#jobRequest').length);
-  console.log("Init Client:", $('#clientID').length);
+  let defaultClient = { id: "7", text: "Summit Homes Group" };
 
-  // 🔹 Submit New Job Form
+  let option = new Option(defaultClient.text, defaultClient.id, true, true);
+  $('#clientID').append(option).trigger('change');
+
+
   $("#newJobForm").on("submit", function (e) {
     e.preventDefault();
 
@@ -122,7 +129,6 @@ $(document).ready(function () {
     });
   });
 
-  // 🔹 Load Jobs
   function loadJob() {
     $.ajax({
       url: "../controller/job/list",
@@ -200,9 +206,20 @@ $(document).ready(function () {
     });
   }
 
-  // 🔄 Initial load
   loadJob();
 
-  // 🔄 Optional: auto refresh every 30s
-  // setInterval(loadJob, 30000);
+  $('.compliance').select2({
+    width: '100%'
+  });
+  $('.priority').select2({
+    width: '100%'
+  });
+
+  $('.checked').select2({
+    width: '100%'
+  });
+  $('.assign').select2({
+    width: '100%'
+  });
+
 });

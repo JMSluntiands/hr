@@ -277,6 +277,14 @@
         color: #ddd;
       }
 
+      body.dark-mode h5 {
+        color: #ddd;
+      }
+
+      body.dark-mode .select2-container--default .select2-selection--single .select2-selection__rendered {
+        color: #fff;
+      }
+
       /* Default (Light Mode) */
       .modal-custom-header {
         background-color: #0d6efd; /* Bootstrap primary */
@@ -297,6 +305,8 @@
         z-index: 99999 !important;
       }
 
-
+      .form-control {
+        height: 50px !important;
+      }
     </style>
   </head>

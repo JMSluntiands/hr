@@ -14,28 +14,110 @@
         <div class="modal-body">
           <div class="row g-3">
 
-            
-
-            <div class="col-md-6">
-              <label class="form-label">Reference No.</label>
-              <input type="text" name="reference" class="form-control" placeholder="Enter Reference No." required>
+            <div class="col-12">
+              <h5 class="text-center">Client Details</h5>
             </div>
 
-            <div class="col-md-6">
+            <div class="col-md-4">
+              <label class="form-label">Reference No.</label>
+              <input type="text" name="reference" class="form-control" placeholder="Enter Reference No." required autocomplete="off">
+            </div>
+
+            <div class="col-md-4">
               <label class="form-label">Client Reference</label>
-              <input type="text" name="client_ref" class="form-control" placeholder="Enter Client Reference">
+              <input type="text" name="client_ref" class="form-control" placeholder="Enter Client Reference" autocomplete="off">
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label">Compliance</label>
+              <select name="compliance" class="form-select compliance" required>
+                <option value="2022 (WHO)" selected>2022 (WHO)</option>
+                <option value="2019">2019</option>
+              </select>
+            </div>
+
+            <div class="col-md-12">
+              <div class="mb-3">
+                <label for="clientID" class="form-label">Client</label>
+                <select id="clientID" name="clientID" class="form-control"></select>
+              </div>
+            </div>
+
+
+
+            <div class="col-12"><hr></div>
+
+
+
+            <div class="col-12">
+              <h5 class="text-center">Job Details</h5>
+            </div>
+
+            <div class="col-md-12">
+              <label class="form-label">Job Address</label>
+              <textarea name="address" rows="1" class="form-control" placeholder="Complete Address"></textarea>
+            </div>
+
+            <div class="col-md-12">
+              <label class="form-label">Job Priority</label>
+              <select name="priority" class="form-select priority" required>
+                <option value="Top" selected>Top (COB)</option>
+                <option value="High">High</option>
+                <option value="Standard 2 days">Standard 2 days</option>
+                <option value="Standard 3 days">Standard 3 days</option>
+                <option value="Standard 4 days">Standard 4 days</option>
+                <option value="Low 5 days">Low 5 days</option>
+                <option value="Low 6 days">Low 6 days</option>
+                <option value="Low 7 days">Low 7 days</option>
+              </select>
+            </div>
+
+            <div class="col-md-12">
+              <label class="form-label">Job Request</label>
+              <select name="jobRequest" id="jobRequest" class=" select2"></select>
+            </div>
+
+            <div class="col-md-12">
+              <label class="form-label">Job Status</label>
+              <select name="status" class="form-select compliance" required>
+                <option value="Allocated" selected>Allocated</option>
+                <option value="Accepted">Accepted</option>
+                <option value="Processing">Processing</option>
+                <option value="For Checking">For Checking</option>
+                <option value="Completed">Completed</option>
+                <option value="Awaiting Further Information">Awaiting Further Information</option>
+                <option value="Pending">Pending</option>
+                <option value="For Discussion">For Discussion</option>
+                <option value="Revision Requested">Revision Requested</option>
+                <option value="Revised">Revised</option>
+              </select>
+            </div>
+
+            <div class="col-md-12">
+              <label class="form-label">Notes</label>
+              <textarea name="notes" rows="1" class="form-control" placeholder="Notes"></textarea>
+            </div>
+
+            <div class="col-md-12">
+              <label class="form-label">Upload Plans</label>
+              <input type="file" name="reference" class="form-control" required>
+            </div>
+
+            <div class="col-md-12">
+              <label class="form-label">Upload Document</label>
+              <input type="file" name="reference" class="form-control" required>
             </div>
 
             <div class="col-md-6">
               <label class="form-label">Assigned To</label>
-              <select name="assigned" class="form-select" required>
-                <option value="" selected>Choose</option>
+              <select name="assigned" class="form-select assign" required>
                 <?php 
                   $assign = "SELECT * FROM staff ORDER BY id DESC";
                   $assign_sql = mysqli_query($conn, $assign);
 
                   foreach ($assign_sql as $dataAss) {
-                    echo '<option value="'.$dataAss['staff_id'].'">'.$dataAss['name'].'</option>';
+                    $selected = ($dataAss['staff_id'] === "GM") ? "selected" : "";
+                    echo '<option value="'.$dataAss['staff_id'].'" '.$selected.'>'.$dataAss['staff_id'].'</option>';
                   }
                 ?>
               </select>
@@ -43,58 +125,19 @@
 
             <div class="col-md-6">
               <label class="form-label">Checked By</label>
-              <select name="checked" class="form-select" required>
-                <option value="" selected>Choose</option>
+              <select name="checked" class="form-select checked" required>
                 <?php 
                   $assign = "SELECT * FROM checker ORDER BY id DESC";
                   $assign_sql = mysqli_query($conn, $assign);
 
                   foreach ($assign_sql as $dataAss) {
-                    echo '<option value="'.$dataAss['checker_id'].'">'.$dataAss['name'].'</option>';
+                    $selected = ($dataAss['checker_id'] === "GM") ? "selected" : "";
+                    echo '<option value="'.$dataAss['checker_id'].'" '.$selected.'>'.$dataAss['checker_id'].'</option>';
                   }
                 ?>
               </select>
             </div>
-
             
-
-
-            <div class="col-md-6">
-              <label class="form-label">Compliance</label>
-              <select name="compliance" class="form-select" required>
-                <option value="" selected>Choose</option>
-                <option value="NCC2019">NCC2019</option>
-                <option value="NCC2022">NCC2022</option>
-              </select>
-            </div>
-
-            <div class="col-md-6">
-              <label class="form-label">Priority</label>
-              <select name="priority" class="form-select" required>
-                <option value="Top">Top</option>
-                <option value="High">High</option>
-                <option value="Standard 2 days">Standard 2 days</option>
-                <option value="Standard 3 days">Standard 3 days</option>
-              </select>
-            </div>
-
-            <div class="col-md-6">
-              <label class="form-label">Job Request</label>
-              <select name="jobRequest" id="jobRequest" class=" select2"></select>
-            </div>
-
-            <div class="col-md-6">
-              <div class="mb-3">
-  <label for="clientID" class="form-label">Client</label>
-  <select id="clientID" name="clientID" class="form-control"></select>
-</div>
-
-            </div>
-
-            <div class="col-md-12">
-              <label class="form-label">Address</label>
-              <textarea name="address" rows="2" class="form-control" placeholder="Complete Address"></textarea>
-            </div>
           </div>
         </div>
 
