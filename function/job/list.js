@@ -71,6 +71,21 @@ $(document).ready(function () {
     }
   });
 
+  $('#newJobModal').on('hidden.bs.modal', function () {
+    // reset all inputs sa form
+    $('#newJobForm')[0].reset();
+
+    // clear Select2 if gamit ka
+    $('#jobRequest').val(null).trigger('change');
+    $('#clientID').val(null).trigger('change');
+
+    // clear previews & counters
+    $('#plansPreview').empty();
+    $('#docsPreview').empty();
+    $('#plansCount').text("0 files");
+    $('#docsCount').text("0 files");
+  });
+
   let defaultJobRequest = { id: "EA_LBS_1SDB", text: "1S DB Base Model- 1S Design Builder Model" };
 
   let optionJob = new Option(defaultJobRequest.text, defaultJobRequest.id, true, true);

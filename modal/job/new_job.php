@@ -61,8 +61,8 @@
             <div class="col-md-12">
               <label class="form-label">Job Priority</label>
               <select name="priority" class="form-select priority" required>
-                <option value="Top" selected>Top (COB)</option>
-                <option value="High">High</option>
+                <option value="Top (COB)" selected>Top (COB)</option>
+                <option value="High 1 day">High 1 day</option>
                 <option value="Standard 2 days">Standard 2 days</option>
                 <option value="Standard 3 days">Standard 3 days</option>
                 <option value="Standard 4 days">Standard 4 days</option>
@@ -73,7 +73,7 @@
             </div>
 
             <div class="col-md-12">
-              <label class="form-label">Job Request</label>
+              <label class="form-label">Job Type</label>
               <select name="jobRequest" id="jobRequest" class=" select2"></select>
             </div>
 
