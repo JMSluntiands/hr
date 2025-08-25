@@ -18,36 +18,42 @@
               <h5 class="text-center">Client Details</h5>
             </div>
 
-            <div class="col-md-4">
-              <label class="form-label">Reference No.</label>
-              <input type="text" name="reference" class="form-control" placeholder="Enter Reference No." required autocomplete="off">
-            </div>
+            <!-- Reference No. (restricted) -->
+            <?php if ($_SESSION['role'] === 'LBS' || $_SESSION['role'] === 'LUNTIAN'): ?>
+              <div class="col-md-4">
+                <label class="form-label">Reference No.</label>
+                <input type="text" name="reference" class="form-control" placeholder="Enter Reference No." required autocomplete="off">
+              </div>
+            <?php endif; ?>
 
+            <!-- Client Reference (always visible) -->
             <div class="col-md-4">
               <label class="form-label">Client Reference</label>
               <input type="text" name="client_ref" class="form-control" placeholder="Enter Client Reference" autocomplete="off">
             </div>
 
-            <div class="col-md-4">
-              <label class="form-label">Compliance</label>
-              <select name="compliance" class="form-select compliance" required>
-                <option value="2022 (WHO)" selected>2022 (WHO)</option>
-                <option value="2019">2019</option>
-              </select>
-            </div>
-
-            <div class="col-md-12">
-              <div class="mb-3">
-                <label for="clientID" class="form-label">Client</label>
-                <select id="clientID" name="clientID" class="form-control"></select>
+            <!-- Compliance (restricted) -->
+            <?php if ($_SESSION['role'] === 'LBS' || $_SESSION['role'] === 'LUNTIAN'): ?>
+              <div class="col-md-4">
+                <label class="form-label">Compliance</label>
+                <select name="compliance" class="form-select compliance" required>
+                  <option value="2022 (WHO)" selected>2022 (WHO)</option>
+                  <option value="2019">2019</option>
+                </select>
               </div>
-            </div>
+            <?php endif; ?>
 
-
+            <!-- Client (restricted) -->
+            <?php if ($_SESSION['role'] === 'LBS' || $_SESSION['role'] === 'LUNTIAN'): ?>
+              <div class="col-md-12">
+                <div class="mb-3">
+                  <label for="clientID" class="form-label">Client</label>
+                  <select id="clientID" name="clientID" class="form-control"></select>
+                </div>
+              </div>
+            <?php endif; ?>
 
             <div class="col-12"><hr></div>
-
-
 
             <div class="col-12">
               <h5 class="text-center">Job Details</h5>
@@ -74,7 +80,7 @@
 
             <div class="col-md-12">
               <label class="form-label">Job Type</label>
-              <select name="jobRequest" id="jobRequest" class=" select2"></select>
+              <select name="jobRequest" id="jobRequest" class="select2"></select>
             </div>
 
             <div class="col-md-12">
@@ -93,10 +99,13 @@
               </select>
             </div>
 
-            <div class="col-md-12">
-              <label class="form-label">Notes</label>
-              <textarea name="notes" rows="1" class="form-control" placeholder="Notes"></textarea>
-            </div>
+            <!-- Notes (restricted) -->
+            <?php if ($_SESSION['role'] === 'LBS' || $_SESSION['role'] === 'LUNTIAN'): ?>
+              <div class="col-md-12">
+                <label class="form-label">Notes</label>
+                <textarea name="notes" rows="1" class="form-control" placeholder="Notes"></textarea>
+              </div>
+            <?php endif; ?>
 
             <div class="col-md-12">
               <label class="form-label d-flex justify-content-between">
