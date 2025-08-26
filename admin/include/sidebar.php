@@ -13,6 +13,9 @@
         <li>
           <a href="job"><i class="si si-briefcase"></i> <span>Job Management</span></a>
         </li>
+        <li>
+          <a href="trash"><i class="si si-trash"></i> <span>Job Trash</span></a>
+        </li>
         
         <!-- Setting -->
         <li class="menu-title"><span>Setting</span></li>
