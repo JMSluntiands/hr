@@ -23,7 +23,7 @@
                     <li class="breadcrumb-item">
                       <a href="index">Home</a>
                     </li>
-                    <li class="breadcrumb-item active">Job Management</li>
+                    <li class="breadcrumb-item active">Job Management</li>                                                                       
                   </ul>
                 </div>
               </div>

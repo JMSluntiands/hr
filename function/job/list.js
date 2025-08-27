@@ -179,7 +179,6 @@ $(document).ready(function () {
       type: "GET",
       dataType: "json",
       success: function (response) {
-        console.log("Response from server:", response);
 
         if (!response.data || !Array.isArray(response.data)) {
           toastr.error("Invalid response format from server.", "Error");
@@ -204,7 +203,9 @@ $(document).ready(function () {
             `
             <div class="d-flex justify-content-center align-items-center gap-1">
               <button class="btn btn-sm btn-info text-white" title="View" onclick="viewJob('${item.job_id}')"><i class="fa fa-eye"></i></button>
-              <button class="btn btn-sm btn-warning text-white" title="Edit" onclick="editJob('${item.job_id}')"><i class="fa fa-edit"></i></button>
+              <a class="btn btn-sm btn-warning btn-edit-job text-white" href="job-edit?id=${item.job_id}">
+                <i class="fa fa-edit"></i>
+              </a>
               <button class="btn btn-sm btn-danger btn-delete-job" data-id="${item.job_id}">
                 <i class="fa fa-trash"></i>
               </button>
@@ -258,6 +259,7 @@ $(document).ready(function () {
     width: '100%',
     minimumResultsForSearch: Infinity,
   });
+
   $('.priority').select2({
     width: '100%',
     minimumResultsForSearch: Infinity,
@@ -267,6 +269,7 @@ $(document).ready(function () {
     width: '100%',
     minimumResultsForSearch: Infinity,
   });
+
   $('.assign').select2({
     width: '100%',
     minimumResultsForSearch: Infinity,
@@ -325,31 +328,4 @@ $(document).ready(function () {
       refreshPreview(docsFiles, "docsPreview", "docsCount");
     }
   });
-
-  // lagay sa loob ng $(document).ready()
-  $(document).on("click", ".btn-delete-job", function () {
-    let jobId = $(this).data("id");
-
-    if (!confirm("Are you sure you want to temporarily delete this job?")) return;
-
-    $.ajax({
-      url: "../controller/job/job_delete.php",
-      type: "POST",
-      data: { job_id: jobId },
-      dataType: "json",
-      success: function (res) {
-        if (res.status === "success") {
-          toastr.warning(res.message, "Deleted");
-          loadJob();
-        } else {
-          toastr.error(res.message, "Error");
-        }
-      },
-      error: function () {
-        toastr.error("Something went wrong. Please try again.", "Error");
-      }
-    });
-  });
-
-
 });

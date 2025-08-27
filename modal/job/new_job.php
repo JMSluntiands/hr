@@ -16,6 +16,7 @@
 
             <div class="col-12">
               <h5 class="text-center">Client Details</h5>
+              <input type="hidden" name="job_id" id="job_id">
             </div>
 
             <!-- Reference No. (restricted) -->
