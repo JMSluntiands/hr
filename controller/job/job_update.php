@@ -21,6 +21,7 @@ try {
   $address      = $_POST['address'] ?? null;
   $staff_id     = $_POST['staff_id'] ?? null;
   $checker_id   = $_POST['checker_id'] ?? null;
+  $job_type     = $_POST['job_type'] ?? null;
   $updated_by   = $_SESSION['username'] ?? ($_SESSION['role'] ?? 'system');
 
   if (!$jobID || !$reference) {
@@ -39,6 +40,7 @@ try {
   $updated_by = mysqli_real_escape_string($conn, $updated_by);
   $staff_id      = mysqli_real_escape_string($conn, $staff_id);
   $checker_id    = mysqli_real_escape_string($conn, $checker_id);
+  $job_type     = mysqli_real_escape_string($conn, $job_type);
 
   // Load current job
   $curRes = $conn->query("SELECT * FROM jobs WHERE job_id=$jobID");
@@ -146,11 +148,13 @@ try {
       address_client = '$address',
       staff_id = '$staff_id',
       checker_id = '$checker_id',
+      job_type = '$job_type',
       upload_files = '$plansJson',
       upload_project_files = '$docsJson',
       last_update = NOW()
     WHERE job_id = $jobID
   ";
+
   if (!$conn->query($sql)) {
     throw new Exception("Update failed: ".$conn->error);
   }
@@ -168,7 +172,9 @@ try {
     'address_client'     => ['label'=>'Address','new'=>$address],
     'staff_id'           => ['label'=>'Assigned To','new'=>$staff_id],
     'checker_id'         => ['label'=>'Checked By','new'=>$checker_id],
+    'job_type'           => ['label'=>'Job Type','new'=>$job_type],
   ];
+
   foreach ($map as $field=>$info) {
     $old = (string)($cur[$field] ?? '');
     $new = (string)$info['new'];

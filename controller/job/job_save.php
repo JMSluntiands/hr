@@ -11,7 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $priority   = $_POST['priority'] ?? '';
     $jobRequest = $_POST['jobRequest'] ?? '';
     $address    = $_POST['address'] ?? '';
-    $clientID   = $_POST['clientID'] ?? '';
+    $clientID   = $_POST['client_account_id'] ?? '';
     $notes      = $_POST['notes'] ?? '';
     $status     = $_POST['status'] ?? 'Allocated';
 

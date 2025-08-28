@@ -40,7 +40,7 @@
                       <span id="jobCount" class="text-muted">Total Records: 0</span>
                     </div>
                     <div class="">
-                      <button class="btn text-white btn-danger" data-bs-toggle="modal" data-bs-target="#newJobModal">New Job</button>
+                      <a class="btn text-white btn-danger" href="job-new">New Job</a>
                     </div>
                   </div>
                 </div>

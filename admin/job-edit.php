@@ -16,7 +16,7 @@
         SELECT j.job_id, j.log_date, j.client_code, j.job_reference_no, j.client_reference_no,
                j.ncc_compliance, j.client_account_id, j.job_request_id, j.job_type, j.priority,
                j.address_client, j.notes, j.plan_complexity, j.last_update, j.job_status,
-               j.upload_files, j.upload_project_files, j.staff_id, j.checker_id
+               j.upload_files, j.upload_project_files, j.staff_id, j.job_request_id, j.checker_id
         FROM jobs j
         WHERE j.job_id = ?
       ";
@@ -116,7 +116,7 @@
 
                     <!-- Priority -->
                     <div class="col-md-12 mt-3">
-                      <label>Priority</label>
+                      <label>Job Priority</label>
                       <select class="form-select select" name="priority">
                         <?php
                           $priorities = ["Top (COB)","High 1 day","Standard 2 days","Standard 3 days","Standard 4 days","Low 5 days","Low 6 days","Low 7 days"];
@@ -128,9 +128,23 @@
                       </select>
                     </div>
 
+                    <div class="col-md-12 col-sm-12 mt-3">
+                      <label>Job Type</label>
+                      <select class="form-select select" name="job_type">
+                        <?php
+                          $assign = $job['job_request_id'];
+                          $q = mysqli_query($conn, "SELECT * FROM job_requests");
+                          while ($r = mysqli_fetch_assoc($q)) {
+                            $sel = ($r['job_request_id']==$assign) ? "selected" : "";
+                            echo "<option value='{$r['job_request_id']}' $sel>".htmlspecialchars($r['job_request_type'])."</option>";
+                          }
+                        ?>
+                      </select>
+                    </div>
+
                     <!-- Status -->
                     <div class="col-md-12 mt-3">
-                      <label>Status</label>
+                      <label>Job Status</label>
                       <select class="form-select select" name="status">
                         <?php
                           $statuses = ["Allocated","Accepted","Processing","For Checking","Completed","Awaiting Further Information","Pending","For Discussion","Revision Requested","Revised"];
@@ -199,6 +213,8 @@
                         <?php endforeach; ?>
                       </div>
                     </div>
+
+                    
 
                     <!-- Assigned / Checked -->
                     <div class="col-md-6 col-sm-12 mt-3">
