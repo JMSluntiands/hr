@@ -170,7 +170,7 @@ $docFiles  = json_decode($dupJob['upload_project_files'] ?? '[]', true);
                           </div>
                         <?php endforeach; ?>
                       </div>
-                      <input type="file" class="form-control mt-2" id="uploadPlans" multiple accept="application/pdf" name="plans[]">
+                      <input type="file" class="form-control mt-2" id="uploadPlans" multiple accept="application/pdf" name="plans[]"  style="height:30px!important">
                     </div>
 
                     <!-- Existing Docs -->
@@ -187,7 +187,7 @@ $docFiles  = json_decode($dupJob['upload_project_files'] ?? '[]', true);
                           </div>
                         <?php endforeach; ?>
                       </div>
-                      <input type="file" class="form-control mt-2" id="uploadDocs" multiple accept="application/pdf" name="docs[]">
+                      <input type="file" class="form-control mt-2" id="uploadDocs" multiple accept="application/pdf" name="docs[]"  style="height:30px!important">
                     </div>
 
                     <!-- Assigned -->

@@ -72,9 +72,9 @@ $(document).ready(function () {
             // Action buttons
             `
             <div class="d-flex justify-content-center align-items-center gap-1">
-              <button class="btn btn-sm btn-info text-white rounded-0" title="View" onclick="viewJob('${item.job_id}')">
+              <a class="btn btn-sm btn-info text-white rounded-0" title="View" href="job-view?id=${item.job_id}">
                 <i class="si si-eye"></i>
-              </button>
+              </a>
 
               <a class="btn btn-sm btn-warning btn-edit-job text-white rounded-0" title="Edit" href="job-edit?id=${item.job_id}">
                 <i class="si si-note"></i>
