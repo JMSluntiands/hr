@@ -237,16 +237,15 @@ $docFiles  = json_decode($dupJob['upload_project_files'] ?? '[]', true);
     $(function(){
       $('.select').select2({width:'100%'});
 
-      let plansFiles = [];   // new uploaded plans
-      let docsFiles  = [];   // new uploaded docs
-      let removedPlans = []; // removed old plans
-      let removedDocs  = []; // removed old docs
-      const MAX_SIZE = 10 * 1024 * 1024; // 10MB
+      let plansFiles = [];
+      let docsFiles  = [];
+      let removedPlans = [];
+      let removedDocs  = [];
+      const MAX_SIZE = 10 * 1024 * 1024;
 
-      // ✅ Refresh preview for NEW files
       function refreshPreview(fileArray, previewContainer, countContainer) {
         let $preview = $("#" + previewContainer);
-        $preview.find(".new-file-row").remove(); // wag galawin yung existing
+        $preview.find(".new-file-row").remove();
         $.each(fileArray, function (i, file) {
           let $row = $(`
             <div class="d-flex align-items-center border p-2 mb-1 rounded new-file-row">
@@ -264,7 +263,6 @@ $docFiles  = json_decode($dupJob['upload_project_files'] ?? '[]', true);
         );
       }
 
-      // ✅ New Upload (with size check)
       $("#uploadPlans").on("change", function (e) {
         let files = Array.from(e.target.files);
         files.forEach(f => {
@@ -291,7 +289,6 @@ $docFiles  = json_decode($dupJob['upload_project_files'] ?? '[]', true);
         $(this).val("");
       });
 
-      // ✅ Remove NEW file
       $(document).on("click", ".remove-file", function () {
         let index = $(this).data("index");
         let target = $(this).data("target");
@@ -304,7 +301,6 @@ $docFiles  = json_decode($dupJob['upload_project_files'] ?? '[]', true);
         }
       });
 
-      // ✅ Remove EXISTING file (mark only, not delete from folder)
       $(document).on("click", ".remove-existing-file", function () {
         let fileName = $(this).data("file");
         let $row = $(this).closest(".existing-file-row");
@@ -318,16 +314,13 @@ $docFiles  = json_decode($dupJob['upload_project_files'] ?? '[]', true);
         $("#docsCount").text($("#docsPreview .existing-file-row").length + docsFiles.length + " file(s)");
       });
 
-      // ✅ Submit
       $("#duplicateJobForm").on("submit", function (e) {
         e.preventDefault();
         let fd = new FormData(this);
 
-        // Append NEW files manually (wag iwan sa serialize)
         plansFiles.forEach(f => fd.append("plans[]", f));
         docsFiles.forEach(f => fd.append("docs[]", f));
 
-        // Append removed files
         fd.append("removedPlans", JSON.stringify(removedPlans));
         fd.append("removedDocs", JSON.stringify(removedDocs));
 
@@ -357,7 +350,6 @@ $docFiles  = json_decode($dupJob['upload_project_files'] ?? '[]', true);
         $("#keepDocs").val(JSON.stringify(docsFiles));
       }
 
-      // Call this every refresh
       function refreshPreview(fileArray, previewContainer, countContainer) {
         let $preview = $("#" + previewContainer);
         $preview.empty();

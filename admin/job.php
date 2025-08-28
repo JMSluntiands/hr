@@ -10,7 +10,6 @@
       <!-- Sidebar -->
       <?php include_once 'include/sidebar.php' ?>
       
-
       <div class="page-wrapper">
         <div class="content container-fluid">
 

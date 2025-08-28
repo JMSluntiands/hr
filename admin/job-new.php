@@ -204,7 +204,6 @@
       let plansFiles = [];
       let docsFiles = [];
 
-    // Refresh preview + update badge
     function refreshPreview(fileArray, previewContainer, countContainer) {
       let $preview = $("#" + previewContainer);
       $preview.empty();
@@ -222,16 +221,14 @@
           $preview.append($row);
         });
 
-        // update badge text
         $("#" + countContainer).text(fileArray.length + " file(s)");
     }
 
-    // Handle file input changes
     $("#uploadPlans").on("change", function (e) {
       let files = Array.from(e.target.files);
       plansFiles = plansFiles.concat(files);
       refreshPreview(plansFiles, "plansPreview", "plansCount");
-      $(this).val(""); // reset para makapili ulit
+      $(this).val("");
     });
 
     $("#uploadDocs").on("change", function (e) {
@@ -241,7 +238,6 @@
       $(this).val("");
     });
 
-    // Handle remove click
     $(document).on("click", ".remove-file", function () {
       let index = $(this).data("index");
       let target = $(this).data("target");
@@ -260,18 +256,16 @@
 
         let formData = new FormData(this);
 
-        // append plans files
         plansFiles.forEach((file, i) => {
           formData.append("plans[]", file);
         });
 
-        // append docs files
         docsFiles.forEach((file, i) => {
           formData.append("docs[]", file);
         });
 
         $.ajax({
-          url: "../controller/job/job_save.php", // adjust path mo
+          url: "../controller/job/job_save.php",
           type: "POST",
           data: formData,
           contentType: false,
@@ -283,7 +277,6 @@
           success: function (response) {
             if (response.status === "success") {
               toastr.success(response.message, "Success");
-              // ✅ reset form & previews
               $("#addJobForm")[0].reset();
               $("#plansPreview, #docsPreview").empty();
               $("#plansCount").text("0 files");

@@ -264,7 +264,6 @@
   <script>
     $('.select').select2({ width:'100%', minimumResultsForSearch: Infinity });
 
-    // remove file (AJAX)
     $(document).on('click', '.btn-remove-file', function(){
       const job_id = $(this).data('id');
       const type   = $(this).data('type'); // 'plans' or 'docs'
@@ -299,7 +298,6 @@
       });
     });
 
-    // submit update (validate ≤10MB/file, PDFs only)
     $('#editJobForm').on('submit', function(e){
       e.preventDefault();
 
