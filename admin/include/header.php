@@ -3,6 +3,13 @@
     include '../controller/auth.php'; 
     include '../database/db.php';
   ?>
+  <?php
+    // ilagay sa pinaka taas ng mga PHP files mo (o sa include/header.php)
+    header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+    header("Cache-Control: post-check=0, pre-check=0", false);
+    header("Pragma: no-cache");
+  ?>
+
     <meta charset="utf-8" />
     <meta
       name="viewport"
@@ -296,13 +303,6 @@
         background-color: #333 !important;
         border-bottom: 1px solid #444;
         color: #fff;
-      }
-
-      .select2-container {
-        z-index: 9999 !important; /* para lumutang sa ibabaw ng modal */
-      }
-      .select2-dropdown {
-        z-index: 99999 !important;
       }
 
       .form-control {

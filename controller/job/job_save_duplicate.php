@@ -92,9 +92,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $sourceFolder = "../../document/" . $srcData['job_reference_no'] . "/";
     }
 
-    // 📝 Get keep list from frontend (after UI remove)
-    $keepPlans = json_decode($_POST['keep_plans'] ?? '[]', true);
-    $keepDocs  = json_decode($_POST['keep_docs'] ?? '[]', true);
+    $keepPlans = json_decode($_POST['keep_plans'] ?? '[]', true) ?: [];
+    $keepDocs  = json_decode($_POST['keep_docs'] ?? '[]', true) ?: [];
 
     // 📌 Copy only kept old plans
     foreach ($oldPlans as $f) {
