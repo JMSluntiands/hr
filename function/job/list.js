@@ -72,14 +72,21 @@ $(document).ready(function () {
             // Action buttons
             `
             <div class="d-flex justify-content-center align-items-center gap-1">
-              <button class="btn btn-sm btn-info text-white" title="View" onclick="viewJob('${item.job_id}')"><i class="fa fa-eye"></i></button>
-              <a class="btn btn-sm btn-warning btn-edit-job text-white" href="job-edit?id=${item.job_id}">
-                <i class="fa fa-edit"></i>
-              </a>
-              <button class="btn btn-sm btn-danger btn-delete-job" data-id="${item.job_id}">
-                <i class="fa fa-trash"></i>
+              <button class="btn btn-sm btn-info text-white rounded-0" title="View" onclick="viewJob('${item.job_id}')">
+                <i class="si si-eye"></i>
               </button>
-              <button class="btn btn-sm btn-secondary" title="Duplicate" onclick="duplicateJob('${item.job_id}')"><i class="fa fa-copy"></i></button>
+
+              <a class="btn btn-sm btn-warning btn-edit-job text-white rounded-0" title="Edit" href="job-edit?id=${item.job_id}">
+                <i class="si si-note"></i>
+              </a>
+
+              <button class="btn btn-sm btn-danger btn-delete-job rounded-0" title="Delete" data-id="${item.job_id}">
+                <i class="si si-trash"></i>
+              </button>
+
+              <a class="btn btn-sm btn-dark rounded-0" title="Duplicate" href="job-duplicate?id=${item.job_id}">
+                <i class="si si-docs"></i>
+              </a>
             </div>
             `,
 
@@ -87,7 +94,7 @@ $(document).ready(function () {
             `<div class="text-center">${formatDateTime(item.log_date)}</div>`,
 
             // Client
-            `<span style="font-size: 12px">${item.client_account_name}</span><br><small>Complex</small>`,
+            `<span style="font-size: 12px">${item.client_account_name}</span><br><small>${item.ncc_compliance}</small>`,
 
             // Reference
             `<strong>${item.start_ref}${item.job_reference_no}</strong>`,
@@ -95,9 +102,19 @@ $(document).ready(function () {
             // Client Ref
             `<span><strong>${item.client_reference_no}</strong></span>`,
 
-            // Staff / Checker
-            `<small>Staff: ${item.staff_name ?? ""}</small><br><small>Checker: ${item.checker_name ?? ""}</small>`,
-
+            // // Staff / Checker
+            // `<small>Staff: <span class="badge bg-info">${item.staff_name ?? ""}</span></small><br><small>Checker: <span class="badge bg-info">${item.checker_name ?? ""}</span></small>`,
+            `<small>
+                <span class="">
+                     Staff : 
+                </span> ${item.staff_name ?? ""}
+              </small><br>
+              <small>
+                <span class="">
+                    Checker : 
+                </span> ${item.checker_name ?? ""}
+              </small><br>
+            <small>`,
             // Status
             `
             <span class="badge text-dark" 
