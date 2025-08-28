@@ -159,7 +159,7 @@
                           $q = mysqli_query($conn, "SELECT staff_id, name FROM staff ORDER BY name");
                           while ($r = mysqli_fetch_assoc($q)) {
                             $sel = ($r['staff_id'] === $staff_default) ? "selected" : "";
-                            echo "<option value='{$r['staff_id']}' $sel>" . htmlspecialchars($r['name']) . "</option>";
+                            echo "<option value='{$r['staff_id']}' $sel>" . htmlspecialchars($r['staff_id']) . "</option>";
                           }
                         ?>
                       </select>
@@ -173,7 +173,7 @@
                           $q2 = mysqli_query($conn, "SELECT checker_id, name FROM checker ORDER BY name");
                           while ($r2 = mysqli_fetch_assoc($q2)) {
                             $sel = ($r2['checker_id'] === $checker_default) ? "selected" : "";
-                            echo "<option value='{$r2['checker_id']}' $sel>" . htmlspecialchars($r2['name']) . "</option>";
+                            echo "<option value='{$r2['checker_id']}' $sel>" . htmlspecialchars($r2['checker_id']) . "</option>";
                           }
                         ?>
                       </select>

@@ -198,7 +198,7 @@ $docFiles  = json_decode($dupJob['upload_project_files'] ?? '[]', true);
                           $sQ=mysqli_query($conn,"SELECT staff_id,name FROM staff");
                           while($s=mysqli_fetch_assoc($sQ)){
                             $sel=($dupJob['staff_id']==$s['staff_id'])?"selected":"";
-                            echo "<option value='{$s['staff_id']}' $sel>".htmlspecialchars($s['name'])."</option>";
+                            echo "<option value='{$s['staff_id']}' $sel>".htmlspecialchars($s['staff_id'])."</option>";
                           }
                         ?>
                       </select>
@@ -212,7 +212,7 @@ $docFiles  = json_decode($dupJob['upload_project_files'] ?? '[]', true);
                           $chQ=mysqli_query($conn,"SELECT checker_id,name FROM checker");
                           while($ch=mysqli_fetch_assoc($chQ)){
                             $sel=($dupJob['checker_id']==$ch['checker_id'])?"selected":"";
-                            echo "<option value='{$ch['checker_id']}' $sel>".htmlspecialchars($ch['name'])."</option>";
+                            echo "<option value='{$ch['checker_id']}' $sel>".htmlspecialchars($ch['checker_id'])."</option>";
                           }
                         ?>
                       </select>

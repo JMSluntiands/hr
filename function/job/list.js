@@ -141,4 +141,30 @@ $(document).ready(function () {
   }
 
   loadJob();
+
+  // 🔹 Delete Job Handler (event delegation)
+  $(document).on("click", ".btn-delete-job", function () {
+    let jobId = $(this).data("id");
+
+    if (!confirm("Are you sure you want to delete this job?")) return;
+
+    $.ajax({
+      url: "../controller/job/job_delete", // adjust kung ibang endpoint
+      type: "POST",
+      data: { job_id: jobId },
+      dataType: "json",
+      success: function (response) {
+        if (response.status === "success") {
+          toastr.success(response.message || "Job deleted successfully", "Success");
+          loadJob(); // reload table after delete
+        } else {
+          toastr.error(response.message || "Failed to delete job", "Error");
+        }
+      },
+      error: function (xhr) {
+        toastr.error("Error deleting job: " + xhr.responseText, "Error");
+      }
+    });
+  });
+
 });
