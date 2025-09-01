@@ -103,7 +103,6 @@ $(document).ready(function () {
             `<span><strong>${item.client_reference_no}</strong></span>`,
 
             // // Staff / Checker
-            // `<small>Staff: <span class="badge bg-info">${item.staff_name ?? ""}</span></small><br><small>Checker: <span class="badge bg-info">${item.checker_name ?? ""}</span></small>`,
             `<small>
                 <span class="">
                      Staff : 
@@ -118,15 +117,13 @@ $(document).ready(function () {
             // Status
             `
             <span class="badge text-dark" 
-              style="background-color: ${item.priority === "Top" ? "#F74639" :
-              item.priority === "High (1 day)" ? "#FFA775" :
-                item.priority === "Standard (2 days)" ? "#FF71CF" :
-                  item.priority === "Standard (3 days)" ? "#CF7AFA" : "#6c757d"}">
+              style="background-color: ${item.priority === "Top (COB)" ? "#F74639" :
+              item.priority === "High 1 day" ? "#FFA775" :
+                item.priority === "Standard 2 days" ? "#FF71CF" :
+                  item.priority === "Standard 3 days" ? "#CF7AFA" : "#6c757d"}">
               ${item.job_status}
             </span>
             `,
-
-            // ✅ Completion Date
             `<div class="text-center">${formatDateTime(item.completion_date)}</div>`
           ]).draw(false);
         });
@@ -142,21 +139,20 @@ $(document).ready(function () {
 
   loadJob();
 
-  // 🔹 Delete Job Handler (event delegation)
   $(document).on("click", ".btn-delete-job", function () {
     let jobId = $(this).data("id");
 
     if (!confirm("Are you sure you want to delete this job?")) return;
 
     $.ajax({
-      url: "../controller/job/job_delete", // adjust kung ibang endpoint
+      url: "../controller/job/job_delete",
       type: "POST",
       data: { job_id: jobId },
       dataType: "json",
       success: function (response) {
         if (response.status === "success") {
           toastr.success(response.message || "Job deleted successfully", "Success");
-          loadJob(); // reload table after delete
+          loadJob();
         } else {
           toastr.error(response.message || "Failed to delete job", "Error");
         }
