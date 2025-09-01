@@ -319,6 +319,37 @@
         background-color: #2c2c2c;
         color: #f1f1f1;
       }
+
+      /* ✅ Uploaded Files list (Plans & Documents) */
+      body.dark-mode .list-group-item {
+        background-color: #2c2c2c;
+        color: #f1f1f1;
+        border-color: #444;
+      }
+      body.dark-mode .list-group-item a {
+        color: #4da6ff; /* light blue links */
+      }
+      body.dark-mode .list-group-item a:hover {
+        color: #80c0ff;
+        text-decoration: underline;
+      }
+
+      /* ✅ Activity Logs inside list-group */
+      body.dark-mode .list-group-flush .list-group-item {
+        background-color: #2c2c2c;
+        color: #ddd;
+        border-color: #444;
+      }
+      body.dark-mode .list-group-flush .list-group-item .fw-bold.text-primary {
+        color: #66b3ff !important; /* softer blue for activity type */
+      }
+      body.dark-mode .list-group-flush .list-group-item small.text-muted {
+        color: #aaa !important;
+      }
+      body.dark-mode .list-group-flush .list-group-item small.text-secondary {
+        color: #bbb !important;
+      }
+
       
     </style>
   </head>

@@ -32,6 +32,7 @@
                 <div class="card-body">
                   <div class="row">
                     <div class="col-12"><h5 class="text-center">Client Details</h5></div>
+                    <input type="hidden" name="log_date" id="log_date">
 
                     <!-- Reference No. (restricted) -->
                     <?php if ($_SESSION['role'] === 'LBS' || $_SESSION['role'] === 'LUNTIAN'): ?>
@@ -199,7 +200,7 @@
 
   <script>
     $(document).ready(function () {
-      $('.select').select2({ width:'100%', minimumResultsForSearch: Infinity });
+      $('.select').select2({ width:'100%', minimumResultsForSearch: 2, });
 
       let plansFiles = [];
       let docsFiles = [];
@@ -209,19 +210,19 @@
       $preview.empty();
 
       $.each(fileArray, function (i, file) {
-          let $row = $(`
-            <div class="d-flex align-items-center border p-2 mb-1 rounded file-row">
-              <i class="fa fa-file-pdf text-danger me-2 fs-4"></i>
-              <span class="flex-grow-1">${file.name}</span>
-              <button type="button" class="btn btn-sm btn-danger remove-file" data-index="${i}" data-target="${previewContainer}">
-                <i class="fa fa-times"></i>
-              </button>
-            </div>
-          `);
-          $preview.append($row);
-        });
+        let $row = $(`
+          <div class="d-flex align-items-center border p-2 mb-1 rounded file-row">
+            <i class="fa fa-file-pdf text-danger me-2 fs-4"></i>
+            <span class="flex-grow-1">${file.name}</span>
+            <button type="button" class="btn btn-sm btn-danger remove-file" data-index="${i}" data-target="${previewContainer}">
+              <i class="fa fa-times"></i>
+            </button>
+          </div>
+        `);
+        $preview.append($row);
+      });
 
-        $("#" + countContainer).text(fileArray.length + " file(s)");
+      $("#" + countContainer).text(fileArray.length + " file(s)");
     }
 
     $("#uploadPlans").on("change", function (e) {
@@ -253,6 +254,16 @@
 
     $("#addJobForm").on("submit", function (e) {
         e.preventDefault();
+
+        let now = new Date();
+        let localDatetime = now.getFullYear() + "-" +
+          ("0" + (now.getMonth()+1)).slice(-2) + "-" +
+          ("0" + now.getDate()).slice(-2) + " " +
+          ("0" + now.getHours()).slice(-2) + ":" +
+          ("0" + now.getMinutes()).slice(-2) + ":" +
+          ("0" + now.getSeconds()).slice(-2);
+
+        $("#log_date").val(localDatetime);
 
         let formData = new FormData(this);
 

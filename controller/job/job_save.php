@@ -146,6 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $status      = mysqli_real_escape_string($conn, $status);
     $notes       = mysqli_real_escape_string($conn, $notes);
     $clientID    = mysqli_real_escape_string($conn, $clientID);
+    $log_date = $_POST['log_date'] ?? date("Y-m-d H:i:s");
 
     // ✅ Single insert query (NULLIF trick for clientID)
     $sql = "INSERT INTO jobs (
@@ -175,7 +176,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 '$priority',
                 '$jobRequest',
                 '$address',
-                NOW(),
+                '$log_date',
                 '$job_request_type',
                 '$status',
                 NULLIF('$clientID',''),

@@ -235,7 +235,10 @@ $docFiles  = json_decode($dupJob['upload_project_files'] ?? '[]', true);
   <?php include_once 'include/footer.php' ?>
   <script>
     $(function(){
-      $('.select').select2({width:'100%'});
+      $('.select').select2({
+        width:'100%',
+        minimumResultsForSearch: 2,
+      });
 
       let plansFiles = [];
       let docsFiles  = [];
