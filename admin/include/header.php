@@ -143,6 +143,18 @@
       color: #fff !important;
       border: 1px solid #555 !important;
     }
+
+    body.dark-mode h5,
+    body.dark-mode .page-title,
+    body.dark-mode .breadcrumb-item,
+    body.dark-mode .user-text h6 {
+      color: #fff;
+    }
+
+    body.dark-mode .breadcrumb-item a {
+      color: #777;
+    }
+
     body.dark-mode .form-control:focus,
     body.dark-mode .form-select:focus,
     body.dark-mode textarea:focus {
@@ -196,5 +208,18 @@
     }
     body.dark-mode .list-group-flush small.text-muted { color: #aaa !important; }
     body.dark-mode .list-group-flush small.text-secondary { color: #bbb !important; }
+
+    /* 🔥 Fix: Select2 text & options in Dark Mode */
+    body.dark-mode .select2-container--default .select2-selection--single .select2-selection__rendered {
+      color: #fff !important;
+    }
+    body.dark-mode .select2-results__option {
+      background-color: #333;
+      color: #fff;
+    }
+    body.dark-mode .select2-results__option--highlighted {
+      background-color: #555 !important;
+      color: #fff !important;
+    }
   </style>
 </head>
