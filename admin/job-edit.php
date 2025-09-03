@@ -69,8 +69,9 @@
                     <!-- Reference No -->
                     <div class="col-md-4 col-sm-12 mt-3">
                       <label>Reference</label>
-                      <input type="text" class="form-control" name="reference"
-                             value="<?php echo htmlspecialchars($job['job_reference_no']); ?>" autocomplete="off">
+                      <input type="text" class="form-control" name="reference_show"
+                             value="<?php echo htmlspecialchars($job['job_reference_no']); ?>" autocomplete="off" disabled>
+                      <input type="hidden" name="reference" value="<?php echo htmlspecialchars($job['job_reference_no']); ?>">
                     </div>
 
                     <!-- Client Reference -->

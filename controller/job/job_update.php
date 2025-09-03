@@ -38,9 +38,9 @@ try {
   $notes      = mysqli_real_escape_string($conn, $notes);
   $address    = mysqli_real_escape_string($conn, $address);
   $updated_by = mysqli_real_escape_string($conn, $updated_by);
-  $staff_id      = mysqli_real_escape_string($conn, $staff_id);
-  $checker_id    = mysqli_real_escape_string($conn, $checker_id);
-  $job_type     = mysqli_real_escape_string($conn, $job_type);
+  $staff_id   = mysqli_real_escape_string($conn, $staff_id);
+  $checker_id = mysqli_real_escape_string($conn, $checker_id);
+  $job_type   = mysqli_real_escape_string($conn, $job_type);
 
   // Load current job
   $curRes = $conn->query("SELECT * FROM jobs WHERE job_id=$jobID");
@@ -62,6 +62,24 @@ try {
     echo json_encode(['status'=>'error','message'=>'Client Reference already exists']);
     exit;
   }
+
+    // ✅ Duplicate Address check (ignoring spaces) only if changed
+  $oldNormalized = strtolower(preg_replace('/\s+/', '', trim($cur['address_client'] ?? '')));
+  $newNormalized = strtolower(preg_replace('/\s+/', '', trim($address)));
+
+  if ($oldNormalized !== $newNormalized) {
+    $dupAddress = $conn->query("
+        SELECT job_id 
+        FROM jobs 
+        WHERE REPLACE(LOWER(address_client), ' ', '') = '$newNormalized'
+        AND job_id <> $jobID
+    ");
+    if ($dupAddress->num_rows > 0) {
+      echo json_encode(['status'=>'error','message'=>'Job Address already exists (ignoring spaces).']);
+      exit;
+    }
+  }
+
 
   // Decode existing files
   $plans = json_decode($cur['upload_files'] ?? '[]', true);

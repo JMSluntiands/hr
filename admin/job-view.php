@@ -95,29 +95,29 @@
             <div class="col-sm-12 col-md-4">
               <div class="card">
                 <div class="card-header">
-                  <div class="d-flex justify-content-between items-center">
+                  <div class="d-flex justify-content-between align-items-center">
                     <div>
                       <h5 class="card-title">Client Details</h5>
                     </div>
                   </div>
                 </div>
                 <div class="card-body">
-                  <div class="d-flex justify-content-between items-center py-1">
+                  <div class="d-flex justify-content-between align-items-center py-1">
                     <span><strong>Client Reference</strong></span>
                     <span><?php echo $c_ref ?></span>
                   </div>
 
-                  <div class="d-flex justify-content-between items-center py-1">
+                  <div class="d-flex justify-content-between align-items-center py-1">
                     <span><strong>Job Reference</strong></span>
                     <span><?php echo $j_ref ?></span>
                   </div>
 
-                  <div class="d-flex justify-content-between items-center py-1">
+                  <div class="d-flex justify-content-between align-items-center py-1">
                     <span><strong>Compliance</strong></span>
                     <span><?php echo $ncc_compliance ?></span>
                   </div>
 
-                  <div class="d-flex justify-content-between items-center py-1">
+                  <div class="d-flex justify-content-between align-items-center py-1">
                     <span><strong>Client</strong></span>
                     <span><?php echo $client ?></span>
                   </div>
@@ -126,9 +126,39 @@
 
               <div class="card">
                 <div class="card-header">
-                  <div class="d-flex justify-content-between items-center">
+                  <div class="d-flex justify-content-between align-items-center">
                     <div>
                       <h5 class="card-title">Notes</h5>
+                    </div>
+                  </div>
+                </div>
+                <div class="card-body">
+                  <div class="py-1">
+                    <span><?php echo $notes ?></span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-header">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <h5 class="card-title">Run Notes</h5>
+                    </div>
+                  </div>
+                </div>
+                <div class="card-body">
+                  <div class="py-1">
+                    <span><?php echo $notes ?></span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-header">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <h5 class="card-title">Comments</h5>
                     </div>
                   </div>
                 </div>
@@ -144,29 +174,51 @@
             <div class="col-sm-12 col-md-4">
               <div class="card">
                 <div class="card-header">
-                  <div class="d-flex justify-content-between items-center">
+                  <div class="d-flex justify-content-between align-items-center">
                     <div>
                       <h5 class="card-title">Job Details</h5>
                     </div>
                     <div>
-                      <span class="badge text-dark" style="background-color: <?php echo $badgeColor; ?>">
+                      <!-- Badge display -->
+                      <span id="statusBadge" 
+                            class="badge text-dark" 
+                            style="background-color: <?php echo $badgeColor; ?>; font-weight:bold; cursor:pointer;">
                         <?php echo htmlspecialchars($status); ?>
                       </span>
+
+                      <!-- Hidden dropdown -->
+                      <select id="jobStatus" 
+                              class="form-select form-select-sm d-none"
+                              style="width:auto; display:inline-block;">
+                        <option value="Allocated" <?php echo ($status == 'Allocated') ? 'selected' : ''; ?>>Allocated</option>
+                        <option value="Accepted" <?php echo ($status == 'Accepted') ? 'selected' : ''; ?>>Accepted</option>
+                        <option value="Processing" <?php echo ($status == 'Processing') ? 'selected' : ''; ?>>Processing</option>
+                        <option value="For Checking" <?php echo ($status == 'For Checking') ? 'selected' : ''; ?>>For Checking</option>
+                        <option value="Completed" <?php echo ($status == 'Completed') ? 'selected' : ''; ?>>Completed</option>
+                        <option value="Awaiting Further Information" <?php echo ($status == 'Awaiting Further Information') ? 'selected' : ''; ?>>Awaiting Further Information</option>
+                        <option value="Pending" <?php echo ($status == 'Pending') ? 'selected' : ''; ?>>Pending</option>
+                        <option value="For Discussion" <?php echo ($status == 'For Discussion') ? 'selected' : ''; ?>>For Discussion</option>
+                        <option value="Revision Requested" <?php echo ($status == 'Revision Requested') ? 'selected' : ''; ?>>Revision Requested</option>
+                        <option value="Revised" <?php echo ($status == 'Revised') ? 'selected' : ''; ?>>Revised</option>
+                      </select>
+
+                      <input type="hidden" id="jobID" value="<?php echo $jobID; ?>">
                     </div>
                   </div>
+
                 </div>
                 <div class="card-body">
-                  <div class="d-flex justify-content-between items-center py-1">
+                  <div class="d-flex justify-content-between align-items-center py-1">
                     <span><strong>Job Address</strong></span>
                     <span><?php echo $address ?></span>
                   </div>
 
-                  <div class="d-flex justify-content-between items-center py-1">
+                  <div class="d-flex justify-content-between align-items-center py-1">
                     <span><strong>Priority</strong></span>
                     <span><?php echo $priority ?></span>
                   </div>
 
-                  <div class="d-flex justify-content-between items-center py-1">
+                  <div class="d-flex justify-content-between align-items-center py-1">
                     <span><strong>Job Type</strong></span>
                     <span style="max-width: 50%"><?php echo $type ?></span>
                   </div>
@@ -176,7 +228,7 @@
               <!-- Uploaded Files -->
               <div class="card">
                 <div class="card-header">
-                  <div class="d-flex justify-content-between items-center">
+                  <div class="d-flex justify-content-between align-items-center">
                     <div>
                       <h5 class="card-title">Uploaded Files</h5>
                     </div>
@@ -198,22 +250,38 @@
                   <?php else: ?>
                     <p class="text-muted">No plans uploaded.</p>
                   <?php endif; ?>
+                </div>
+              </div>
 
-                  <h5>Documents</h5>
-                  <?php if (!empty($docs)): ?>
-                    <ul class="list-group">
-                      <?php foreach ($docs as $d): ?>
-                        <li class="list-group-item d-flex align-items-center">
-                          <i class="fa fa-file-pdf text-danger me-2"></i>
-                          <a href="../document/<?php echo $ref; ?>/<?php echo htmlspecialchars($d); ?>" target="_blank">
-                            <?php echo htmlspecialchars($d); ?>
-                          </a>
-                        </li>
-                      <?php endforeach; ?>
-                    </ul>
-                  <?php else: ?>
-                    <p class="text-muted">No documents uploaded.</p>
-                  <?php endif; ?>
+              <!-- Uploaded Files -->
+              <div class="card">
+                <div class="card-header">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <h5 class="card-title">Uploaded Files</h5>
+                    </div>
+                  </div>
+                </div>
+                <div class="card-body">
+                  <div>
+                    <h5>Documents</h5>
+                  </div>
+                  <div>
+                    <?php if (!empty($docs)): ?>
+                      <ul class="list-group">
+                        <?php foreach ($docs as $d): ?>
+                          <li class="list-group-item d-flex align-items-center">
+                            <i class="fa fa-file-pdf text-danger me-2"></i>
+                            <a href="../document/<?php echo $ref; ?>/<?php echo htmlspecialchars($d); ?>" target="_blank">
+                              <?php echo htmlspecialchars($d); ?>
+                            </a>
+                          </li>
+                        <?php endforeach; ?>
+                      </ul>
+                    <?php else: ?>
+                      <p class="text-muted">No documents uploaded.</p>
+                    <?php endif; ?>
+                  </div>
                 </div>
               </div>
             </div>
@@ -222,74 +290,64 @@
             <div class="col-sm-12 col-md-4">
               <div class="card">
                 <div class="card-header">
-                  <div class="d-flex justify-content-between items-center">
+                  <div class="d-flex justify-content-between align-items-center">
                     <div>
                       <h5 class="card-title">Assigned</h5>
                     </div>
                   </div>
                 </div>
-                <div class="card-body">
-                  <div class="d-flex justify-content-between items-center py-1">
-                    <span><strong>Staff</strong></span>
-                    <span style="max-width: 50%"><?php echo $staff ?></span>
-                  </div>
-                  <div class="d-flex justify-content-between items-center py-1">
-                    <span><strong>Checker</strong></span>
-                    <span style="max-width: 50%"><?php echo $checker ?></span>
-                  </div>
-                </div>
-              </div>
+                <?php
+                  $staffList = mysqli_query($conn, "SELECT staff_id, name FROM staff ORDER BY name");
+                  $checkerList = mysqli_query($conn, "SELECT checker_id, name FROM checker ORDER BY name");
+                ?>
 
-              <!-- Activity Logs Card -->
+                <div class="card-body">
+                  <!-- Staff -->
+                  <div class="d-flex justify-content-between align-items-center py-1">
+                    <span><strong>Staff</strong></span>
+                    <select id="staffSelect" class="form-select form-select-sm" style="width: 60%;">
+                      <option value="">-- Select Staff --</option>
+                      <?php while($s = mysqli_fetch_assoc($staffList)): ?>
+                        <option value="<?php echo $s['staff_id']; ?>" <?php echo ($staff == $s['staff_id']) ? 'selected' : ''; ?>>
+                          <?php echo htmlspecialchars($s['staff_id']); ?>
+                        </option>
+                      <?php endwhile; ?>
+                    </select>
+                  </div>
+
+                  <!-- Checker -->
+                  <div class="d-flex justify-content-between align-items-center py-1">
+                    <span><strong>Checker</strong></span>
+                    <select id="checkerSelect" class="form-select form-select-sm" style="width: 60%;">
+                      <option value="">-- Select Checker --</option>
+                      <?php while($c = mysqli_fetch_assoc($checkerList)): ?>
+                        <option value="<?php echo $c['checker_id']; ?>" <?php echo ($checker == $c['checker_id']) ? 'selected' : ''; ?>>
+                          <?php echo htmlspecialchars($c['checker_id']); ?>
+                        </option>
+                      <?php endwhile; ?>
+                    </select>
+                  </div>
+
+                  <input type="hidden" id="jobID" value="<?php echo $jobID; ?>">
+                </div>
+
+              </div>
+              <?php if ($_SESSION['role'] === 'LUNTIAN'): ?>
               <div class="card">
                 <div class="card-header">
-                  <div class="d-flex justify-content-between items-center">
+                  <div class="d-flex justify-content-between align-items-center">
                     <div>
                       <h5 class="card-title">Activity Logs</h5>
                     </div>
                   </div>
                 </div>
-                <div class="card-body" style="max-height: 300px; overflow-y: auto;">
-                  <?php
-                    $log_sql = "
-                      SELECT log_id, activity_date, activity_type, activity_description, updated_by 
-                      FROM activity_log 
-                      WHERE job_id = '$jobID' 
-                      ORDER BY activity_date DESC
-                    ";
-                    $log_query = mysqli_query($conn, $log_sql);
-                  ?>
 
-                  <?php if (mysqli_num_rows($log_query) > 0): ?>
-                    <ul class="list-group list-group-flush">
-                      <?php while ($log = mysqli_fetch_assoc($log_query)): ?>
-                        <li class="list-group-item">
-                          <div class="d-flex justify-content-between">
-                            <span class="fw-bold text-primary">
-                              <?php echo htmlspecialchars($log['activity_type']); ?>
-                            </span>
-                            <small class="text-muted">
-                              <?php echo date("Y-m-d H:i", strtotime($log['activity_date'])); ?>
-                            </small>
-                          </div>
-                          <p class="mb-1">
-                            <?php 
-                              // preserve line breaks
-                              echo nl2br(htmlspecialchars($log['activity_description'])); 
-                            ?>
-                          </p>
-                          <small class="text-secondary">
-                            Updated by: <strong><?php echo htmlspecialchars($log['updated_by']); ?></strong>
-                          </small>
-                        </li>
-                      <?php endwhile; ?>
-                    </ul>
-                  <?php else: ?>
-                    <p class="text-muted">No activity logs found.</p>
-                  <?php endif; ?>
+                <!-- Activity Logs Card -->
+                <div class="card-body" id="activityLogs" style="max-height: 400px; overflow-y: auto;">
+                  <p class="text-muted">Loading activity logs...</p>
                 </div>
               </div>
-
+              <?php endif; ?>
             </div>
           </div>
 
@@ -300,4 +358,111 @@
     <?php include_once 'include/footer.php' ?>
 
   </body>
+  <script>
+    $(document).ready(function(){
+
+      // ✅ Function para i-load ulit ang activity logs
+      function loadActivityLogs() {
+        let jobID = $("#jobID").val();
+        $("#activityLogs").load("../controller/job/view_activity_logs.php?job_id=" + jobID);
+      }
+
+      // Initial load
+      loadActivityLogs();
+
+      // 🔹 Badge click → show dropdown
+      $("#statusBadge").on("click", function(){
+        $(this).addClass("d-none");
+        $("#jobStatus").removeClass("d-none").focus();
+      });
+
+      // 🔹 Change dropdown → update status via AJAX
+      $("#jobStatus").on("change", function(){
+        let jobID = $("#jobID").val();
+        let newStatus = $(this).val();
+
+        $.ajax({
+          url: "../controller/job/view_update_status.php",
+          type: "POST",
+          data: { job_id: jobID, job_status: newStatus },
+          dataType: "json",
+          success: function(response){
+            if(response.success){
+              toastr.success(response.message, "Success");
+
+              // update badge text
+              $("#statusBadge")
+                .text(newStatus)
+                .removeClass("d-none");
+
+              // hide dropdown again
+              $("#jobStatus").addClass("d-none");
+
+              // refresh logs
+              loadActivityLogs();
+            } else {
+              toastr.error(response.message || "Failed to update status", "Error");
+              $("#statusBadge").removeClass("d-none");
+              $("#jobStatus").addClass("d-none");
+            }
+          },
+          error: function(xhr){
+            toastr.error("Error fetching data: " + xhr.responseText, "Error");
+            $("#statusBadge").removeClass("d-none");
+            $("#jobStatus").addClass("d-none");
+          }
+        });
+      });
+
+
+      // 🔹 Update Staff
+      $("#staffSelect").on("change", function(){
+        let jobID = $("#jobID").val();
+        let staffID = $(this).val();
+
+        $.ajax({
+          url: "../controller/job/view_update_assigned.php",
+          type: "POST",
+          data: { job_id: jobID, staff_id: staffID },
+          dataType: "json",
+          success: function(response){
+            if(response.success){
+              toastr.success(response.message, "Success");
+              loadActivityLogs();
+            } else {
+              toastr.error(response.message || "Failed to update staff", "Error");
+            }
+          },
+          error: function(xhr){
+            toastr.error("Error: " + xhr.responseText, "Error");
+          }
+        });
+      });
+
+      // 🔹 Update Checker
+      $("#checkerSelect").on("change", function(){
+        let jobID = $("#jobID").val();
+        let checkerID = $(this).val();
+
+        $.ajax({
+          url: "../controller/job/view_update_assigned.php",
+          type: "POST",
+          data: { job_id: jobID, checker_id: checkerID },
+          dataType: "json",
+          success: function(response){
+            if(response.success){
+              toastr.success(response.message, "Success");
+              loadActivityLogs();
+            } else {
+              toastr.error(response.message || "Failed to update checker", "Error");
+            }
+          },
+          error: function(xhr){
+            toastr.error("Error: " + xhr.responseText, "Error");
+          }
+        });
+      });
+
+    });
+  </script>
 </html>

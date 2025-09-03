@@ -5,6 +5,19 @@
   <div class="main-wrapper">
     <?php include_once 'include/navbar.php' ?>
     <?php include_once 'include/sidebar.php' ?>
+    <?php 
+      // kunin role
+      $role = $_SESSION['role'] ?? 'USER';
+
+      // bilangin ilan na jobs
+      $count_sql = "SELECT COUNT(*) as total FROM jobs";
+      $count_query = mysqli_query($conn, $count_sql);
+      $count_row = mysqli_fetch_assoc($count_query);
+      $jobCount = $count_row['total'] + 1;
+
+      // gawa ng reference number
+      $referenceNo = $role . $jobCount;
+    ?>
 
     <div class="page-wrapper">
       <div class="content container-fluid">
@@ -38,7 +51,8 @@
                     <?php if ($_SESSION['role'] === 'LBS' || $_SESSION['role'] === 'LUNTIAN'): ?>
                       <div class="col-md-4 col-sm-12 mt-3">
                         <label class="form-label">Reference No.</label>
-                        <input type="text" name="reference" class="form-control" placeholder="Enter Reference No." required autocomplete="off">
+                        <input type="text" name="reference_show" class="form-control" value="<?php echo $referenceNo ?>" disabled autocomplete="off">
+                        <input type="hidden" name="reference" value="<?php echo htmlspecialchars($referenceNo); ?>">
                       </div>
                     <?php endif; ?>
 

@@ -97,7 +97,7 @@ $(document).ready(function () {
             `<span style="font-size: 12px">${item.client_account_name}</span><br><small>${item.ncc_compliance}</small>`,
 
             // Reference
-            `<strong>${item.start_ref}${item.job_reference_no}</strong>`,
+            `<strong>${item.job_reference_no}</strong>`,
 
             // Client Ref
             `<span><strong>${item.client_reference_no}</strong></span>`,

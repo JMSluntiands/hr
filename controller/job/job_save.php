@@ -62,14 +62,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
+    // 🔍 Normalize Address (remove spaces + lowercase para consistent)
+    $normalizedAddress = strtolower(preg_replace('/\s+/', '', $address));
+
+    // 🔁 Check duplicate address (ignore spaces)
+    $sql_check_address = "
+        SELECT COUNT(*) as cnt 
+        FROM jobs 
+        WHERE REPLACE(LOWER(address_client), ' ', '') = '" . mysqli_real_escape_string($conn, $normalizedAddress) . "'
+    ";
+    $result_addr = mysqli_query($conn, $sql_check_address);
+    $row_addr = mysqli_fetch_assoc($result_addr);
+
+    if ($row_addr['cnt'] > 0) {
+        echo json_encode(["status" => "error", "message" => "Duplicate job address found (ignoring spaces)."]);
+        exit;
+    }
+
+
     // 🔁 Check for duplicates
     $sql_check = "SELECT COUNT(*) as cnt FROM jobs 
-                  WHERE job_reference_no = '".mysqli_real_escape_string($conn,$reference)."' 
-                  OR client_reference_no = '".mysqli_real_escape_string($conn,$client_ref)."'";
+                  WHERE job_reference_no = '".mysqli_real_escape_string($conn,$reference)."'";
     $result_check = mysqli_query($conn, $sql_check);
     $row = mysqli_fetch_assoc($result_check);
     if ($row['cnt'] > 0) {
-        echo json_encode(["status"=>"error","message"=>"Duplicate found: job_reference_no or client_reference_no already exists."]);
+        echo json_encode(["status"=>"error","message"=>"Duplicate found: job_reference_no already exists."]);
         exit;
     }
 
