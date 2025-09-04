@@ -264,84 +264,8 @@
 
   <script>
     $('.select').select2({ width:'100%', minimumResultsForSearch: 2, });
-
-    $(document).on('click', '.btn-remove-file', function(){
-      const job_id = $(this).data('id');
-      const type   = $(this).data('type'); // 'plans' or 'docs'
-      const file   = $(this).data('file');
-      const row    = $(this).closest('.file-row');
-
-      if(!confirm('Remove this file?')) return;
-
-      $.ajax({
-        url: '../controller/job/job_file_remove.php',
-        type: 'POST',
-        dataType: 'json',
-        data: { job_id, type, file },
-        success: function(res){
-          if(res.status === 'success'){
-            toastr.warning(res.message, 'Removed');
-            row.remove();
-            if (type === 'plans') {
-              const n = parseInt($('#plansCount').text())-1;
-              $('#plansCount').text((n<0?0:n)+' files');
-            } else {
-              const n = parseInt($('#docsCount').text())-1;
-              $('#docsCount').text((n<0?0:n)+' files');
-            }
-          } else {
-            toastr.error(res.message || 'Failed to remove file', 'Error');
-          }
-        },
-        error: function(){
-          toastr.error('Something went wrong.', 'Error');
-        }
-      });
-    });
-
-    $('#editJobForm').on('submit', function(e){
-      e.preventDefault();
-
-      const fd = new FormData(this);
-
-      const pdfOk = (f) => f && f.type === 'application/pdf';
-      const sizeOk = (f) => f && f.size <= (10*1024*1024);
-
-      const plans = $('#uploadPlans')[0].files;
-      const docs  = $('#uploadDocs')[0].files;
-
-      for (let f of plans) {
-        if (!pdfOk(f)) { toastr.error('All Plans must be PDF.', 'Invalid File'); return; }
-        if (!sizeOk(f)) { toastr.error('Plans file exceeds 10MB.', 'Too Large'); return; }
-      }
-      for (let f of docs) {
-        if (!pdfOk(f)) { toastr.error('All Documents must be PDF.', 'Invalid File'); return; }
-        if (!sizeOk(f)) { toastr.error('Document file exceeds 10MB.', 'Too Large'); return; }
-      }
-
-      $.ajax({
-        url: '../controller/job/job_update.php',
-        type: 'POST',
-        data: fd,
-        contentType: false,
-        processData: false,
-        dataType: 'json',
-        success: function(res){
-          if(res.status === 'success'){
-            toastr.success(res.message || 'Job updated.', 'Success');
-            setTimeout(() => {
-              window.location.href = "job";
-            }, 900);
-          } else {
-            toastr.error(res.message || 'Update failed.', 'Error');
-          }
-        },
-        error: function(xhr){
-          toastr.error('Something went wrong.', 'Error');
-          console.error(xhr.responseText);
-        }
-      });
-    });
   </script>
+  <script src="../function/job/update/editJob.js"></script>
+  <script src="../function/job/update/remove_file.js"></script>
 </body>
 </html>

@@ -215,110 +215,12 @@
   <script>
     $(document).ready(function () {
       $('.select').select2({ width:'100%', minimumResultsForSearch: 2, });
-
-      let plansFiles = [];
-      let docsFiles = [];
-
-    function refreshPreview(fileArray, previewContainer, countContainer) {
-      let $preview = $("#" + previewContainer);
-      $preview.empty();
-
-      $.each(fileArray, function (i, file) {
-        let $row = $(`
-          <div class="d-flex align-items-center border p-2 mb-1 rounded file-row">
-            <i class="fa fa-file-pdf text-danger me-2 fs-4"></i>
-            <span class="flex-grow-1">${file.name}</span>
-            <button type="button" class="btn btn-sm btn-danger remove-file" data-index="${i}" data-target="${previewContainer}">
-              <i class="fa fa-times"></i>
-            </button>
-          </div>
-        `);
-        $preview.append($row);
-      });
-
-      $("#" + countContainer).text(fileArray.length + " file(s)");
-    }
-
-    $("#uploadPlans").on("change", function (e) {
-      let files = Array.from(e.target.files);
-      plansFiles = plansFiles.concat(files);
-      refreshPreview(plansFiles, "plansPreview", "plansCount");
-      $(this).val("");
-    });
-
-    $("#uploadDocs").on("change", function (e) {
-      let files = Array.from(e.target.files);
-      docsFiles = docsFiles.concat(files);
-      refreshPreview(docsFiles, "docsPreview", "docsCount");
-      $(this).val("");
-    });
-
-    $(document).on("click", ".remove-file", function () {
-      let index = $(this).data("index");
-      let target = $(this).data("target");
-
-      if (target === "plansPreview") {
-        plansFiles.splice(index, 1);
-        refreshPreview(plansFiles, "plansPreview", "plansCount");
-      } else if (target === "docsPreview") {
-        docsFiles.splice(index, 1);
-        refreshPreview(docsFiles, "docsPreview", "docsCount");
-      }
-    });
-
-    $("#addJobForm").on("submit", function (e) {
-        e.preventDefault();
-
-        let now = new Date();
-        let localDatetime = now.getFullYear() + "-" +
-          ("0" + (now.getMonth()+1)).slice(-2) + "-" +
-          ("0" + now.getDate()).slice(-2) + " " +
-          ("0" + now.getHours()).slice(-2) + ":" +
-          ("0" + now.getMinutes()).slice(-2) + ":" +
-          ("0" + now.getSeconds()).slice(-2);
-
-        $("#log_date").val(localDatetime);
-
-        let formData = new FormData(this);
-
-        plansFiles.forEach((file, i) => {
-          formData.append("plans[]", file);
-        });
-
-        docsFiles.forEach((file, i) => {
-          formData.append("docs[]", file);
-        });
-
-        $.ajax({
-          url: "../controller/job/job_save.php",
-          type: "POST",
-          data: formData,
-          contentType: false,
-          processData: false,
-          dataType: "json",
-          beforeSend: function () {
-            $("#addJobForm button[type=submit]").prop("disabled", true).text("Saving...");
-          },
-          success: function (response) {
-            if (response.status === "success") {
-              toastr.success(response.message, "Success");
-              $("#addJobForm")[0].reset();
-              $("#plansPreview, #docsPreview").empty();
-              $("#plansCount").text("0 files");
-              $("#docsCount").text("0 files");
-            } else {
-              toastr.error(response.message, "Error");
-            }
-          },
-          error: function (xhr, status, error) {
-            toastr.error("Invalid response format from server.", "Error");
-          },
-          complete: function () {
-            $("#addJobForm button[type=submit]").prop("disabled", false).text("Add Job");
-          }
-        });
-      });
     });
   </script>
+  <script src="../function/job/new/file_preview.js"></script>
+  <script src="../function/job/new/remove_file.js"></script>
+  <script src="../function/job/new/save_job.js"></script>
+  <script src="../function/job/new/upload_document.js"></script>
+  <script src="../function/job/new/upload_plans.js"></script>
 </body>
 </html>
