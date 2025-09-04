@@ -25,6 +25,31 @@ if ($jobID > 0) {
 // ✅ Decode JSON files
 $planFiles = json_decode($dupJob['upload_files'] ?? '[]', true);
 $docFiles  = json_decode($dupJob['upload_project_files'] ?? '[]', true);
+
+// ✅ Client Reference auto increment (-1, -2, etc.)
+$clientRef = $dupJob['client_reference_no'] ?? '';
+
+if ($clientRef) {
+    if (preg_match('/^(.*?)(?:-(\d+))?$/', $clientRef, $matches)) {
+        $baseRef = $matches[1];
+        $num = isset($matches[2]) ? (int)$matches[2] : 0;
+        $num++;
+        $clientRef = $baseRef . "-" . $num;
+    }
+}
+
+// ✅ Job Reference auto increment (-1, -2, etc.)
+$jobRef = $dupJob['job_reference_no'] ?? '';
+
+if ($jobRef) {
+    if (preg_match('/^(.*?)(?:-(\d+))?$/', $jobRef, $matches)) {
+        $baseRef = $matches[1];
+        $num = isset($matches[2]) ? (int)$matches[2] : 0;
+        $num++;
+        $jobRef = $baseRef . "-" . $num;
+    }
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -64,20 +89,22 @@ $docFiles  = json_decode($dupJob['upload_project_files'] ?? '[]', true);
                 <div class="card-body">
                   <div class="row">
 
-                    <!-- Reference No -->
-                    <div class="col-md-4 mt-3">
-                      <label>Reference No.</label>
-                      <input type="text" name="reference" class="form-control"
-                        value="<?= htmlspecialchars($dupJob['job_reference_no'] ?? '') ?>"
-                        required>
-                    </div>
+                    <!-- Reference No. (restricted) -->
+                    <?php if ($_SESSION['role'] === 'LBS' || $_SESSION['role'] === 'LUNTIAN'): ?>
+                      <div class="col-md-4 col-sm-12 mt-3">
+                        <label class="form-label">Reference No.</label>
+                        <input type="text" name="reference_show" class="form-control" value="<?php echo $jobRef ?>" disabled autocomplete="off">
+                        <input type="hidden" name="reference" value="<?php echo htmlspecialchars($jobRef); ?>">
+                      </div>
+                    <?php endif; ?>
 
                     <!-- Client Ref -->
                     <div class="col-md-4 mt-3">
                       <label>Client Reference</label>
-                      <input type="text" name="client_ref" class="form-control"
-                        value="<?= htmlspecialchars($dupJob['client_reference_no'] ?? '') ?>">
+                      <input type="text" name="client_show" class="form-control" value="<?= htmlspecialchars($clientRef) ?>" disabled autocomplete="off">
+                      <input type="hidden" name="client_ref" value="<?= htmlspecialchars($clientRef) ?>">
                     </div>
+
 
                     <!-- Compliance -->
                     <div class="col-md-4 mt-3">
@@ -100,6 +127,12 @@ $docFiles  = json_decode($dupJob['upload_project_files'] ?? '[]', true);
                           }
                         ?>
                       </select>
+                    </div>
+
+                    <!-- Dwelling -->
+                    <div class="col-md-12 mt-3">
+                      <label>Unit \ Dwelling</label>
+                      <input type="text" name="dwelling" class="form-control" autocomplete="off">
                     </div>
 
                     <!-- Address -->

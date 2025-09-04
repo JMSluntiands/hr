@@ -14,6 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $address    = $_POST['address'] ?? '';
     $clientID   = $_POST['client_account_id'] ?? '';
     $notes      = $_POST['notes'] ?? '';
+    $dwelling   = $_POST['dwelling'] ?? '';
     $status     = $_POST['status'] ?? 'Allocated';
 
     $user_role = $_SESSION['role'] ?? '';
@@ -160,6 +161,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $job_request_type = mysqli_real_escape_string($conn, $job_request_type);
     $status      = mysqli_real_escape_string($conn, $status);
     $notes       = mysqli_real_escape_string($conn, $notes);
+    $dwelling    = mysqli_real_escape_string($conn,$dwelling);
     $clientID    = mysqli_real_escape_string($conn, $clientID);
 
     // ✅ Insert
@@ -179,7 +181,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 client_account_id,
                 notes,
                 upload_files,
-                upload_project_files
+                upload_project_files,
+                dwelling
             ) VALUES (
                 '$client_code',
                 '$reference',
@@ -196,7 +199,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 NULLIF('$clientID',''),
                 '$notes',
                 '$plansJson',
-                '$docsJson'
+                '$docsJson',
+                '$dwelling'
             )";
 
     if (mysqli_query($conn, $sql)) {

@@ -143,16 +143,21 @@
                 <div class="card-header">
                   <div class="d-flex justify-content-between align-items-center">
                     <div>
-                      <h5 class="card-title">Run Notes</h5>
+                      <h5 class="card-title">Run Comments</h5>
                     </div>
                   </div>
                 </div>
-                <div class="card-body">
-                  <div class="py-1">
-                    <span><?php echo $notes ?></span>
+                <div class="card-body" id="runCommentsBox">
+                  <p class="text-muted">Loading run comments...</p>
+                </div>
+                <div class="card-footer">
+                  <div class="input-group">
+                    <input type="text" id="runCommentMessage" class="form-control" placeholder="Write a run comment...">
+                    <button class="btn btn-primary" id="btnSendRunComment">Send</button>
                   </div>
                 </div>
               </div>
+
 
               <div class="card">
                 <div class="card-header">
@@ -235,14 +240,14 @@
                 <div class="card-header">
                   <div class="d-flex justify-content-between align-items-center">
                     <div>
-                      <h5 class="card-title">Uploaded Files</h5>
+                      <h5 class="card-title">Uploaded Plans</h5>
                     </div>
                   </div>
                 </div>
                 <div class="card-body">
-                  <h5>Plans</h5>
+                  <!-- <h5>Plans</h5> -->
                   <?php if (!empty($plans)): ?>
-                    <ul class="list-group mb-3">
+                    <ul class="list-group">
                       <?php foreach ($plans as $p): ?>
                         <li class="list-group-item d-flex align-items-center">
                           <i class="fa fa-file-pdf text-danger me-2"></i>
@@ -263,13 +268,13 @@
                 <div class="card-header">
                   <div class="d-flex justify-content-between align-items-center">
                     <div>
-                      <h5 class="card-title">Uploaded Files</h5>
+                      <h5 class="card-title">Uploaded Documents</h5>
                     </div>
                   </div>
                 </div>
                 <div class="card-body">
                   <div>
-                    <h5>Documents</h5>
+                    <!-- <h5>Documents</h5> -->
                   </div>
                   <div>
                     <?php if (!empty($docs)): ?>
@@ -472,27 +477,27 @@
       const commentLimit = 5;
 
       // 🔹 Function para mag-load ng comments (una + load more)
-function loadComments(offset = 0, append = false){
-  let jobID = $("#jobID").val();
+      function loadComments(offset = 0, append = false){
+        let jobID = $("#jobID").val();
 
-  $.get("../controller/job/view_comments.php", { job_id: jobID, offset: offset }, function(data){
-    if(append){
-      $("#commentsBox").append(data);
-    } else {
-      $("#commentsBox").html(data);
-    }
-  });
-}
+        $.get("../controller/job/view_comments.php", { job_id: jobID, offset: offset }, function(data){
+          if(append){
+            $("#commentsBox").append(data);
+          } else {
+            $("#commentsBox").html(data);
+          }
+        });
+      }
 
-// Initial load (offset 0)
-loadComments();
+      // Initial load (offset 0)
+      loadComments();
 
-// 🔹 Handle "View More" button click (delegate kasi dynamic sya)
-$(document).on("click", ".view-more", function(){
-  let offset = $(this).data("offset");
-  $(this).remove(); // alisin muna yung button para hindi madoble
-  loadComments(offset, true);
-});
+      // 🔹 Handle "View More" button click (delegate kasi dynamic sya)
+      $(document).on("click", ".view-more", function(){
+        let offset = $(this).data("offset");
+        $(this).remove(); // alisin muna yung button para hindi madoble
+        loadComments(offset, true);
+      });
 
 
       // 🔹 Send comment
@@ -529,6 +534,69 @@ $(document).on("click", ".view-more", function(){
           }
         });
       });
+
+
+      // ================== RUN COMMENTS ==================
+      let runCommentOffset = 0;
+      const runCommentLimit = 5;
+
+      // Load run comments
+      function loadRunComments(offset = 0, append = false){
+        let jobID = $("#jobID").val();
+        $.get("../controller/job/view_run_comments.php", { job_id: jobID, offset: offset }, function(data){
+          if(append){
+            $("#runCommentsBox").append(data);
+          } else {
+            $("#runCommentsBox").html(data);
+          }
+        });
+      }
+
+      // Initial load
+      loadRunComments();
+
+      // View More (delegate)
+      $(document).on("click", ".view-more-run", function(){
+        let offset = $(this).data("offset");
+        $(this).remove();
+        loadRunComments(offset, true);
+      });
+
+      // Send run comment
+      $("#btnSendRunComment").on("click", function(){
+        let jobID = $("#jobID").val();
+        let message = $("#runCommentMessage").val().trim();
+
+        if(message === ""){
+          toastr.warning("Please enter a run comment.");
+          return;
+        }
+
+        // ⏰ device time
+        let createdAt = new Date();
+        let options = { month: "short", day: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: true };
+        let formattedTime = createdAt.toLocaleString("en-US", options);
+
+        $.ajax({
+          url: "../controller/job/view_add_run_comments.php",
+          type: "POST",
+          data: { job_id: jobID, message: message, created_at: formattedTime },
+          dataType: "json",
+          success: function(response){
+            if(response.success){
+              toastr.success(response.message, "Success");
+              $("#runCommentMessage").val("");
+              loadRunComments();
+            } else {
+              toastr.error(response.message || "Failed to add run comment", "Error");
+            }
+          },
+          error: function(xhr){
+            toastr.error("Error: " + xhr.responseText, "Error");
+          }
+        });
+      });
+
 
     });
   </script>
