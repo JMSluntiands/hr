@@ -273,140 +273,15 @@ if ($jobRef) {
         minimumResultsForSearch: 2,
       });
 
-      let plansFiles = [];
-      let docsFiles  = [];
-      let removedPlans = [];
-      let removedDocs  = [];
-      const MAX_SIZE = 10 * 1024 * 1024;
-
-      function refreshPreview(fileArray, previewContainer, countContainer) {
-        let $preview = $("#" + previewContainer);
-        $preview.find(".new-file-row").remove();
-        $.each(fileArray, function (i, file) {
-          let $row = $(`
-            <div class="d-flex align-items-center border p-2 mb-1 rounded new-file-row">
-              <i class="fa fa-file-pdf text-danger me-2 fs-4"></i>
-              <span class="flex-grow-1">${file.name}</span>
-              <button type="button" class="btn btn-sm btn-danger remove-file" data-index="${i}" data-target="${previewContainer}">
-                <i class="fa fa-times"></i>
-              </button>
-            </div>
-          `);
-          $preview.append($row);
-        });
-        $("#" + countContainer).text(
-          $preview.find(".existing-file-row").length + fileArray.length + " file(s)"
-        );
-      }
-
-      $("#uploadPlans").on("change", function (e) {
-        let files = Array.from(e.target.files);
-        files.forEach(f => {
-          if (f.size > MAX_SIZE) {
-            toastr.error(`${f.name} exceeds 10MB limit.`);
-          } else {
-            plansFiles.push(f);
-          }
-        });
-        refreshPreview(plansFiles, "plansPreview", "plansCount");
-        $(this).val("");
-      });
-
-      $("#uploadDocs").on("change", function (e) {
-        let files = Array.from(e.target.files);
-        files.forEach(f => {
-          if (f.size > MAX_SIZE) {
-            toastr.error(`${f.name} exceeds 10MB limit.`);
-          } else {
-            docsFiles.push(f);
-          }
-        });
-        refreshPreview(docsFiles, "docsPreview", "docsCount");
-        $(this).val("");
-      });
-
-      $(document).on("click", ".remove-file", function () {
-        let index = $(this).data("index");
-        let target = $(this).data("target");
-        if (target === "plansPreview") {
-          plansFiles.splice(index, 1);
-          refreshPreview(plansFiles, "plansPreview", "plansCount");
-        } else if (target === "docsPreview") {
-          docsFiles.splice(index, 1);
-          refreshPreview(docsFiles, "docsPreview", "docsCount");
-        }
-      });
-
-      $(document).on("click", ".remove-existing-file", function () {
-        let fileName = $(this).data("file");
-        let $row = $(this).closest(".existing-file-row");
-        if ($row.parent().attr("id") === "plansPreview") {
-          removedPlans.push(fileName);
-        } else if ($row.parent().attr("id") === "docsPreview") {
-          removedDocs.push(fileName);
-        }
-        $row.remove();
-        $("#plansCount").text($("#plansPreview .existing-file-row").length + plansFiles.length + " file(s)");
-        $("#docsCount").text($("#docsPreview .existing-file-row").length + docsFiles.length + " file(s)");
-      });
-
-      $("#duplicateJobForm").on("submit", function (e) {
-        e.preventDefault();
-        let fd = new FormData(this);
-
-        plansFiles.forEach(f => fd.append("plans[]", f));
-        docsFiles.forEach(f => fd.append("docs[]", f));
-
-        fd.append("removedPlans", JSON.stringify(removedPlans));
-        fd.append("removedDocs", JSON.stringify(removedDocs));
-
-        $.ajax({
-          url: "../controller/job/job_save_duplicate.php",
-          type: "POST",
-          data: fd,
-          processData: false,
-          contentType: false,
-          dataType: "json",
-          success: function (res) {
-            if (res.status === "success") {
-              toastr.success("Job duplicated successfully!");
-              setTimeout(() => window.location.href = "job", 1200);
-            } else {
-              toastr.error(res.message || "Failed to duplicate job.");
-            }
-          },
-          error: function () {
-            toastr.error("Server error.");
-          }
-        });
-      });
-
-      function updateKeepInputs() {
-        $("#keepPlans").val(JSON.stringify(plansFiles));
-        $("#keepDocs").val(JSON.stringify(docsFiles));
-      }
-
-      function refreshPreview(fileArray, previewContainer, countContainer) {
-        let $preview = $("#" + previewContainer);
-        $preview.empty();
-        $.each(fileArray, function (i, file) {
-          let filename = (typeof file === "string") ? file : file.name;
-          let $row = $(`
-            <div class="d-flex align-items-center border p-2 mb-1 rounded file-row">
-              <i class="fa fa-file-pdf text-danger me-2 fs-4"></i>
-              <span class="flex-grow-1">${filename}</span>
-              <button type="button" class="btn btn-sm btn-danger remove-file" 
-                data-index="${i}" data-target="${previewContainer}">
-                <i class="fa fa-times"></i>
-              </button>
-            </div>
-          `);
-          $preview.append($row);
-        });
-        $("#" + countContainer).text(fileArray.length + " file(s)");
-        updateKeepInputs();
-      }
+      
     });
   </script>
+  <script src="../function/job/duplicate/uploadDocs.js"></script>
+  <script src="../function/job/duplicate/uploadPlans.js"></script>
+  <script src="../function/job/duplicate/duplicate.js"></script>
+  <script src="../function/job/duplicate/refresh_preview.js"></script>
+  <script src="../function/job/duplicate/remove_existing_file.js"></script>
+  <script src="../function/job/duplicate/remove_file.js"></script>
+  
 </body>
 </html>
