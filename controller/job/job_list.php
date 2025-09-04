@@ -6,11 +6,14 @@ session_start();
 
 $user_client = $_SESSION['role'] ?? '';
 
-$client = mysqli_query($conn, "SELECT * FROM clients WHERE client_name = '$user_client'");
-$fetch_client = mysqli_fetch_array($client);
+$usersID = '';
+if ($user_client !== 'LUNTIAN') {
+    $client = mysqli_query($conn, "SELECT * FROM clients WHERE client_name = '$user_client'");
+    $fetch_client = mysqli_fetch_array($client);
+    $usersID = $fetch_client['client_code'] ?? '';
+}
 
-$usersID = $fetch_client['client_code'];
-
+// base SQL
 $sql = "SELECT DISTINCT 
             j.job_id, 
             j.log_date, 
@@ -37,9 +40,14 @@ $sql = "SELECT DISTINCT
             ON j.client_account_id = ca.client_account_id
         LEFT JOIN job_requests jr 
             ON j.job_request_id = jr.job_request_id
-        WHERE j.client_code = '$usersID' 
-          AND j.job_status = 'Deleted'
-        ORDER BY j.log_date DESC";
+        WHERE j.job_status = 'Deleted'";
+
+// idagdag lang filter kung hindi LUNTIAN
+if ($user_client !== 'LUNTIAN' && $usersID !== '') {
+    $sql .= " AND j.client_code = '$usersID'";
+}
+
+$sql .= " ORDER BY j.log_date DESC";
 
 $result = $conn->query($sql);
 

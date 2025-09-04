@@ -221,5 +221,27 @@
       background-color: #555 !important;
       color: #fff !important;
     }
+
+    /* ✅ Dark Mode: Comments Input Group */
+    body.dark-mode .card-footer {
+      background-color: #2c2c2c;
+      border-top: 1px solid #444;
+    }
+    body.dark-mode .card-footer .form-control {
+      background-color: #333 !important;
+      color: #fff !important;
+      border: 1px solid #555 !important;
+    }
+    body.dark-mode .card-footer .form-control::placeholder {
+      color: #aaa !important;
+    }
+    body.dark-mode .card-footer .btn {
+      background-color: #0d6efd;
+      color: #fff;
+      border: none;
+    }
+    body.dark-mode .card-footer .btn:hover {
+      background-color: #0b5ed7;
+    }
   </style>
 </head>

@@ -162,12 +162,17 @@
                     </div>
                   </div>
                 </div>
-                <div class="card-body">
-                  <div class="py-1">
-                    <span><?php echo $notes ?></span>
+                <div class="card-body" id="commentsBox">
+                  <p class="text-muted">Loading comments...</p>
+                </div>
+                <div class="card-footer">
+                  <div class="input-group">
+                    <input type="text" id="commentMessage" class="form-control" placeholder="Write a comment...">
+                    <button class="btn btn-primary" id="btnSendComment">Send</button>
                   </div>
                 </div>
               </div>
+
             </div>
 
             <!-- Job Details -->
@@ -455,6 +460,68 @@
               loadActivityLogs();
             } else {
               toastr.error(response.message || "Failed to update checker", "Error");
+            }
+          },
+          error: function(xhr){
+            toastr.error("Error: " + xhr.responseText, "Error");
+          }
+        });
+      });
+
+      let commentOffset = 0;
+      const commentLimit = 5;
+
+      // 🔹 Function para mag-load ng comments (una + load more)
+function loadComments(offset = 0, append = false){
+  let jobID = $("#jobID").val();
+
+  $.get("../controller/job/view_comments.php", { job_id: jobID, offset: offset }, function(data){
+    if(append){
+      $("#commentsBox").append(data);
+    } else {
+      $("#commentsBox").html(data);
+    }
+  });
+}
+
+// Initial load (offset 0)
+loadComments();
+
+// 🔹 Handle "View More" button click (delegate kasi dynamic sya)
+$(document).on("click", ".view-more", function(){
+  let offset = $(this).data("offset");
+  $(this).remove(); // alisin muna yung button para hindi madoble
+  loadComments(offset, true);
+});
+
+
+      // 🔹 Send comment
+      $("#btnSendComment").on("click", function(){
+        let jobID = $("#jobID").val();
+        let message = $("#commentMessage").val().trim();
+
+        if(message === ""){
+          toastr.warning("Please enter a comment.");
+          return;
+        }
+
+        // ⏰ Gumamit ng device time (formatted gaya ng activity logs)
+        let createdAt = new Date();
+        let options = { month: "short", day: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: true };
+        let formattedTime = createdAt.toLocaleString("en-US", options);
+
+        $.ajax({
+          url: "../controller/job/view_add_comments.php",
+          type: "POST",
+          data: { job_id: jobID, message: message, created_at: formattedTime },
+          dataType: "json",
+          success: function(response){
+            if(response.success){
+              toastr.success(response.message, "Success");
+              $("#commentMessage").val("");
+              loadComments();
+            } else {
+              toastr.error(response.message || "Failed to add comment", "Error");
             }
           },
           error: function(xhr){
