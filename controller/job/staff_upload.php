@@ -9,13 +9,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $comment  = trim($_POST['comment'] ?? '');
     $uploaded_by = $_SESSION['role'] ?? 'system';
 
+    // 🔹 Kunin muna job_reference_no
+    $ref = '';
+    $stmt = $conn->prepare("SELECT job_reference_no FROM jobs WHERE job_id = ?");
+    $stmt->bind_param("i", $job_id);
+    $stmt->execute();
+    $stmt->bind_result($ref);
+    $stmt->fetch();
+    $stmt->close();
+
+    if (empty($ref)) {
+        echo json_encode(['success' => false, 'message' => 'Invalid job reference.']);
+        exit;
+    }
+
     if (!isset($_FILES['docs'])) {
         echo json_encode(['success' => false, 'message' => 'No files uploaded.']);
         exit;
     }
 
     $files = $_FILES['docs'];
-    $uploadDir = "../../document/$job_id/"; 
+    $uploadDir = "../../document/$ref/";  // 🔹 gamit na ang job_reference_no
+
     if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
 
     $allowedExt = ['pdf'];
@@ -50,7 +65,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             echo json_encode([
                 'success' => true,
                 'message' => 'Files uploaded successfully',
-                'files'   => $uploadedFiles
+                'files'   => $uploadedFiles,
+                'reference' => $ref
             ]);
         } else {
             echo json_encode(['success' => false, 'message' => 'DB insert failed']);
