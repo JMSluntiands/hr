@@ -220,12 +220,12 @@
                 <div class="card-body">
                   <div class="d-flex justify-content-between align-items-center py-1">
                     <span><strong>Job Address</strong></span>
-                    <span><?php echo $address ?></span>
+                    <span style="max-width: 50%"><?php echo $address ?></span>
                   </div>
 
                   <div class="d-flex justify-content-between align-items-center py-1">
                     <span><strong>Priority</strong></span>
-                    <span><?php echo $priority ?></span>
+                    <span style="max-width: 50%"><?php echo $priority ?></span>
                   </div>
 
                   <div class="d-flex justify-content-between align-items-center py-1">
@@ -292,6 +292,49 @@
                       <p class="text-muted">No documents uploaded.</p>
                     <?php endif; ?>
                   </div>
+                </div>
+              </div>
+
+              <!-- Staff Files -->
+              <div class="card">
+                <div class="card-header">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <h5 class="card-title">Staff Uploaded Files</h5>
+                    </div>
+                  </div>
+                </div>
+                <div class="card-body">
+                  <!-- Uploaded Files List -->
+                  <div id="staffFilesBox" class="mt-3"></div>
+                </div>
+              </div>
+
+              <!-- STAFF ONLY -->
+              <div class="card">
+                <div class="card-header">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <h5 class="card-title">Staff Upload Plan/Document</h5>
+                    </div>
+                  </div>
+                </div>
+                <div class="card-body">
+                  <form id="staffUploadForm" enctype="multipart/form-data">
+                    <input type="hidden" name="job_id" id="jobID" value="<?php echo $jobID; ?>">
+
+                    <div class="form-group">
+                      <label>Upload Files</label>
+                      <input type="file" name="docs[]" id="uploadDocs" multiple accept="application/pdf" class="form-control" style="height:30px!important">
+                    </div>
+
+                    <div class="form-group mt-2">
+                      <textarea name="comment" id="staffComment" class="form-control" placeholder="Add comment..."></textarea>
+                    </div>
+
+                    <button type="button" id="btnUploadStaffFile" class="btn btn-primary mt-3">Upload</button>
+                  </form>
+
                 </div>
               </div>
             </div>
@@ -374,4 +417,5 @@
   <script src="../function/job/view/runcomment.js"></script>
   <script src="../function/job/view/staff.js"></script>
   <script src="../function/job/view/statusBadge.js"></script>
+  <script src="../function/job/view/staff_upload.js"></script>
 </html>
