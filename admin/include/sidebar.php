@@ -18,6 +18,7 @@
           <a href="trash"><i class="si si-trash"></i> <span>Job Trash</span></a>
         </li>
         <?php endif; ?>
+        <?php if ($_SESSION['role'] === 'LUNTIAN'): ?>
         <!-- Setting -->
         <li class="menu-title"><span>Setting</span></li>
         <li class="submenu">
@@ -48,6 +49,7 @@
             <li><a href="discount">Discount</a></li>
           </ul>
         </li>
+        <?php endif; ?>
       </ul>
     </div>
   </div>
