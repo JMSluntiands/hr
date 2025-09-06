@@ -18,6 +18,17 @@ $('#editJobForm').on('submit', function (e) {
     if (!sizeOk(f)) { toastr.error('Document file exceeds 10MB.', 'Too Large'); return; }
   }
 
+  // 🕒 Device time -> MySQL DATETIME format
+  let createdAt = new Date();
+  let formattedTime = createdAt.getFullYear() + "-" +
+    String(createdAt.getMonth() + 1).padStart(2, "0") + "-" +
+    String(createdAt.getDate()).padStart(2, "0") + " " +
+    String(createdAt.getHours()).padStart(2, "0") + ":" +
+    String(createdAt.getMinutes()).padStart(2, "0") + ":" +
+    String(createdAt.getSeconds()).padStart(2, "0");
+
+  fd.append("createdAt", formattedTime);
+
   $.ajax({
     url: '../controller/job/job_update.php',
     type: 'POST',

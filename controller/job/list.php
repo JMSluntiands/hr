@@ -27,6 +27,7 @@
               j.priority, 
               j.plan_complexity, 
               j.ncc_compliance, 
+              j.completion_date,
               j.last_update, 
               j.job_status,
               s.name AS staff_name, 
@@ -74,6 +75,7 @@
     "completion_date" => $row['completion_date'],
     "ncc_compliance" => $row['ncc_compliance'],
     "last_update" => $last_update,
+    "completion_date" => $row['completion_date'],
     "priority" => $row['priority'],
   ];
 }

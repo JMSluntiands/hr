@@ -24,6 +24,9 @@ try {
   $job_type     = $_POST['job_type'] ?? null;
   $updated_by   = $_SESSION['username'] ?? ($_SESSION['role'] ?? 'system');
 
+  // 🕒 Device time from JS (fallback sa server time)
+  $createdAt    = $_POST['createdAt'] ?? date("Y-m-d H:i:s");
+
   if (!$jobID || !$reference) {
     echo json_encode(['status'=>'error','message'=>'Missing job_id or reference']);
     exit;
@@ -41,6 +44,7 @@ try {
   $staff_id   = mysqli_real_escape_string($conn, $staff_id);
   $checker_id = mysqli_real_escape_string($conn, $checker_id);
   $job_type   = mysqli_real_escape_string($conn, $job_type);
+  $safeDate   = mysqli_real_escape_string($conn, $createdAt);
 
   // Load current job
   $curRes = $conn->query("SELECT * FROM jobs WHERE job_id=$jobID");
@@ -63,7 +67,7 @@ try {
     exit;
   }
 
-    // ✅ Duplicate Address check (ignoring spaces) only if changed
+  // ✅ Duplicate Address check (ignoring spaces) only if changed
   $oldNormalized = strtolower(preg_replace('/\s+/', '', trim($cur['address_client'] ?? '')));
   $newNormalized = strtolower(preg_replace('/\s+/', '', trim($address)));
 
@@ -79,7 +83,6 @@ try {
       exit;
     }
   }
-
 
   // Decode existing files
   $plans = json_decode($cur['upload_files'] ?? '[]', true);
@@ -154,6 +157,12 @@ try {
   $plansJson = mysqli_real_escape_string($conn, json_encode(array_values($plans)));
   $docsJson  = mysqli_real_escape_string($conn, json_encode(array_values($docs)));
 
+  // ✅ Add completion_date logic
+  $completionSQL = "";
+  if (strtolower($status) === 'completed') {
+    $completionSQL = ", completion_date = '$safeDate'";
+  }
+
   $sql = "
     UPDATE jobs SET
       job_reference_no = '$reference',
@@ -169,7 +178,8 @@ try {
       job_type = '$job_type',
       upload_files = '$plansJson',
       upload_project_files = '$docsJson',
-      last_update = NOW()
+      last_update = '$safeDate'
+      $completionSQL
     WHERE job_id = $jobID
   ";
 
@@ -206,8 +216,8 @@ try {
   if (!empty($changes)) {
     $desc = mysqli_real_escape_string($conn, implode("\n", $changes));
     $conn->query("
-      INSERT INTO activity_log (job_id, activity_type, activity_description, updated_by)
-      VALUES ($jobID, 'Update', '$desc', '$updated_by')
+      INSERT INTO activity_log (job_id, activity_type, activity_description, updated_by, activity_date)
+      VALUES ($jobID, 'Update', '$desc', '$updated_by', '$safeDate')
     ");
   }
 

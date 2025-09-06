@@ -260,9 +260,7 @@
                     </div>
                   </div>
                 </div>
-                
                 <?php include_once 'extension/job_view/assigned.php' ?>
-
               </div>
 
               <!-- Activity Logs -->

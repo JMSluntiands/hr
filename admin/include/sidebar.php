@@ -13,6 +13,9 @@
         <li>
           <a href="job"><i class="si si-briefcase"></i> <span>Job Management</span></a>
         </li>
+        <li>
+          <a href="for_email_confirmation"><i class="si si-envelope"></i> <span>Mailbox</span></a>
+        </li>
         <?php if ($_SESSION['role'] === 'LBS' || $_SESSION['role'] === 'LUNTIAN'): ?>
         <li>
           <a href="trash"><i class="si si-trash"></i> <span>Job Trash</span></a>

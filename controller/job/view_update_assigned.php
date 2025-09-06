@@ -7,9 +7,10 @@ header('Content-Type: application/json');
 $updated_by = $_SESSION['role'] ?? 'System';
 
 // ✅ Inputs
-$jobID     = $_POST['job_id']    ?? '';
-$staff_id  = $_POST['staff_id']  ?? null;
-$checker_id = $_POST['checker_id'] ?? null;
+$jobID      = $_POST['job_id']      ?? '';
+$staff_id   = $_POST['staff_id']    ?? null;
+$checker_id = $_POST['checker_id']  ?? null;
+$createdAt  = $_POST['createdAt']   ?? '';
 
 if (!$jobID) {
     echo json_encode(["success" => false, "message" => "Missing job_id"]);
@@ -20,7 +21,8 @@ $updates = [];
 $changes = [];
 
 // ✅ Fetch old values para may comparison
-$old = mysqli_fetch_assoc(mysqli_query($conn, "SELECT staff_id, checker_id FROM jobs WHERE job_id = '" . mysqli_real_escape_string($conn, $jobID) . "'"));
+$old = mysqli_fetch_assoc(mysqli_query($conn, 
+    "SELECT staff_id, checker_id FROM jobs WHERE job_id = '" . mysqli_real_escape_string($conn, $jobID) . "'"));
 
 if ($staff_id !== null && $staff_id != $old['staff_id']) {
     $updates[] = "staff_id = '" . mysqli_real_escape_string($conn, $staff_id) . "'";
@@ -36,15 +38,19 @@ if (empty($updates)) {
     exit;
 }
 
-$sql = "UPDATE jobs SET " . implode(", ", $updates) . " WHERE job_id = '" . mysqli_real_escape_string($conn, $jobID) . "'";
+$sql = "UPDATE jobs SET " . implode(", ", $updates) . " 
+        WHERE job_id = '" . mysqli_real_escape_string($conn, $jobID) . "'";
 
 if (mysqli_query($conn, $sql)) {
     // ✅ Insert activity log
     if (!empty($changes)) {
-        $desc = mysqli_real_escape_string($conn, implode("\n", $changes));
+        $desc     = mysqli_real_escape_string($conn, implode("\n", $changes));
+        $safeDate = $createdAt ?: date("Y-m-d H:i:s");
+
+
         $conn->query("
-          INSERT INTO activity_log (job_id, activity_type, activity_description, updated_by)
-          VALUES ($jobID, 'Update', '$desc', '$updated_by')
+          INSERT INTO activity_log (job_id, activity_type, activity_description, updated_by, activity_date)
+          VALUES ('" . mysqli_real_escape_string($conn, $jobID) . "', 'Update', '$desc', '$updated_by', '$safeDate')
         ");
     }
 

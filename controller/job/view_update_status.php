@@ -7,8 +7,11 @@ header('Content-Type: application/json');
 $updated_by = $_SESSION['role'] ?? 'System';
 
 // ✅ Inputs
-$jobID = $_POST['job_id'] ?? '';
+$jobID     = $_POST['job_id'] ?? '';
 $newStatus = $_POST['job_status'] ?? '';
+
+// kung Completed na yung status gawin update mo sa jobs ung column na completion_date
+$createdAt = $_POST['createdAt'] ?? '';
 
 if (!$jobID || !$newStatus) {
     echo json_encode(["success" => false, "message" => "Missing job_id or status"]);
@@ -16,23 +19,37 @@ if (!$jobID || !$newStatus) {
 }
 
 // ✅ Fetch old value
-$old = mysqli_fetch_assoc(mysqli_query($conn, "SELECT job_status FROM jobs WHERE job_id = '" . mysqli_real_escape_string($conn, $jobID) . "'"));
+$old = mysqli_fetch_assoc(mysqli_query($conn, 
+    "SELECT job_status FROM jobs WHERE job_id = '" . mysqli_real_escape_string($conn, $jobID) . "'"));
 
-if ($old['job_status'] === $newStatus) {
+if ($old && $old['job_status'] === $newStatus) {
     echo json_encode(["success" => false, "message" => "Status unchanged"]);
     exit;
 }
 
-// ✅ Update
-$sql = "UPDATE jobs SET job_status = '" . mysqli_real_escape_string($conn, $newStatus) . "' WHERE job_id = '" . mysqli_real_escape_string($conn, $jobID) . "'";
+// ✅ Safe date
+$safeDate = $createdAt ?: date("Y-m-d H:i:s");
+
+// ✅ Update job status (+ completion_date if Completed)
+if ($newStatus === "Completed") {
+    $sql = "UPDATE jobs 
+            SET job_status = '" . mysqli_real_escape_string($conn, $newStatus) . "', 
+                completion_date = '" . mysqli_real_escape_string($conn, $safeDate) . "' 
+            WHERE job_id = '" . mysqli_real_escape_string($conn, $jobID) . "'";
+} else {
+    $sql = "UPDATE jobs 
+            SET job_status = '" . mysqli_real_escape_string($conn, $newStatus) . "' 
+            WHERE job_id = '" . mysqli_real_escape_string($conn, $jobID) . "'";
+}
 
 if (mysqli_query($conn, $sql)) {
-    // ✅ Log
+    // ✅ Log changes
     $changes = ["Status updated from {$old['job_status']} to {$newStatus}"];
     $desc = mysqli_real_escape_string($conn, implode("\n", $changes));
+
     $conn->query("
-      INSERT INTO activity_log (job_id, activity_type, activity_description, updated_by)
-      VALUES ($jobID, 'Update', '$desc', '$updated_by')
+      INSERT INTO activity_log (job_id, activity_type, activity_description, updated_by, activity_date)
+      VALUES ('" . mysqli_real_escape_string($conn, $jobID) . "', 'Update', '$desc', '$updated_by', '$safeDate')
     ");
 
     echo json_encode(["success" => true, "message" => "Status updated successfully"]);

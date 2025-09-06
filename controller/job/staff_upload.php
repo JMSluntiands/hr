@@ -5,9 +5,10 @@ include '../../database/db.php';
 header('Content-Type: application/json');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $job_id   = intval($_POST['job_id'] ?? 0);
-    $comment  = trim($_POST['comment'] ?? '');
+    $job_id     = intval($_POST['job_id'] ?? 0);
+    $comment    = trim($_POST['comment'] ?? '');
     $uploaded_by = $_SESSION['role'] ?? 'system';
+    $createdAt  = $_POST['createdAt'] ?? ''; // 🕒 time galing JS
 
     // 🔹 Kunin muna job_reference_no
     $ref = '';
@@ -29,7 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $files = $_FILES['docs'];
-    $uploadDir = "../../document/$ref/";  // 🔹 gamit na ang job_reference_no
+    $uploadDir = "../../document/$ref/";
 
     if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
 
@@ -55,11 +56,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!empty($uploadedFiles)) {
         $jsonFiles = json_encode($uploadedFiles);
 
+        // 🕒 fallback kung walang galing JS
+        $safeDate = $createdAt ?: date("Y-m-d H:i:s");
+
         $stmt = $conn->prepare("
-            INSERT INTO staff_uploaded_files (job_id, files_json, comment, uploaded_by) 
-            VALUES (?, ?, ?, ?)
+            INSERT INTO staff_uploaded_files (job_id, files_json, comment, uploaded_by, uploaded_at) 
+            VALUES (?, ?, ?, ?, ?)
         ");
-        $stmt->bind_param("isss", $job_id, $jsonFiles, $comment, $uploaded_by);
+        $stmt->bind_param("issss", $job_id, $jsonFiles, $comment, $uploaded_by, $safeDate);
 
         if ($stmt->execute()) {
             echo json_encode([

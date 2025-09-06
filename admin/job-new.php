@@ -133,7 +133,7 @@
                       <label>Job Status</label>
                       <select class="form-select select" name="status">
                         <?php
-                          $statuses = ["Allocated","Accepted","Processing","For Checking","Completed","Awaiting Further Information","Pending","For Discussion","Revision Requested","Revised"];
+                          $statuses = ["Allocated","Accepted","Processing","For Checking","Completed","Awaiting Further Information","Pending","For Discussion","Revision Requested","Revised","For Email Confirmation"];
                           foreach ($statuses as $st) {
                             echo "<option value='".htmlspecialchars($st)."' $sel>".htmlspecialchars($st)."</option>";
                           }

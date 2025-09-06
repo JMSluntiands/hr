@@ -1,9 +1,19 @@
+// 🔹 Function para i-load lahat ng staff files
 function loadStaffFiles(jobID) {
   $.get("../controller/job/staff_upload_list.php", { job_id: jobID }, function (data) {
     $("#staffFilesBox").html(data);
   });
 }
 
+// 🔹 Initial load on page ready
+$(document).ready(function () {
+  let jobID = $("#jobID").val();
+  if (jobID) {
+    loadStaffFiles(jobID);
+  }
+});
+
+// 🔹 Upload handler (di ko ginalaw, meron ka na)
 $("#btnUploadStaffFile").on("click", function () {
   let jobID = $("#jobID").val();
   let comment = $("#staffComment").val().trim();
@@ -16,6 +26,17 @@ $("#btnUploadStaffFile").on("click", function () {
 
   let formData = new FormData($("#staffUploadForm")[0]);
 
+  // 🕒 dagdag timestamp
+  let createdAt = new Date();
+  let formattedTime = createdAt.getFullYear() + "-" +
+    String(createdAt.getMonth() + 1).padStart(2, "0") + "-" +
+    String(createdAt.getDate()).padStart(2, "0") + " " +
+    String(createdAt.getHours()).padStart(2, "0") + ":" +
+    String(createdAt.getMinutes()).padStart(2, "0") + ":" +
+    String(createdAt.getSeconds()).padStart(2, "0");
+
+  formData.append("createdAt", formattedTime);
+
   $.ajax({
     url: "../controller/job/staff_upload.php",
     type: "POST",
@@ -27,7 +48,7 @@ $("#btnUploadStaffFile").on("click", function () {
         toastr.success(response.message, "Success");
         $("#uploadDocs").val("");
         $("#staffComment").val("");
-        loadStaffFiles(jobID);
+        loadStaffFiles(jobID); // refresh list
       } else {
         toastr.error(response.message || "Upload failed", "Error");
       }
@@ -37,6 +58,3 @@ $("#btnUploadStaffFile").on("click", function () {
     }
   });
 });
-
-// Initial load
-loadStaffFiles($("#jobID").val());
