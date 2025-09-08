@@ -85,6 +85,38 @@ $(document).on("click", ".email-preview", function () {
   $("#emailFormatModal").modal("show");
 });
 
+$(document).on("click", ".send-email", function () {
+  const toEmail = $(this).data("to");
+  const reference = $(this).data("reference");
+  const status = $(this).data("status");
+  const assessor = $(this).data("assessor");
+  const assessorEmail = $(this).data("assessoremail");
+
+  $.ajax({
+    url: "../controller/job/job_email.php",
+    type: "POST",
+    data: {
+      toEmail,
+      reference,
+      status,
+      assessor,
+      assessorEmail
+    },
+    dataType: "json",
+    success: function (res) {
+      if (res.success) {
+        toastr.success(res.message);
+      } else {
+        toastr.error(res.message);
+      }
+    },
+    error: function () {
+      toastr.error("Something went wrong.");
+    }
+  });
+});
+
+
 // Revert button click
 $(document).on("click", ".restore-btn", function () {
   const jobId = $(this).data("id");

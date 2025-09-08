@@ -69,6 +69,7 @@
     </div>
 
     <?php include_once 'include/footer.php' ?>
+    
     <div class="modal fade" id="emailFormatModal" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content p-4">
