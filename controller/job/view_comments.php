@@ -3,39 +3,38 @@ include '../../database/db.php';
 session_start();
 
 $jobID = $_GET['job_id'] ?? 0;
-$offset = $_GET['offset'] ?? 0;
-$limit = 5;
 
+// kunin lahat ng comments ng job
 $sql = "SELECT username, message, created_at 
         FROM comments 
         WHERE job_id = '$jobID' 
-        ORDER BY comment_id DESC 
-        LIMIT $limit OFFSET $offset";
+        ORDER BY comment_id ASC";
 $result = mysqli_query($conn, $sql);
+
+// header para mag-download ng RTF file
+header("Content-Type: application/rtf");
+header("Content-Disposition: attachment; filename=job_{$jobID}_comments.rtf");
+
+// start RTF document
+echo "{\\rtf1\\ansi\\deff0\n";
+echo "{\\fonttbl{\\f0 Arial;}}\n";
+echo "\\fs24 Job ID: {$jobID}\\par\\par\n"; 
 
 if(mysqli_num_rows($result) > 0){
   while($row = mysqli_fetch_assoc($result)){
-    echo '<div class="mb-2">';
-    echo '<div class="d-flex justify-content-between">';
-    echo '<strong>'.htmlspecialchars($row['username']).'</strong>';
-    echo '<small class="text-muted">'.$row['created_at'].'</small>';
-    echo '</div>';
-    echo '<div>'.nl2br(htmlspecialchars($row['message'])).'</div>';
-    echo '<hr>';
-    echo '</div>';
-  }
+    $username = htmlspecialchars($row['username']);
+    $created  = htmlspecialchars($row['created_at']);
+    $message  = htmlspecialchars($row['message']);
 
-  // check kung may next batch pa
-  $countSql = "SELECT COUNT(*) as total FROM comments WHERE job_id = '$jobID'";
-  $countResult = mysqli_query($conn, $countSql);
-  $total = mysqli_fetch_assoc($countResult)['total'];
-
-  if($offset + $limit < $total){
-    echo '<button class="btn btn-link text-primary p-0 view-more" data-offset="'.($offset + $limit).'">View More</button>';
+    // format per comment
+    echo "{\\b {$username}} ({$created})\\par\n";
+    echo nl2br($message) . "\\par\n";
+    echo "\\par\n";
   }
 } else {
-  if ($offset == 0) {
-    echo '<p class="text-muted">No comments yet.</p>';
-  }
+  echo "No comments found.\\par\n";
 }
+
+// end RTF
+echo "}";
 ?>

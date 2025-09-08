@@ -2,7 +2,7 @@
   <div class="card-header">
     <div class="d-flex justify-content-between align-items-center">
       <div>
-        <h5 class="card-title">Staff Upload Plan/Document</h5>
+        <h5 class="card-title">Checker Upload Plan/Document</h5>
       </div>
     </div>
   </div>
@@ -19,7 +19,7 @@
         <textarea name="comment" id="staffComment" class="form-control" placeholder="Add comment..."></textarea>
       </div>
 
-      <button type="button" id="btnUploadStaffFile" class="btn btn-primary mt-3">Upload</button>
+      <button type="button" id="btnUploadStaffFile" class="btn btn-primary mt-3" <?php echo $disabled ?>>Upload</button>
     </form>
 
   </div>

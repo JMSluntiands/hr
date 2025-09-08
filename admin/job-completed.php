@@ -10,7 +10,6 @@
       <!-- Sidebar -->
       <?php include_once 'include/sidebar.php' ?>
       
-
       <div class="page-wrapper">
         <div class="content container-fluid">
 
@@ -23,7 +22,7 @@
                     <li class="breadcrumb-item">
                       <a href="index">Home</a>
                     </li>
-                    <li class="breadcrumb-item active">Job Trash</li>
+                    <li class="breadcrumb-item active">Job Management</li>                                                                       
                   </ul>
                 </div>
               </div>
@@ -36,8 +35,11 @@
                 <div class="card-header">
                   <div class="d-flex justify-content-between items-center">
                     <div>
-                      <h5 class="card-title mb-2">Job Mailbox</h5>
+                      <h5 class="card-title mb-2">Job List</h5>
                       <span id="jobCount" class="text-muted">Total Records: 0</span>
+                    </div>
+                    <div class="">
+                      <a class="btn text-white btn-danger" href="job-new">New Job</a>
                     </div>
                   </div>
                 </div>
@@ -53,6 +55,7 @@
                           <th>Client Ref</th>
                           <th>Assigned</th>
                           <th>Status</th>
+                          <th>Completion Date</th>
                         </tr>
                       </thead>
                       <tbody id="jobBody">
@@ -72,5 +75,5 @@
     <?php include_once 'include/footer.php' ?>
     <?php include_once '../modal/job/new_job.php' ?>
   </body>
-  <script src="../function/job/email_verification.js"></script>
+  <script src="../function/job/list_completed.js"></script>
 </html>

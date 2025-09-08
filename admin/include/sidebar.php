@@ -10,17 +10,18 @@
 
         <!-- Admin Management -->
         <li class="menu-title"><span>Admin Management</span></li>
-        <li>
-          <a href="job"><i class="si si-briefcase"></i> <span>Job Management</span></a>
+        <li class="submenu">
+          <a href="#"><i class="si si-briefcase"></i> <span>Job Management</span> <span class="menu-arrow"></span></a>
+          <ul class="removeActive">
+            <li><a href="job">List</a></li>
+            <li><a href="job-completed">Completed</a></li>
+            <li><a href="job-review">For Review</a></li>
+            <li><a href="job-mailbox">Mailbox</a></li>
+            <?php if ($_SESSION['role'] === 'LBS' || $_SESSION['role'] === 'LUNTIAN'): ?>
+            <li><a href="trash">Trash</a></li>
+            <?php endif; ?>
+          </ul>
         </li>
-        <li>
-          <a href="for_email_confirmation"><i class="si si-envelope"></i> <span>Mailbox</span></a>
-        </li>
-        <?php if ($_SESSION['role'] === 'LBS' || $_SESSION['role'] === 'LUNTIAN'): ?>
-        <li>
-          <a href="trash"><i class="si si-trash"></i> <span>Job Trash</span></a>
-        </li>
-        <?php endif; ?>
         <?php if ($_SESSION['role'] === 'LUNTIAN'): ?>
         <!-- Setting -->
         <li class="menu-title"><span>Setting</span></li>

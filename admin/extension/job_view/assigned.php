@@ -7,7 +7,7 @@
   <!-- Staff -->
   <div class="d-flex justify-content-between align-items-center py-1">
     <span><strong>Staff</strong></span>
-    <?php if ($_SESSION['role'] === 'LUNTIAN'): ?>
+    <?php if ($_SESSION['role'] === 'LUNTIAN' && $status !== 'Completed'): ?>
       <select id="staffSelect" class="form-select form-select-sm" style="width: 60%;">
         <option value="">-- Select Staff --</option>
         <?php while($s = mysqli_fetch_assoc($staffList)): ?>
@@ -24,7 +24,7 @@
   <!-- Checker -->
   <div class="d-flex justify-content-between align-items-center py-1">
     <span><strong>Checker</strong></span>
-    <?php if ($_SESSION['role'] === 'LUNTIAN'): ?>
+    <?php if ($_SESSION['role'] === 'LUNTIAN' && $status !== 'Completed'): ?>
       <select id="checkerSelect" class="form-select form-select-sm" style="width: 60%;">
         <option value="">-- Select Checker --</option>
         <?php while($c = mysqli_fetch_assoc($checkerList)): ?>

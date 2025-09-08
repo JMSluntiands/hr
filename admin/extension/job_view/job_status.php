@@ -1,5 +1,5 @@
 <div>
-  <?php if ($_SESSION['role'] === 'LUNTIAN'): ?>
+  <?php if ($_SESSION['role'] === 'LUNTIAN' && $status !== 'Completed'): ?>
     <!-- Editable dropdown for LUNTIAN -->
     <span id="statusBadge" 
           class="badge text-dark" 

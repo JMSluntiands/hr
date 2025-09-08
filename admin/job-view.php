@@ -88,8 +88,12 @@
             // decode uploaded files
             $plans = json_decode($sql_fetch['upload_files'], true) ?? [];
             $docs  = json_decode($sql_fetch['upload_project_files'], true) ?? [];
+         
+            $disabled = '';
+            if ($status === 'Completed'):
+              $disabled = 'disabled';
+            endif;
           ?>
-
           <div class="row">
             <!-- Client Details -->
             <div class="col-sm-12 col-md-4">
@@ -153,7 +157,7 @@
                 <div class="card-footer">
                   <div class="input-group">
                     <input type="text" id="runCommentMessage" class="form-control" placeholder="Write a run comment...">
-                    <button class="btn btn-primary" id="btnSendRunComment">Send</button>
+                    <button class="btn btn-primary" id="btnSendRunComment" <?php echo $disabled ?>>Send</button>
                   </div>
                 </div>
               </div>
@@ -175,7 +179,9 @@
                 <div class="card-footer">
                   <div class="input-group">
                     <input type="text" id="commentMessage" class="form-control" placeholder="Write a comment...">
-                    <button class="btn btn-primary" id="btnSendComment">Send</button>
+                    
+                    <button class="btn btn-primary" id="btnSendComment" <?php echo $disabled ?>>Send</button>
+                    
                   </div>
                 </div>
               </div>
@@ -205,7 +211,7 @@
                 <div class="card-header">
                   <div class="d-flex justify-content-between align-items-center">
                     <div>
-                      <h5 class="card-title">Uploaded Plans</h5>
+                      <h5 class="card-title">Client Uploaded Plans</h5>
                     </div>
                   </div>
                 </div>
@@ -219,7 +225,7 @@
                 <div class="card-header">
                   <div class="d-flex justify-content-between align-items-center">
                     <div>
-                      <h5 class="card-title">Uploaded Documents</h5>
+                      <h5 class="card-title">Client Uploaded Documents</h5>
                     </div>
                   </div>
                 </div>
@@ -234,7 +240,7 @@
                 <div class="card-header">
                   <div class="d-flex justify-content-between align-items-center">
                     <div>
-                      <h5 class="card-title">Staff Uploaded Files</h5>
+                      <h5 class="card-title">Checker Uploaded Files</h5>
                     </div>
                   </div>
                 </div>

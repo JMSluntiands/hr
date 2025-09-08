@@ -13,33 +13,25 @@ if ($user_client !== 'LUNTIAN') {
     $usersID = $fetch_client['client_code'] ?? '';
 }
 
-// base SQL
+// base SQL (walang semicolon sa dulo)
 $sql = "SELECT DISTINCT 
             j.job_id, 
             j.log_date, 
-            j.client_code, 
-            j.job_reference_no, 
-            j.client_reference_no, 
-            j.ncc_compliance, 
-            ca.client_account_name, 
-            jr.job_request_id, 
-            jr.job_request_type, 
-            j.job_type, 
-            j.priority, 
-            j.plan_complexity, 
-            j.last_update, 
-            j.job_status,
-            s.name AS staff_name, 
-            c.name AS checker_name
+            j.job_reference_no,
+            ca.client_email,
+            f.files_json,
+            f.uploaded_at,
+            f.uploaded_by
         FROM jobs j
-        LEFT JOIN staff s 
-            ON j.staff_id = s.staff_id
-        LEFT JOIN checker c 
-            ON j.checker_id = c.checker_id
-        LEFT JOIN client_accounts ca 
-            ON j.client_account_id = ca.client_account_id
-        LEFT JOIN job_requests jr 
-            ON j.job_request_id = jr.job_request_id
+        LEFT JOIN clients ca 
+            ON j.client_code = ca.client_code
+        LEFT JOIN staff_uploaded_files f 
+            ON f.job_id = j.job_id
+           AND f.uploaded_at = (
+                SELECT MAX(f2.uploaded_at) 
+                FROM staff_uploaded_files f2 
+                WHERE f2.job_id = j.job_id
+           )
         WHERE j.job_status = 'For Email Confirmation'";
 
 // idagdag lang filter kung hindi LUNTIAN
@@ -47,13 +39,16 @@ if ($user_client !== 'LUNTIAN' && $usersID !== '') {
     $sql .= " AND j.client_code = '$usersID'";
 }
 
+// ORDER BY laging huli
 $sql .= " ORDER BY j.log_date DESC";
 
 $result = $conn->query($sql);
 
 $data = [];
-while ($row = $result->fetch_assoc()) {
-    $data[] = $row;
+if ($result) {
+    while ($row = $result->fetch_assoc()) {
+        $data[] = $row;
+    }
 }
 
 echo json_encode([
