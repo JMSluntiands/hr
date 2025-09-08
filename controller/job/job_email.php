@@ -1,19 +1,17 @@
 <?php
+include '../../database/db.php';
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
-require '../../vendor/autoload.php'; // kung composer
-// or require 'path/to/PHPMailer/src/PHPMailer.php';
-// require 'path/to/PHPMailer/src/Exception.php';
-// require 'path/to/PHPMailer/src/SMTP.php';
+require '../../vendor/autoload.php';
 
 session_start();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $toEmail   = $_POST['toEmail'] ?? '';
-    $reference = $_POST['reference'] ?? '';
-    $status    = $_POST['status'] ?? '';
-    $assessor  = $_POST['assessor'] ?? '';
+    $toEmail       = $_POST['toEmail'] ?? '';
+    $reference     = $_POST['reference'] ?? '';
+    $status        = $_POST['status'] ?? '';
+    $assessor      = $_POST['assessor'] ?? '';
     $assessorEmail = $_POST['assessorEmail'] ?? '';
 
     if (!$toEmail) {
@@ -24,28 +22,59 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $mail = new PHPMailer(true);
 
     try {
-        // SMTP settings for SMTP2GO
+        // SMTP settings
         $mail->isSMTP();
-        $mail->Host       = "mail.smtp2go.com"; 
+        $mail->Host       = "mail.smtp2go.com";
         $mail->SMTPAuth   = true;
-        $mail->Username   = "YOUR_SMTP2GO_USERNAME"; 
-        $mail->Password   = "YOUR_SMTP2GO_PASSWORD"; 
-        $mail->SMTPSecure = "tls"; 
-        $mail->Port       = 2525; // or 587, 8025, depende sa SMTP2GO
+        $mail->Username   = "luntian4518";
+        $mail->Password   = "ODZ1o6Ia4pctLUJ3";
+        $mail->SMTPSecure = "tls";
+        $mail->Port       = 2525;
 
-        $mail->setFrom("no-reply@yourdomain.com", "Your System");
+        $mail->setFrom("admin@luntian.com.au", "LUNTIAN System");
         $mail->addAddress($toEmail);
 
+        // Embed local logo
+        $logoPath = "../../img/emailLOGO.png"; 
+        if (file_exists($logoPath)) {
+            $mail->AddEmbeddedImage($logoPath, "logo_cid");
+        }
+
+        // Attach latest PDF file
+        $stmt = $conn->prepare("
+            SELECT suf.files_json
+            FROM jobs j
+            LEFT JOIN staff_uploaded_files suf 
+                   ON suf.job_id = j.job_id
+            WHERE j.job_reference_no = ?
+            ORDER BY suf.uploaded_at DESC, suf.file_id DESC
+            LIMIT 1
+        ");
+        $stmt->bind_param("s", $reference);
+        $stmt->execute();
+        $stmt->bind_result($filesJson);
+        if ($stmt->fetch()) {
+            $files = json_decode($filesJson, true);
+            if (is_array($files)) {
+                foreach ($files as $file) {
+                    $filePath = __DIR__ . "/../../document/$reference/$file";
+                    if (file_exists($filePath)) {
+                        $mail->addAttachment($filePath);
+                    }
+                }
+            }
+        }
+        $stmt->close();
+
+        // Email format
         $mail->isHTML(true);
         $mail->Subject = "Job Update - Reference #{$reference}";
-
-        // same format as modal
         $mail->Body = '
           <div style="font-family: Arial, sans-serif; text-align:center; padding:20px;">
-            <img src="https://yourdomain.com/img/logo-light.png" alt="Logo" style="height:60px;">
+            <img src="cid:logo_cid" alt="Logo" style="height:60px;">
             <h2 style="margin-top:20px;">Hi there!</h2>
             <p style="font-size:16px; font-weight:bold; color:#ff9800;">' . htmlspecialchars($reference) . '</p>
-            <p style="margin:5px 0;">status has been updated to</p>
+            <p style="margin:5px 0;">Status has been updated to</p>
             <p style="font-size:16px; font-weight:bold; color:#ff9800;">' . htmlspecialchars($status) . '</p>
 
             <div style="margin-top:20px;">
@@ -53,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <p>Assessor Email: <a href="mailto:' . htmlspecialchars($assessorEmail) . '">' . htmlspecialchars($assessorEmail) . '</a></p>
             </div>
 
-            <div style="margin-top:30px;">
+            <div style="margin-top:30px; text-align:center;">
               <h4>Submission Notes:</h4>
               <p>
                 Click or copy & paste link to browser to access NatHERS Climate Zone Map<br>
@@ -67,8 +96,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $mail->AltBody = "Job Reference: $reference\nStatus: $status\nAssessor: $assessor\nEmail: $assessorEmail";
 
+        // Send Email
         $mail->send();
-        echo json_encode(['success' => true, 'message' => 'Email sent successfully!']);
+
+        // ✅ Update job status to Completed
+        $update = $conn->prepare("UPDATE jobs SET job_status = 'Completed' WHERE job_reference_no = ?");
+        $update->bind_param("s", $reference);
+        $update->execute();
+        $update->close();
+
+        echo json_encode(['success' => true, 'message' => 'Email sent successfully! Job marked as Completed.']);
     } catch (Exception $e) {
         echo json_encode(['success' => false, 'message' => "Email failed: {$mail->ErrorInfo}"]);
     }

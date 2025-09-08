@@ -41,22 +41,25 @@ function loadTrashJob() {
               <button class="btn btn-sm btn-danger restore-btn d-flex align-items-center gap-1" data-id="${item.job_id}">
                 <i class="fa fa-undo"></i> Revert
               </button>
-              <button class="btn btn-sm btn-primary send-btn d-flex align-items-center gap-1" data-id="${item.job_id}">
-                <i class="fa fa-paper-plane"></i> Send
-              </button>
+              <button class="btn btn-sm btn-primary send-email d-flex align-items-center gap-1"
+        data-id="${item.job_id}"
+        data-to="${item.client_email}"
+        data-reference="${item.job_reference_no}"
+        data-status="For Email Confirmation"
+        data-assessor="SB"
+        data-assessor-email="${item.client_email}">
+  <i class="fa fa-paper-plane"></i> Send
+</button>
+
+
+
             </div>
           `,
           item.log_date,
           item.job_reference_no,
           item.client_email,
-          `<button class="btn btn-sm btn-info email-preview" 
-                  data-id="${item.job_id}" 
-                  data-reference="${item.job_reference_no}" 
-                  data-status="Completed" 
-                  data-assessor="SB" 
-                  data-assessor-email="${item.client_email}">
-            Preview
-          </button>`,
+          `<button class="btn btn-sm btn-info email-preview" data-id="${item.job_id}" data-reference="${item.job_reference_no}" data-status="Completed" data-assessor="SB" data-assessor-email="${item.client_email}"> Preview </button>
+          `,
           filesHtml
         ]).draw(false);
 
@@ -90,7 +93,9 @@ $(document).on("click", ".send-email", function () {
   const reference = $(this).data("reference");
   const status = $(this).data("status");
   const assessor = $(this).data("assessor");
-  const assessorEmail = $(this).data("assessoremail");
+  const assessorEmail = $(this).data("assessor-email");
+
+  console.log("DEBUG SEND:", { toEmail, reference, status, assessor, assessorEmail });
 
   $.ajax({
     url: "../controller/job/job_email.php",
@@ -108,13 +113,15 @@ $(document).on("click", ".send-email", function () {
         toastr.success(res.message);
       } else {
         toastr.error(res.message);
+        console.log("Backend debug:", res.debug); // para makita kung ano dumating
       }
     },
-    error: function () {
-      toastr.error("Something went wrong.");
+    error: function (xhr) {
+      toastr.error("Something went wrong: " + xhr.responseText);
     }
   });
 });
+
 
 
 // Revert button click
