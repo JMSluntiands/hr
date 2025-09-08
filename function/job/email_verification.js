@@ -42,17 +42,14 @@ function loadTrashJob() {
                 <i class="fa fa-undo"></i> Revert
               </button>
               <button class="btn btn-sm btn-primary send-email d-flex align-items-center gap-1"
-        data-id="${item.job_id}"
-        data-to="${item.client_email}"
-        data-reference="${item.job_reference_no}"
-        data-status="For Email Confirmation"
-        data-assessor="SB"
-        data-assessor-email="${item.client_email}">
-  <i class="fa fa-paper-plane"></i> Send
-</button>
-
-
-
+                      data-id="${item.job_id}"
+                      data-to="${item.client_email}"
+                      data-reference="${item.job_reference_no}"
+                      data-status="For Email Confirmation"
+                      data-assessor="SB"
+                      data-assessor-email="${item.client_email}">
+                <i class="fa fa-paper-plane"></i> Send
+              </button>
             </div>
           `,
           item.log_date,

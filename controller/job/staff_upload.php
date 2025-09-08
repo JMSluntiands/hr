@@ -34,7 +34,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
 
-    $allowedExt = ['pdf'];
+    // ✅ PDF + ZIP allowed
+    $allowedExt = ['pdf', 'zip'];
     $maxSize = 10 * 1024 * 1024; // 10MB
     $uploadedFiles = [];
 
@@ -50,6 +51,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if (move_uploaded_file($files['tmp_name'][$i], $targetPath)) {
             $uploadedFiles[] = $safeName;
+
+            // 🔹 Kung gusto i-extract ZIP, uncomment mo ito:
+            /*
+            if ($ext === 'zip') {
+                $zip = new ZipArchive;
+                if ($zip->open($targetPath) === true) {
+                    $zip->extractTo($uploadDir); // extract sa job folder
+                    $zip->close();
+                }
+            }
+            */
         }
     }
 

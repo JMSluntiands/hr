@@ -19,6 +19,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    $sql = "
+      SELECT j.*, c.client_account_name
+      FROM jobs j
+      LEFT JOIN client_accounts c 
+            ON j.client_account_id = c.client_account_id
+      WHERE j.job_reference_no = ?
+    ";
+
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $reference);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $row = $result->fetch_assoc();
+    $client_account_name     = $row['client_account_name'];
+    $reference               = $row['job_reference_no'];
+    $client_reference_number = $row['client_reference_no'];
+    $subject = "Job Update : ".$client_account_name." ".$reference."-".$client_reference_number;
     $mail = new PHPMailer(true);
 
     try {
@@ -31,7 +48,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $mail->SMTPSecure = "tls";
         $mail->Port       = 2525;
 
-        $mail->setFrom("admin@luntian.com.au", "LUNTIAN System");
+        $mail->setFrom(
+            "admin@luntian.com.au",
+            "Luntian"
+        );
         $mail->addAddress($toEmail);
 
         // Embed local logo
@@ -40,35 +60,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $mail->AddEmbeddedImage($logoPath, "logo_cid");
         }
 
-        // Attach latest PDF file
-        $stmt = $conn->prepare("
-            SELECT suf.files_json
-            FROM jobs j
-            LEFT JOIN staff_uploaded_files suf 
-                   ON suf.job_id = j.job_id
-            WHERE j.job_reference_no = ?
-            ORDER BY suf.uploaded_at DESC, suf.file_id DESC
-            LIMIT 1
-        ");
-        $stmt->bind_param("s", $reference);
-        $stmt->execute();
-        $stmt->bind_result($filesJson);
-        if ($stmt->fetch()) {
-            $files = json_decode($filesJson, true);
-            if (is_array($files)) {
-                foreach ($files as $file) {
-                    $filePath = __DIR__ . "/../../document/$reference/$file";
-                    if (file_exists($filePath)) {
-                        $mail->addAttachment($filePath);
-                    }
-                }
-            }
-        }
-        $stmt->close();
+        // // Attach latest PDF file
+        // $stmt = $conn->prepare("
+        //     SELECT suf.files_json
+        //     FROM jobs j
+        //     LEFT JOIN staff_uploaded_files suf 
+        //            ON suf.job_id = j.job_id
+        //     WHERE j.job_reference_no = ?
+        //     ORDER BY suf.uploaded_at DESC, suf.file_id DESC
+        //     LIMIT 1
+        // ");
+        // $stmt->bind_param("s", $reference);
+        // $stmt->execute();
+        // $stmt->bind_result($filesJson);
+        // if ($stmt->fetch()) {
+        //     $files = json_decode($filesJson, true);
+        //     if (is_array($files)) {
+        //         foreach ($files as $file) {
+        //             $filePath = __DIR__ . "/../../document/$reference/$file";
+        //             if (file_exists($filePath)) {
+        //                 $mail->addAttachment($filePath);
+        //             }
+        //         }
+        //     }
+        // }
+        // $stmt->close();
 
         // Email format
         $mail->isHTML(true);
-        $mail->Subject = "Job Update - Reference #{$reference}";
+        $mail->Subject = $subject;
         $mail->Body = '
           <div style="font-family: Arial, sans-serif; text-align:center; padding:20px;">
             <img src="cid:logo_cid" alt="Logo" style="height:60px;">

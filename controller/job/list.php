@@ -41,7 +41,7 @@
               ON j.client_account_id = ca.client_account_id
           LEFT JOIN job_requests jr 
               ON j.job_request_id = jr.job_request_id
-          WHERE j.client_code = '$usersID' AND j.job_status NOT IN ('Deleted', 'Completed', 'For Review')
+          WHERE j.client_code = '$usersID' AND j.job_status NOT IN ('Deleted', 'Completed', 'For Review', 'For Email Confirmation')
 ";
   $stmt = $conn->prepare($sql);
   $stmt->execute();

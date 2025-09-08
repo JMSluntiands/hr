@@ -166,22 +166,26 @@
               <!-- Comments -->
               <div class="card">
                 <div class="card-header">
-                  <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                      <h5 class="card-title">Comments</h5>
-                    </div>
-                  </div>
+                  <h5 class="card-title">Comments</h5>
                 </div>
+
                 <div class="card-body" id="commentsBox">
                   <p class="text-muted">Loading comments...</p>
                 </div>
-                
+
                 <div class="card-footer">
-                  <div class="input-group">
-                    <input type="text" id="commentMessage" class="form-control" placeholder="Write a comment...">
-                    
+                  <!-- Quill Editor Toolbar -->
+                  <div id="toolbar">
+                    <button class="ql-bold"></button>
+                    <button class="ql-italic"></button>
+                    <button class="ql-underline"></button>
+                  </div>
+
+                  <!-- Rich Text Editor -->
+                  <div id="commentMessage" style="height:100px;"></div>
+
+                  <div class="mt-2 text-end">
                     <button class="btn btn-primary" id="btnSendComment" <?php echo $disabled ?>>Send</button>
-                    
                   </div>
                 </div>
               </div>

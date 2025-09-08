@@ -21,11 +21,21 @@ $(document).on("click", ".view-more", function () {
   loadComments(offset, true);
 });
 
+
+var quill = new Quill('#commentMessage', {
+  theme: 'snow',
+  placeholder: 'Write a comment...',
+  modules: {
+    toolbar: '#toolbar'
+  }
+});
+
+// ✅ Send Comment
 $("#btnSendComment").on("click", function () {
   let jobID = $("#jobID").val();
-  let message = $("#commentMessage").val().trim();
+  let message = quill.root.innerHTML.trim();
 
-  if (message === "") {
+  if (message === "" || message === "<p><br></p>") {
     toastr.warning("Please enter a comment.");
     return;
   }
@@ -42,7 +52,7 @@ $("#btnSendComment").on("click", function () {
     success: function (response) {
       if (response.success) {
         toastr.success(response.message, "Success");
-        $("#commentMessage").val("");
+        quill.root.innerHTML = ""; // clear editor
         loadComments();
       } else {
         toastr.error(response.message || "Failed to add comment", "Error");

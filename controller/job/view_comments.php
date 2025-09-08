@@ -2,39 +2,59 @@
 include '../../database/db.php';
 session_start();
 
-$jobID = $_GET['job_id'] ?? 0;
+$jobID  = intval($_GET['job_id'] ?? 0);
+$offset = intval($_GET['offset'] ?? 0);
+$limit  = 5;
 
-// kunin lahat ng comments ng job
-$sql = "SELECT username, message, created_at 
-        FROM comments 
-        WHERE job_id = '$jobID' 
-        ORDER BY comment_id ASC";
-$result = mysqli_query($conn, $sql);
-
-// header para mag-download ng RTF file
-header("Content-Type: application/rtf");
-header("Content-Disposition: attachment; filename=job_{$jobID}_comments.rtf");
-
-// start RTF document
-echo "{\\rtf1\\ansi\\deff0\n";
-echo "{\\fonttbl{\\f0 Arial;}}\n";
-echo "\\fs24 Job ID: {$jobID}\\par\\par\n"; 
-
-if(mysqli_num_rows($result) > 0){
-  while($row = mysqli_fetch_assoc($result)){
-    $username = htmlspecialchars($row['username']);
-    $created  = htmlspecialchars($row['created_at']);
-    $message  = htmlspecialchars($row['message']);
-
-    // format per comment
-    echo "{\\b {$username}} ({$created})\\par\n";
-    echo nl2br($message) . "\\par\n";
-    echo "\\par\n";
-  }
-} else {
-  echo "No comments found.\\par\n";
+if (!$jobID) {
+    echo "<p class='text-muted'>Invalid job.</p>";
+    exit;
 }
 
-// end RTF
-echo "}";
+$stmt = $conn->prepare("
+    SELECT username, message, created_at 
+    FROM comments 
+    WHERE job_id = ? 
+    ORDER BY comment_id DESC 
+    LIMIT ?, ?
+");
+$stmt->bind_param("iii", $jobID, $offset, $limit);
+$stmt->execute();
+$result = $stmt->get_result();
+
+if ($result->num_rows > 0) {
+    while ($row = $result->fetch_assoc()) {
+        ?>
+        <div class="comment border-bottom pb-2 mb-2">
+          <div class="d-flex justify-content-between">
+            <strong class="text-primary">
+              <?= htmlspecialchars($row['username']) ?>
+            </strong>
+            <small class="text-muted">
+              <?= htmlspecialchars($row['created_at']) ?>
+            </small>
+          </div>
+          <div class="comment-body mt-1">
+            <!-- ✅ Output raw HTML (safe kasi ikaw ang nag-save galing Quill) -->
+            <?= $row['message'] ?>
+          </div>
+        </div>
+        <?php
+    }
+
+    // View More button
+    if ($result->num_rows == $limit) {
+        ?>
+        <div class="text-center mt-2">
+          <button class="btn btn-outline-primary btn-sm view-more" data-offset="<?= $offset + $limit ?>">
+            View More
+          </button>
+        </div>
+        <?php
+    }
+} else {
+    if ($offset == 0) {
+        echo "<p class='text-muted'>No comments yet.</p>";
+    }
+}
 ?>

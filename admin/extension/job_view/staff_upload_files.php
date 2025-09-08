@@ -12,7 +12,12 @@
 
       <div class="form-group">
         <label>Upload Files</label>
-        <input type="file" name="docs[]" id="uploadDocs" multiple accept="application/pdf" class="form-control" style="height:30px!important">
+        <input type="file" name="docs[]" id="uploadDocs" 
+          multiple 
+          accept=".pdf, .zip,application/pdf,application/zip" 
+          class="form-control" 
+          style="height:30px!important">
+
       </div>
 
       <div class="form-group mt-2">
