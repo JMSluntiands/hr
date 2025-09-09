@@ -226,8 +226,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         "admin@luntian.com.au",
         "Luntian"
     );
-    // $mail->addAddress("admin@luntian.com.au");
-    $mail->addAddress("ronnel.navarro2020@gmail.com");
+    $mail->addAddress("admin@luntian.com.au");
+    // $mail->addAddress("ronnel.navarro2020@gmail.com");
     // Embed local logo
     $logoPath = "../../img/emailLOGO.png"; 
     if (file_exists($logoPath)) {
