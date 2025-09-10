@@ -211,54 +211,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $client_account_name = $cai['client_account_name'];
 
-    $subject = "Job Update : ".$client_account_name." ".$reference."-".$client_ref;
-    $mail = new PHPMailer(true);
-    // SMTP settings
-    $mail->isSMTP();
-    $mail->Host       = "mail.smtp2go.com";
-    $mail->SMTPAuth   = true;
-    $mail->Username   = "luntian4518";
-    $mail->Password   = "ODZ1o6Ia4pctLUJ3";
-    $mail->SMTPSecure = "tls";
-    $mail->Port       = 2525;
+    // $subject = "Job Update : ".$client_account_name." ".$reference."-".$client_ref;
+    // $mail = new PHPMailer(true);
+    // // SMTP settings
+    // $mail->isSMTP();
+    // $mail->Host       = "mail.smtp2go.com";
+    // $mail->SMTPAuth   = true;
+    // $mail->Username   = "luntian4518";
+    // $mail->Password   = "ODZ1o6Ia4pctLUJ3";
+    // $mail->SMTPSecure = "tls";
+    // $mail->Port       = 2525;
 
-    $mail->setFrom(
-        "admin@luntian.com.au",
-        "Luntian"
-    );
-    $mail->addAddress("admin@luntian.com.au");
-    // $mail->addAddress("ronnel.navarro2020@gmail.com");
-    // Embed local logo
-    $logoPath = "../../img/emailLOGO.png"; 
-    if (file_exists($logoPath)) {
-      $mail->AddEmbeddedImage($logoPath, "logo_cid");
-    }
+    // $mail->setFrom(
+    //     "admin@luntian.com.au",
+    //     "Luntian"
+    // );
+    // $mail->addAddress("admin@luntian.com.au");
+    // // $mail->addAddress("ronnel.navarro2020@gmail.com");
+    // // Embed local logo
+    // $logoPath = "../../img/emailLOGO.png"; 
+    // if (file_exists($logoPath)) {
+    //   $mail->AddEmbeddedImage($logoPath, "logo_cid");
+    // }
 
-    // Email format
-    $mail->isHTML(true);
-    $mail->Subject = $subject;
-    $mail->Body = '
-      <div style="font-family: Arial, sans-serif; text-align:center; padding:20px;">
-        <img src="cid:logo_cid" alt="Logo" style="height:60px;">
-        <h2 style="margin-top:20px;">Hi there!</h2>
-        <p style="font-size:16px; font-weight:bold; color:#ff9800;">' . htmlspecialchars($reference) . '</p>
-        <p style="margin:5px 0;">Status has been updated to</p>
-        <p style="font-size:16px; font-weight:bold; color:#ff9800;">Allocated</p>
+    // // Email format
+    // $mail->isHTML(true);
+    // $mail->Subject = $subject;
+    // $mail->Body = '
+    //   <div style="font-family: Arial, sans-serif; text-align:center; padding:20px;">
+    //     <img src="cid:logo_cid" alt="Logo" style="height:60px;">
+    //     <h2 style="margin-top:20px;">Hi there!</h2>
+    //     <p style="font-size:16px; font-weight:bold; color:#ff9800;">' . htmlspecialchars($reference) . '</p>
+    //     <p style="margin:5px 0;">Status has been updated to</p>
+    //     <p style="font-size:16px; font-weight:bold; color:#ff9800;">Allocated</p>
 
-        <div style="margin-top:30px; text-align:center;">
-          <h4>Submission Notes:</h4>
-          <p>
-            Click or copy & paste link to browser to access NatHERS Climate Zone Map<br>
-            <a href="http://www.nathers.gov.au/sites/all/themes/custom//climate-map/index.html" target="_blank">
-              http://www.nathers.gov.au/sites/all/themes/custom//climate-map/index.html
-            </a>
-          </p>
-        </div>
-      </div>
-    ';
+    //     <div style="margin-top:30px; text-align:center;">
+    //       <h4>Submission Notes:</h4>
+    //       <p>
+    //         Click or copy & paste link to browser to access NatHERS Climate Zone Map<br>
+    //         <a href="http://www.nathers.gov.au/sites/all/themes/custom//climate-map/index.html" target="_blank">
+    //           http://www.nathers.gov.au/sites/all/themes/custom//climate-map/index.html
+    //         </a>
+    //       </p>
+    //     </div>
+    //   </div>
+    // ';
 
-    // Send Email
-    $mail->send();
+    // // Send Email
+    // $mail->send();
 
     if (mysqli_query($conn, $sql)) {
       echo json_encode(["status"=>"success","message"=>"New job has been created successfully, files uploaded."]);
