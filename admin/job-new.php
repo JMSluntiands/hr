@@ -67,7 +67,7 @@
                       <div class="col-md-4 col-sm-12 mt-3">
                         <label class="form-label">Compliance</label>
                         <select name="compliance" class="form-select select" required>
-                          <option value="2022 (WHO)" selected>2022 (WHO)</option>
+                          <option value="2022 Whole of Home (WOH)" selected>2022 Whole of Home (WOH)</option>
                           <option value="2019">2019</option>
                         </select>
                       </div>

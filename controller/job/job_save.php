@@ -261,9 +261,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $mail->send();
 
     if (mysqli_query($conn, $sql)) {
-        echo json_encode(["status"=>"success","message"=>"New job has been created successfully, files uploaded."]);
+      echo json_encode(["status"=>"success","message"=>"New job has been created successfully, files uploaded."]);
     } else {
-        echo json_encode(["status"=>"error","message"=>"Database error: " . mysqli_error($conn)]);
+      echo json_encode(["status"=>"error","message"=>"Database error: " . mysqli_error($conn)]);
     }
 }
 ?>

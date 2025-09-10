@@ -274,7 +274,7 @@
               </div>
 
               <!-- Activity Logs -->
-              <?php if ($_SESSION['role'] === 'LUNTIAN'): ?>
+              <?php if ($_SESSION['role'] === 'LUNTIAN' || $_SESSION['role'] === 'LBS'): ?>
               <div class="card">
                 <div class="card-header">
                   <div class="d-flex justify-content-between align-items-center">
