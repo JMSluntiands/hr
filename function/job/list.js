@@ -142,9 +142,7 @@ $(document).ready(function () {
                                   "#6c757d" // default gray
             }">
               ${item.job_status}
-            </span>
-
-            `,
+            </span>`,
             `<div class="text-center">${formatDateTime(item.completion_date)}</div>`
           ]).draw(false);
         });
