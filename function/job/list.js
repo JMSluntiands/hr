@@ -55,7 +55,8 @@ $(document).ready(function () {
 
   $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
     let selected = $('#statusFilter').val();
-    let status = $(table.cell(dataIndex, 6).node()).text().trim();
+    let status = $(table.cell(dataIndex, 7).node()).text().trim();
+
     return selected === "" || status === selected;
   });
 
