@@ -32,6 +32,7 @@
               j.completion_date,
               j.last_update, 
               j.job_status,
+              j.job_type,
               s.name AS staff_name, 
               c.name AS checker_name
           FROM jobs j
@@ -73,6 +74,8 @@
     "client_code" => $row['client_code'],
     "staff_name" => $row['staff_id'],
     "checker_name" => $row['checker_id'],
+    "job_type" => $row['job_type'],
+    "priority" => $row['priority'],
     "plan_complexity" => $row['plan_complexity'],
     "completion_date" => $row['completion_date'],
     "ncc_compliance" => $row['ncc_compliance'],

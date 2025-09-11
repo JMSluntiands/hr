@@ -46,7 +46,7 @@ function loadTrashJob() {
                       data-to="${item.client_email}"
                       data-reference="${item.job_reference_no}"
                       data-status="For Email Confirmation"
-                      data-assessor="SB"
+                      data-assessor="${item.staff_id}"
                       data-assessor-email="${item.client_email}">
                 <i class="fa fa-paper-plane"></i> Send
               </button>
@@ -55,7 +55,7 @@ function loadTrashJob() {
           item.log_date,
           item.job_reference_no,
           item.client_email,
-          `<button class="btn btn-sm btn-info email-preview" data-id="${item.job_id}" data-reference="${item.job_reference_no}" data-status="Completed" data-assessor="SB" data-assessor-email="${item.client_email}"> Preview </button>
+          `<button class="btn btn-sm btn-info email-preview" data-id="${item.job_id}" data-reference="${item.job_reference_no}" data-status="Completed" data-assessor="${item.staff_id}" data-assessor-email="${item.client_email}"> Preview </button>
           `,
           filesHtml
         ]).draw(false);
@@ -108,6 +108,7 @@ $(document).on("click", ".send-email", function () {
     success: function (res) {
       if (res.success) {
         toastr.success(res.message);
+        loadTrashJob();
       } else {
         toastr.error(res.message);
         console.log("Backend debug:", res.debug); // para makita kung ano dumating
@@ -133,7 +134,13 @@ $(document).on("click", ".restore-btn", function () {
     success: function (response) {
       if (response.status === "success") {
         toastr.success("Job reverted to For Review", "Success");
-        loadTrashJob(); // reload table
+        // Reload table muna
+        loadTrashJob();
+
+        // 🔄 After a short delay, refresh page
+        setTimeout(function () {
+          location.reload();
+        }, 1500); // depende sa tagal ng toast
       } else {
         toastr.error(response.message || "Failed to update job.", "Error");
       }

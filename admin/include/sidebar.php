@@ -14,8 +14,8 @@
           <a href="#"><i class="si si-briefcase"></i> <span>Job Management</span> <span class="menu-arrow"></span></a>
           <ul class="removeActive">
             <li><a href="job">List</a></li>
-            <?php if ($_SESSION['role'] === 'LUNTIAN'): ?>
             <li><a href="job-completed">Completed</a></li>
+            <?php if ($_SESSION['role'] === 'LUNTIAN'): ?>
             <li><a href="job-review">For Review</a></li>
             <li><a href="job-mailbox">Mailbox</a></li>
             <?php endif; ?>

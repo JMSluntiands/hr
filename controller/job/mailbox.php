@@ -17,6 +17,7 @@ if ($user_client !== 'LUNTIAN') {
 $sql = "SELECT DISTINCT 
             j.job_id, 
             j.log_date, 
+            j.staff_id, 
             j.job_reference_no,
             ca.client_email,
             f.files_json,
@@ -39,7 +40,7 @@ if ($user_client !== 'LUNTIAN' && $usersID !== '') {
     $sql .= " AND j.client_code = '$usersID'";
 }
 
-// ORDER BY laging huli
+// ORDER BY laging huli // $mail->send();
 $sql .= " ORDER BY j.log_date DESC";
 
 $result = $conn->query($sql);

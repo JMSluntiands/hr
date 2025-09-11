@@ -19,6 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    // 🔎 Fetch job details
     $sql = "
       SELECT j.*, c.client_account_name
       FROM jobs j
@@ -28,13 +29,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ";
 
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("i", $reference);
+    $stmt->bind_param("s", $reference); // ✅ string
     $stmt->execute();
     $result = $stmt->get_result();
     $row = $result->fetch_assoc();
+    $stmt->close();
+
+    if (!$row) {
+        echo json_encode(['success' => false, 'message' => 'No job found with reference: ' . htmlspecialchars($reference)]);
+        exit;
+    }
+
     $client_account_name     = $row['client_account_name'];
     $reference               = $row['job_reference_no'];
     $client_reference_number = $row['client_reference_no'];
+
     $subject = "Job Update : ".$client_account_name." ".$reference."-".$client_reference_number;
     $mail = new PHPMailer(true);
 
@@ -48,10 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $mail->SMTPSecure = "tls";
         $mail->Port       = 2525;
 
-        $mail->setFrom(
-            "admin@luntian.com.au",
-            "Luntian"
-        );
+        $mail->setFrom("admin@luntian.com.au", "Luntian");
         $mail->addAddress($toEmail);
 
         // Embed local logo
@@ -59,32 +65,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (file_exists($logoPath)) {
             $mail->AddEmbeddedImage($logoPath, "logo_cid");
         }
-
-        // // Attach latest PDF file
-        // $stmt = $conn->prepare("
-        //     SELECT suf.files_json
-        //     FROM jobs j
-        //     LEFT JOIN staff_uploaded_files suf 
-        //            ON suf.job_id = j.job_id
-        //     WHERE j.job_reference_no = ?
-        //     ORDER BY suf.uploaded_at DESC, suf.file_id DESC
-        //     LIMIT 1
-        // ");
-        // $stmt->bind_param("s", $reference);
-        // $stmt->execute();
-        // $stmt->bind_result($filesJson);
-        // if ($stmt->fetch()) {
-        //     $files = json_decode($filesJson, true);
-        //     if (is_array($files)) {
-        //         foreach ($files as $file) {
-        //             $filePath = __DIR__ . "/../../document/$reference/$file";
-        //             if (file_exists($filePath)) {
-        //                 $mail->addAttachment($filePath);
-        //             }
-        //         }
-        //     }
-        // }
-        // $stmt->close();
 
         // Email format
         $mail->isHTML(true);
@@ -116,16 +96,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $mail->AltBody = "Job Reference: $reference\nStatus: $status\nAssessor: $assessor\nEmail: $assessorEmail";
 
-        // Send Email
-        $mail->send();
-
-        // ✅ Update job status to Completed
+        // 📌 Update job status
         $update = $conn->prepare("UPDATE jobs SET job_status = 'Completed' WHERE job_reference_no = ?");
         $update->bind_param("s", $reference);
         $update->execute();
+
+        $mail->send();
+
+        if ($update->affected_rows > 0) {
+            echo json_encode(['success' => true, 'message' => 'Email sent successfully! Job marked as Completed.']);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'No job updated. Check reference: ' . htmlspecialchars($reference)]);
+        }
         $update->close();
 
-        echo json_encode(['success' => true, 'message' => 'Email sent successfully! Job marked as Completed.']);
     } catch (Exception $e) {
         echo json_encode(['success' => false, 'message' => "Email failed: {$mail->ErrorInfo}"]);
     }

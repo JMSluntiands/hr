@@ -21,19 +21,31 @@ $(document).ready(function () {
     });
   }
 
-  // 🔹 Init DataTable
   let table = $("#jobTable").DataTable({
-    responsive: true,
+    responsive: {
+      details: {
+        type: 'column'   // ✅ show + button on first column
+      }
+    },
     autoWidth: false,
     destroy: true,
     dom: 'Bfrtip',
-    data: [], // manual loading
+    data: [],
     buttons: buttonsConfig,
     columnDefs: [
-      { responsivePriority: 1, targets: 0 },
-      { responsivePriority: 2, targets: -1 }
+      {
+        className: 'dtr-control', // ✅ built-in + button
+        orderable: false,
+        targets: 0                // gawin siyang first column
+      },
+      { responsivePriority: 1, targets: 1 }, // Log Date
+      { responsivePriority: 2, targets: 2 }, // Client
+      ...(userRole === "LBS" ? [
+        { targets: [6, 7], visible: false }
+      ] : [])
     ]
   });
+
 
   // 🔹 Add Job Status Filter Dropdown before Export Button
   let statusFilter = `
@@ -120,8 +132,23 @@ $(document).ready(function () {
             // Reference
             `<strong>${item.job_reference_no}</strong>`,
 
+            `<span>${item.job_type}</span>`,
+
+            `
+            <span class="badge text-dark"
+              style="background-color: ${item.priority === "Top" ? "#F74639" :
+              item.priority === "High Prio" ? "#FFA775" :
+                item.priority === "Standard 2 days" ? "#FF71CF" :
+                  item.priority === "Standard 3 days" ? "#CF7AFA" :
+                    "#6c757d" // default gray
+            }">
+              ${item.priority}
+            </span>
+            `,
+
+
             // Client Ref
-            `<span><strong>${item.client_reference_no}</strong></span>`,
+            // `<span><strong>${item.client_reference_no}</strong></span>`,
 
             `<span><strong>${item.staff_name}</strong></span>`,
 
@@ -144,6 +171,7 @@ $(document).ready(function () {
             }">
               ${item.job_status}
             </span>`,
+            `<div class="text-center">${computeDueDate(item.log_date, item.priority)}</div>`,
             `<div class="text-center">${formatDateTime(item.completion_date)}</div>`
           ]).draw(false);
         });
@@ -156,6 +184,44 @@ $(document).ready(function () {
       }
     });
   }
+
+  function computeDueDate(logDate, priority) {
+    if (!logDate) return "";
+
+    let dateObj = new Date(logDate);
+
+    switch (priority) {
+      case "Standard 4 days":
+        dateObj.setDate(dateObj.getDate() + 4);
+        dateObj.setHours(dateObj.getHours() + 48);
+        break;
+      case "Standard 3 days":
+        dateObj.setDate(dateObj.getDate() + 3);
+        dateObj.setHours(dateObj.getHours() + 48);
+        break;
+      case "Standard 2 days":
+        dateObj.setDate(dateObj.getDate() + 2);
+        dateObj.setHours(dateObj.getHours() + 48);
+        break;
+      case "High 1 day":
+        dateObj.setDate(dateObj.getDate() + 1);
+        dateObj.setHours(dateObj.getHours() + 24);
+        break;
+      case "Top (COB)":
+        dateObj.setHours(dateObj.getHours() + 4);
+        break;
+      default:
+        return "";
+    }
+
+    let optionsDate = { year: "numeric", month: "long", day: "numeric" };
+    let optionsTime = { hour: "numeric", minute: "numeric", hour12: true };
+    let datePart = dateObj.toLocaleDateString("en-US", optionsDate);
+    let timePart = dateObj.toLocaleTimeString("en-US", optionsTime);
+
+    return `${datePart}<br>${timePart}`;
+  }
+
 
   loadJob();
 
