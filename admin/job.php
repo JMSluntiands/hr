@@ -53,7 +53,8 @@
                           <th>Client</th>
                           <th>Reference</th>
                           <th>Client Ref</th>
-                          <th>Assigned</th>
+                          <th>Staff</th>
+                          <th>Checker</th>
                           <th>Status</th>
                           <th>Completion Date</th>
                         </tr>

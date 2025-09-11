@@ -10,7 +10,9 @@
   $usersID = $fetch_client['client_code'];
 
   header("Content-Type: application/json"); // Set response type
-
+  if ($user_client !== 'LUNTIAN') {
+    $luntian = "j.client_code = '".$usersID."' AND";
+  }
   $sql = "SELECT DISTINCT 
               j.job_id, 
               j.log_date, 
@@ -41,7 +43,7 @@
               ON j.client_account_id = ca.client_account_id
           LEFT JOIN job_requests jr 
               ON j.job_request_id = jr.job_request_id
-          WHERE j.client_code = '$usersID' AND j.job_status NOT IN ('Deleted', 'Completed', 'For Review', 'For Email Confirmation')
+          WHERE $luntian j.job_status NOT IN ('Deleted', 'Completed', 'For Review', 'For Email Confirmation')
 ";
   $stmt = $conn->prepare($sql);
   $stmt->execute();

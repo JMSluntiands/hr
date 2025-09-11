@@ -7,7 +7,23 @@ $(document).ready(function () {
     dom: 'Bfrtip',
     data: [], // manual loading
     buttons: [
-
+      {
+        extend: 'excelHtml5',
+        text: '<i class="si si-doc"></i> Export to Excel',
+        titleAttr: 'Export table to Excel',
+        className: 'btn btn-success btn-sm rounded-0',
+        exportOptions: {
+          columns: ':not(:first-child)', // exclude action buttons
+          format: {
+            body: function (data, row, column, node) {
+              // Strip HTML tags
+              let text = data.replace(/<br\s*\/?>/gi, "\n")  // br => line break
+                .replace(/<[^>]*>?/gm, "");     // remove other HTML
+              return text.trim();
+            }
+          }
+        }
+      }
     ],
     columnDefs: [
       { responsivePriority: 1, targets: 0 },
@@ -102,19 +118,10 @@ $(document).ready(function () {
             // Client Ref
             `<span><strong>${item.client_reference_no}</strong></span>`,
 
-            // // Staff / Checker
-            `<small>
-                <span class="">
-                     Staff : 
-                </span> ${item.staff_name ?? ""}
-              </small><br>
-              <small>
-                <span class="">
-                    Checker : 
-                </span> ${item.checker_name ?? ""}
-              </small><br>
-            <small>`,
-            // Status
+            `<span><strong>${item.staff_name}</strong></span>`,
+
+            `<span><strong>${item.checker_name}</strong></span>`,
+
             `
             <span class="badge text-dark" 
               style="background-color: ${item.priority === "Top (COB)" ? "#F74639" :
