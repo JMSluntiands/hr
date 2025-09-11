@@ -3,9 +3,15 @@ $("#statusBadge").on("click", function () {
   $("#jobStatus").removeClass("d-none").focus();
 });
 
+// store old value bago magbago
+$("#jobStatus").on("focus", function () {
+  $(this).data("old-status", $(this).val());
+});
+
 $("#jobStatus").on("change", function () {
   let jobID = $("#jobID").val();
   let newStatus = $(this).val();
+  let oldStatus = $(this).data("old-status");
 
   // 🕒 Device time -> MySQL format
   let createdAt = new Date();
@@ -34,14 +40,20 @@ $("#jobStatus").on("change", function () {
         loadActivityLogs();
       } else {
         toastr.error(response.message || "Failed to update status", "Error");
-        $("#statusBadge").removeClass("d-none");
-        $("#jobStatus").addClass("d-none");
+
+        // ❌ reload after toast
+        setTimeout(function () {
+          location.reload();
+        }, 1500);
       }
     },
     error: function (xhr) {
       toastr.error("Error fetching data: " + xhr.responseText, "Error");
-      $("#statusBadge").removeClass("d-none");
-      $("#jobStatus").addClass("d-none");
+
+      // ❌ reload after toast
+      setTimeout(function () {
+        location.reload();
+      }, 1500);
     }
   });
 });
