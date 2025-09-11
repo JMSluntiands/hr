@@ -23,9 +23,12 @@
     </select>
   <?php else: ?>
     <!-- Read-only badge -->
-    <span class="badge text-dark" 
-          style="background-color: <?php echo $badgeColor; ?>; font-weight:bold;">
+    <span id="statusBadge" 
+      class="badge text-dark fw-bold status-badge" 
+      data-status="<?php echo htmlspecialchars($status); ?>"
+      style="cursor:pointer;">
       <?php echo htmlspecialchars($status); ?>
     </span>
+
   <?php endif; ?>
 </div>

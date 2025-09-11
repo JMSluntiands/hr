@@ -1,4 +1,26 @@
 $(document).ready(function () {
+  let buttonsConfig = [];
+
+  if (userRole === "LUNTIAN") {
+    buttonsConfig.push({
+      extend: 'excelHtml5',
+      text: '<i class="si si-doc"></i> Export to Excel',
+      titleAttr: 'Export table to Excel',
+      className: 'btn btn-success btn-sm rounded-0',
+      exportOptions: {
+        columns: ':not(:first-child)', // exclude action buttons
+        format: {
+          body: function (data, row, column, node) {
+            // Remove HTML tags, keep plain text
+            let text = data.replace(/<br\s*\/?>/gi, "\n")
+              .replace(/<[^>]*>?/gm, "");
+            return text.trim();
+          }
+        }
+      }
+    });
+  }
+
   // 🔹 Init DataTable
   let table = $("#jobTable").DataTable({
     responsive: true,
@@ -6,25 +28,7 @@ $(document).ready(function () {
     destroy: true,
     dom: 'Bfrtip',
     data: [], // manual loading
-    buttons: [
-      {
-        extend: 'excelHtml5',
-        text: '<i class="si si-doc"></i> Export to Excel',
-        titleAttr: 'Export table to Excel',
-        className: 'btn btn-success btn-sm rounded-0',
-        exportOptions: {
-          columns: ':not(:first-child)', // exclude action buttons
-          format: {
-            body: function (data, row, column, node) {
-              // Strip HTML tags
-              let text = data.replace(/<br\s*\/?>/gi, "\n")  // br => line break
-                .replace(/<[^>]*>?/gm, "");     // remove other HTML
-              return text.trim();
-            }
-          }
-        }
-      }
-    ],
+    buttons: buttonsConfig,
     columnDefs: [
       { responsivePriority: 1, targets: 0 },
       { responsivePriority: 2, targets: -1 }
@@ -123,13 +127,23 @@ $(document).ready(function () {
             `<span><strong>${item.checker_name}</strong></span>`,
 
             `
-            <span class="badge text-dark" 
-              style="background-color: ${item.priority === "Top (COB)" ? "#F74639" :
-              item.priority === "High 1 day" ? "#FFA775" :
-                item.priority === "Standard 2 days" ? "#FF71CF" :
-                  item.priority === "Standard 3 days" ? "#CF7AFA" : "#6c757d"}">
+            <span class="badge text-dark"
+              style="background-color: ${item.job_status === "Pending" ? "#F86C62" :
+              item.job_status === "For Discussion" ? "#6AB9CC" :
+                item.job_status === "Revision Requested" ? "#FAE2D4" :
+                  item.job_status === "For Email Confirmation" ? "#7DB9E3" :
+                    item.job_status === "Allocated" ? "#FFA775" :
+                      item.job_status === "Accepted" ? "#FFD2B8" :
+                        item.job_status === "Processing" ? "#FF8AD8" :
+                          item.job_status === "For Checking" ? "#CF7AFA" :
+                            item.job_status === "Cancelled" ? "#C4C4C4" :
+                              item.job_status === "Completed" ? "#69F29B" :
+                                item.job_status === "Awaiting Further Information" ? "#EDE59A" :
+                                  "#6c757d" // default gray
+            }">
               ${item.job_status}
             </span>
+
             `,
             `<div class="text-center">${formatDateTime(item.completion_date)}</div>`
           ]).draw(false);

@@ -76,5 +76,8 @@
     <?php include_once 'include/footer.php' ?>
     <?php include_once '../modal/job/new_job.php' ?>
   </body>
+  <script>
+    var userRole = "<?php echo $_SESSION['role'] ?? ''; ?>";
+  </script>
   <script src="../function/job/list.js"></script>
 </html>

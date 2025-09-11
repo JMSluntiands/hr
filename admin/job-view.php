@@ -68,23 +68,6 @@
             $staff = $sql_fetch['staff_id'];
             $checker = $sql_fetch['checker_id'];
 
-            $badgeColor = "#6c757d"; // default gray
-
-            switch ($priority) {
-              case "Top (COB)":
-                $badgeColor = "#F74639"; // red
-                break;
-              case "High 1 day":
-                $badgeColor = "#FFA775"; // orange
-                break;
-              case "Standard 2 days":
-                $badgeColor = "#FF71CF"; // pink
-                break;
-              case "Standard 3 days":
-                $badgeColor = "#CF7AFA"; // violet
-                break;
-            }
-
             // decode uploaded files
             $plans = json_decode($sql_fetch['upload_files'], true) ?? [];
             $docs  = json_decode($sql_fetch['upload_project_files'], true) ?? [];
@@ -304,4 +287,41 @@
   <script src="../function/job/view/staff.js"></script>
   <script src="../function/job/view/statusBadge.js"></script>
   <script src="../function/job/view/staff_upload.js"></script>
+  <script>
+    function getBadgeColor(status) {
+      switch (status) {
+        case "Pending": return "#F86C62";
+        case "For Discussion": return "#6AB9CC";
+        case "Revision Requested": return "#FAE2D4";
+        case "For Email Confirmation": return "#7DB9E3";
+        case "Allocated": return "#FFA775";
+        case "Accepted": return "#FFD2B8";
+        case "Processing": return "#FF8AD8";
+        case "For Checking": return "#CF7AFA";
+        case "Cancelled": return "#C4C4C4";
+        case "Completed": return "#69F29B";
+        case "Awaiting Further Information": return "#EDE59A";
+        default: return "#6c757d";
+      }
+    }
+
+    function applyBadgeColor(el, status) {
+      $(el).css("background-color", getBadgeColor(status));
+    }
+
+    // Initial load
+    $(document).ready(function () {
+      let badge = $("#statusBadge");
+      let currentStatus = badge.data("status");
+      applyBadgeColor(badge, currentStatus);
+
+      // When dropdown changes
+      $("#jobStatus").on("change", function () {
+        let newStatus = $(this).val();
+        $("#statusBadge").text(newStatus).data("status", newStatus);
+        applyBadgeColor("#statusBadge", newStatus);
+      });
+    });
+
+  </script>
 </html>
