@@ -86,13 +86,19 @@ $(document).on("click", ".email-preview", function () {
 });
 
 $(document).on("click", ".send-email", function () {
-  const toEmail = $(this).data("to");
-  const reference = $(this).data("reference");
-  const status = $(this).data("status");
-  const assessor = $(this).data("assessor");
-  const assessorEmail = $(this).data("assessor-email");
+  const $btn = $(this); // reference sa button
+  const toEmail = $btn.data("to");
+  const reference = $btn.data("reference");
+  const status = $btn.data("status");
+  const assessor = $btn.data("assessor");
+  const assessorEmail = $btn.data("assessor-email");
 
-  console.log("DEBUG SEND:", { toEmail, reference, status, assessor, assessorEmail });
+  // console.log("DEBUG SEND:", { toEmail, reference, status, assessor, assessorEmail });
+
+  // 🌀 disable button at lagyan ng loading spinner
+  $btn.prop("disabled", true).html(`
+    <span class="spinner-border spinner-border-sm me-1"></span> Sending...
+  `);
 
   $.ajax({
     url: "../controller/job/job_email.php",
@@ -111,15 +117,20 @@ $(document).on("click", ".send-email", function () {
         loadTrashJob();
       } else {
         toastr.error(res.message);
-        console.log("Backend debug:", res.debug); // para makita kung ano dumating
+        console.log("Backend debug:", res.debug);
       }
     },
     error: function (xhr) {
       toastr.error("Something went wrong: " + xhr.responseText);
+    },
+    complete: function () {
+      // ibalik yung button sa normal state
+      $btn.prop("disabled", false).html(`
+        <i class="fa fa-paper-plane"></i> Send
+      `);
     }
   });
 });
-
 
 
 // Revert button click
