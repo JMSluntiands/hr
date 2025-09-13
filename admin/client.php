@@ -69,7 +69,7 @@
 
     <?php include_once 'include/footer.php' ?>
   </body>
-  <script src="../function/client/client_list.js"></script>
+  <script src="../function/client/client_list.js?v=<?php echo time(); ?>"></script>
   <script>
     $(document).ready(function () {
       loadClients();

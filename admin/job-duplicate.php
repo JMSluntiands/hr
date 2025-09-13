@@ -276,12 +276,12 @@ if ($jobRef) {
       
     });
   </script>
-  <script src="../function/job/duplicate/uploadDocs.js"></script>
-  <script src="../function/job/duplicate/uploadPlans.js"></script>
-  <script src="../function/job/duplicate/duplicate.js"></script>
-  <script src="../function/job/duplicate/refresh_preview.js"></script>
-  <script src="../function/job/duplicate/remove_existing_file.js"></script>
-  <script src="../function/job/duplicate/remove_file.js"></script>
+  <script src="../function/job/duplicate/uploadDocs.js?v=<?php echo time(); ?>"></script>
+  <script src="../function/job/duplicate/uploadPlans.js?v=<?php echo time(); ?>"></script>
+  <script src="../function/job/duplicate/duplicate.js?v=<?php echo time(); ?>"></script>
+  <script src="../function/job/duplicate/refresh_preview.js?v=<?php echo time(); ?>"></script>
+  <script src="../function/job/duplicate/remove_existing_file.js?v=<?php echo time(); ?>"></script>
+  <script src="../function/job/duplicate/remove_file.js?v=<?php echo time(); ?>"></script>
   
 </body>
 </html>

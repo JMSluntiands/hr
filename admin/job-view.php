@@ -280,13 +280,13 @@
     <?php include_once 'include/footer.php' ?>
 
   </body>
-  <script src="../function/job/view/activity.js"></script>
-  <script src="../function/job/view/checker.js"></script>
-  <script src="../function/job/view/comment.js"></script>
-  <script src="../function/job/view/runcomment.js"></script>
-  <script src="../function/job/view/staff.js"></script>
-  <script src="../function/job/view/statusBadge.js"></script>
-  <script src="../function/job/view/staff_upload.js"></script>
+  <script src="../function/job/view/activity.js?v=<?php echo time(); ?>"></script>
+  <script src="../function/job/view/checker.js?v=<?php echo time(); ?>"></script>
+  <script src="../function/job/view/comment.js?v=<?php echo time(); ?>"></script>
+  <script src="../function/job/view/runcomment.js?v=<?php echo time(); ?>"></script>
+  <script src="../function/job/view/staff.js?v=<?php echo time(); ?>"></script>
+  <script src="../function/job/view/statusBadge.js?v=<?php echo time(); ?>"></script>
+  <script src="../function/job/view/staff_upload.js?v=<?php echo time(); ?>"></script>
   <script>
     function getBadgeColor(status) {
       switch (status) {

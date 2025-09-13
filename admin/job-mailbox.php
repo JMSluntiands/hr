@@ -109,5 +109,5 @@
     </div>
 
   </body>
-  <script src="../function/job/email_verification.js"></script>
+  <script src="../function/job/email_verification.js?v=<?php echo time(); ?>"></script>
 </html>

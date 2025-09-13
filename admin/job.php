@@ -82,5 +82,5 @@
   <script>
     var userRole = "<?php echo $_SESSION['role'] ?? ''; ?>";
   </script>
-  <script src="../function/job/list.js"></script>
+  <script src="../function/job/list.js?v=<?php echo time(); ?>"></script>
 </html>

@@ -265,7 +265,7 @@
   <script>
     $('.select').select2({ width:'100%', minimumResultsForSearch: 2, });
   </script>
-  <script src="../function/job/update/editJob.js"></script>
-  <script src="../function/job/update/remove_file.js"></script>
+  <script src="../function/job/update/editJob.js?v=<?php echo time(); ?>"></script>
+  <script src="../function/job/update/remove_file.js?v=<?php echo time(); ?>"></script>
 </body>
 </html>

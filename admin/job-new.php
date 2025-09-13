@@ -216,10 +216,10 @@
       $('.select').select2({ width:'100%', minimumResultsForSearch: 2, });
     });
   </script>
-  <script src="../function/job/new/file_preview.js"></script>
-  <script src="../function/job/new/remove_file.js"></script>
-  <script src="../function/job/new/save_job.js"></script>
-  <script src="../function/job/new/upload_document.js"></script>
-  <script src="../function/job/new/upload_plans.js"></script>
+  <script src="../function/job/new/file_preview.js?v=<?php echo time(); ?>"></script>
+  <script src="../function/job/new/remove_file.js?v=<?php echo time(); ?>"></script>
+  <script src="../function/job/new/save_job.js?v=<?php echo time(); ?>"></script>
+  <script src="../function/job/new/upload_document.js?v=<?php echo time(); ?>"></script>
+  <script src="../function/job/new/upload_plans.js?v=<?php echo time(); ?>"></script>
 </body>
 </html>

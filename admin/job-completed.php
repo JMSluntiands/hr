@@ -75,5 +75,5 @@
     <?php include_once 'include/footer.php' ?>
     <?php include_once '../modal/job/new_job.php' ?>
   </body>
-  <script src="../function/job/list_completed.js"></script>
+  <script src="../function/job/list_completed.js?v=<?php echo time(); ?>"></script>
 </html>
