@@ -22,6 +22,7 @@
             <option value="Revision Requested" <?php echo ($status == 'Revision Requested') ? 'selected' : ''; ?>>Revision Requested</option>
             <option value="Revised" <?php echo ($status == 'Revised') ? 'selected' : ''; ?>>Revised</option>
             <?php } ?>
+            <option value="For Review" <?php echo ($status == 'For Review') ? 'selected' : ''; ?>>For Review</option>
             <option value="For Email Confirmation" <?php echo ($status == 'For Email Confirmation') ? 'selected' : ''; ?>>For Email Confirmation</option>
     </select>
     <?php else: ?>

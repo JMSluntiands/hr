@@ -60,6 +60,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $mail->setFrom("admin@luntian.com.au", "Luntian");
         $mail->addAddress($toEmail);
 
+        $mail->addCC("admin@luntian.com.au");
+
         // Embed local logo
         $logoPath = "../../img/emailLOGO.png"; 
         if (file_exists($logoPath)) {
