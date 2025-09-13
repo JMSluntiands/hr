@@ -219,9 +219,21 @@ $(document).ready(function () {
     let datePart = dateObj.toLocaleDateString("en-US", optionsDate);
     let timePart = dateObj.toLocaleTimeString("en-US", optionsTime);
 
-    return `${datePart}<br>${timePart}`;
-  }
+    let formatted = `${datePart}<br>${timePart}`;
 
+    // 🔹 Check remaining time (ms → hours)
+    let now = new Date();
+    let diffHours = (dateObj - now) / (1000 * 60 * 60);
+
+    if (diffHours <= 4 && diffHours > 0) {
+      return `<span class="text-danger fw-bold">${formatted}</span>`;
+    } else if (diffHours <= 0) {
+      // 🔴 overdue
+      return `<span class="text-danger fw-bold">${formatted} (Overdue)</span>`;
+    }
+
+    return formatted;
+  }
 
   loadJob();
 

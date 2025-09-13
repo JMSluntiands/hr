@@ -24,14 +24,14 @@
             <?php } ?>
             <option value="For Email Confirmation" <?php echo ($status == 'For Email Confirmation') ? 'selected' : ''; ?>>For Email Confirmation</option>
     </select>
-  <?php else: ?>
-    <!-- Read-only badge -->
-    <span id="statusBadge" 
-      class="badge text-dark fw-bold status-badge" 
-      data-status="<?php echo htmlspecialchars($status); ?>"
-      style="cursor:pointer;">
-      <?php echo htmlspecialchars($status); ?>
-    </span>
+    <?php else: ?>
+      <!-- Read-only badge -->
+      <span id="statusBadge" 
+        class="badge text-dark fw-bold status-badge" 
+        data-status="<?php echo htmlspecialchars($status); ?>"
+        style="cursor:pointer;">
+        <?php echo htmlspecialchars($status); ?>
+      </span>
 
-  <?php endif; ?>
+    <?php endif; ?>
 </div>
