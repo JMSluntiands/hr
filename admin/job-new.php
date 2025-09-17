@@ -51,7 +51,7 @@
                     <?php if ($_SESSION['role'] === 'LBS' || $_SESSION['role'] === 'LUNTIAN'): ?>
                       <div class="col-md-4 col-sm-12 mt-3">
                         <label class="form-label">Reference No.</label>
-                        <input type="text" name="reference_show" class="form-control" placeholder="Enter Reference Number" autocomplete="off">
+                        <input type="text" name="reference" class="form-control" placeholder="Enter Reference Number" autocomplete="off">
                       </div>
                     <?php endif; ?>
 
