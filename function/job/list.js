@@ -190,52 +190,103 @@ $(document).ready(function () {
   function computeDueDate(logDate, priority) {
     if (!logDate) return "";
 
-    let dateObj = new Date(logDate);
+    let start = new Date(logDate);
+
+    // Normalize start: kung before 8AM → start at 8AM
+    if (start.getHours() < 8) {
+      start.setHours(8, 0, 0, 0);
+    }
+
+    // Kung lagpas 3PM → next day 8AM start
+    if (start.getHours() >= 15) {
+      start.setDate(start.getDate() + 1);
+      start.setHours(8, 0, 0, 0);
+    }
+
+    let due = new Date(start);
+
+    function addWorkingDays(days) {
+      for (let i = 0; i < days; i++) {
+        due.setDate(due.getDate() + 1);
+        // skip weekends kung kailangan (optional)
+        // while (due.getDay() === 0 || due.getDay() === 6) {
+        //   due.setDate(due.getDate() + 1);
+        // }
+      }
+    }
 
     switch (priority) {
-      case "Standard 4 days":
-        dateObj.setDate(dateObj.getDate() + 4);
-        dateObj.setHours(dateObj.getHours() + 48);
+      case "Top (COB)": {
+        // 6 working hours from 8AM start
+        due.setHours(due.getHours() + 6);
+        if (due.getHours() > 15) {
+          // lumampas sa cutoff → next working day 8AM + sobra
+          let extra = due.getHours() - 15;
+          due.setDate(due.getDate() + 1);
+          due.setHours(8 + extra, due.getMinutes(), 0, 0);
+        }
         break;
-      case "Standard 3 days":
-        dateObj.setDate(dateObj.getDate() + 3);
-        dateObj.setHours(dateObj.getHours() + 48);
+      }
+
+      case "High (1 day)": {
+        addWorkingDays(1);
         break;
-      case "Standard 2 days":
-        dateObj.setDate(dateObj.getDate() + 2);
-        dateObj.setHours(dateObj.getHours() + 48);
+      }
+
+      case "Standard 2 days": {
+        addWorkingDays(2);
         break;
-      case "High 1 day":
-        dateObj.setDate(dateObj.getDate() + 1);
-        dateObj.setHours(dateObj.getHours() + 24);
+      }
+
+      case "Standard 3 days": {
+        addWorkingDays(3);
         break;
-      case "Top (COB)":
-        dateObj.setHours(dateObj.getHours() + 4);
+      }
+
+      case "Standard 4 days": {
+        addWorkingDays(4);
         break;
+      }
+
+      case "Low 5 days": {
+        addWorkingDays(5);
+        break;
+      }
+
+      case "Low 6 days": {
+        addWorkingDays(6);
+        break;
+      }
+
+      case "Low 7 days": {
+        addWorkingDays(7);
+        break;
+      }
+
       default:
         return "";
     }
 
     let optionsDate = { year: "numeric", month: "long", day: "numeric" };
     let optionsTime = { hour: "numeric", minute: "numeric", hour12: true };
-    let datePart = dateObj.toLocaleDateString("en-US", optionsDate);
-    let timePart = dateObj.toLocaleTimeString("en-US", optionsTime);
+    let datePart = due.toLocaleDateString("en-US", optionsDate);
+    let timePart = due.toLocaleTimeString("en-US", optionsTime);
 
     let formatted = `${datePart}<br>${timePart}`;
 
-    // 🔹 Check remaining time (ms → hours)
+    // Highlight overdue
     let now = new Date();
-    let diffHours = (dateObj - now) / (1000 * 60 * 60);
+    let diffHours = (due - now) / (1000 * 60 * 60);
 
     if (diffHours <= 4 && diffHours > 0) {
       return `<span class="text-danger fw-bold">${formatted}</span>`;
     } else if (diffHours <= 0) {
-      // 🔴 overdue
       return `<span class="text-danger fw-bold">${formatted} (Overdue)</span>`;
     }
 
     return formatted;
   }
+
 
   loadJob();
 
