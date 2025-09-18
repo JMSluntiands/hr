@@ -49,6 +49,7 @@
               ON j.job_request_id = jr.job_request_id
           -- WHERE j.client_code = '$usersID' AND j.job_status IN ('Completed')
           WHERE $luntian j.job_status IN ('Completed')
+          ORDER BY  j.log_date DESC;
 ";
   $stmt = $conn->prepare($sql);
   $stmt->execute();

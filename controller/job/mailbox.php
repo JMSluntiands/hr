@@ -33,7 +33,8 @@ $sql = "SELECT DISTINCT
                 FROM staff_uploaded_files f2 
                 WHERE f2.job_id = j.job_id
            )
-        WHERE j.job_status = 'For Email Confirmation'";
+        WHERE j.job_status = 'For Email Confirmation'
+";
 
 // idagdag lang filter kung hindi LUNTIAN
 if ($user_client !== 'LUNTIAN' && $usersID !== '') {

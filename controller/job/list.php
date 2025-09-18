@@ -48,6 +48,7 @@
           LEFT JOIN job_requests jr 
               ON j.job_request_id = jr.job_request_id
           WHERE $luntian j.job_status NOT IN ('Deleted', 'Completed', 'For Review', 'For Email Confirmation')
+          ORDER BY  j.log_date DESC;
 ";
   $stmt = $conn->prepare($sql);
   $stmt->execute();
