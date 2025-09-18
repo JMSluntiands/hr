@@ -16,7 +16,7 @@
           $stmt->fetch();
           $stmt->close();
 
-          $listCount = 0; // default
+          $listCount = 0;
 
           if ($_SESSION['role'] === 'LUNTIAN') {
               // bilangin lahat ng allocated jobs
