@@ -10,6 +10,9 @@
   $usersID = $fetch_client['client_code'];
 
   header("Content-Type: application/json"); // Set response type
+  if ($user_client !== 'LUNTIAN') {
+    $luntian = "j.client_code = '".$usersID."' AND";
+  }
 
   $sql = "SELECT DISTINCT 
               j.job_id, 
@@ -44,8 +47,8 @@
               ON j.client_account_id = ca.client_account_id
           LEFT JOIN job_requests jr 
               ON j.job_request_id = jr.job_request_id
-          -- WHERE j.client_code = '$usersID' AND 
-          WHERE j.job_status IN ('Completed')
+          -- WHERE j.client_code = '$usersID' AND j.job_status IN ('Completed')
+          WHERE $luntian j.job_status IN ('Completed')
 ";
   $stmt = $conn->prepare($sql);
   $stmt->execute();
@@ -75,6 +78,7 @@
     "client_code" => $row['client_code'],
     "staff_name" => $row['staff_id'],
     "checker_name" => $row['checker_id'],
+    "client_name" => $row['client_name'],
     "plan_complexity" => $row['plan_complexity'],
     "completion_date" => $row['completion_date'],
     "ncc_compliance" => $row['ncc_compliance'],
