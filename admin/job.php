@@ -51,6 +51,7 @@
                           <th>Action</th>
                           <th>Log Date</th>
                           <th>Client</th>
+                          <th>Client Name</th>
                           <th>Reference</th>
                           <th>Job Type</th>
                           <th>Priority</th>
