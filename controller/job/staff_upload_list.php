@@ -5,30 +5,40 @@ include '../../database/db.php';
 $job_id = intval($_GET['job_id'] ?? 0);
 $role   = $_SESSION['role'] ?? '';
 
-// Kunin reference number
+// Kunin reference number at status
 $ref = '';
-$stmt = $conn->prepare("SELECT job_reference_no FROM jobs WHERE job_id = ?");
+$status = '';
+$stmt = $conn->prepare("SELECT job_reference_no, job_status FROM jobs WHERE job_id = ?");
 $stmt->bind_param("i", $job_id);
 $stmt->execute();
-$stmt->bind_result($ref);
+$stmt->bind_result($ref, $status);
 $stmt->fetch();
 $stmt->close();
 
-// Kung LUNTIAN → lahat, else → last upload lang
+// Build SQL depende sa role at status
+$sql = "";
 if ($role === "LUNTIAN") {
+    // LUNTIAN → lahat ng uploads kahit ano status
     $sql = "SELECT * FROM staff_uploaded_files WHERE job_id = ? ORDER BY uploaded_at DESC";
 } else {
-    $sql = "SELECT * FROM staff_uploaded_files WHERE job_id = ? ORDER BY uploaded_at DESC LIMIT 1";
+    if (strtolower($status) === "completed") {
+        // Non-LUNTIAN + Completed → last upload lang
+        $sql = "SELECT * FROM staff_uploaded_files WHERE job_id = ? ORDER BY uploaded_at DESC LIMIT 1";
+    } else {
+        // Non-LUNTIAN + not completed → wala ipapakita
+        $sql = "";
+    }
 }
 
-$stmt = $conn->prepare($sql);
-$stmt->bind_param("i", $job_id);
-$stmt->execute();
-$result = $stmt->get_result();
+if ($sql) {
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $job_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
 
-if ($result->num_rows > 0): 
-  while ($row = $result->fetch_assoc()):
-    $files = json_decode($row['files_json'], true);
+    if ($result->num_rows > 0): 
+      while ($row = $result->fetch_assoc()):
+        $files = json_decode($row['files_json'], true);
 ?>
   <div class="card mb-2">
     <div class="card-body">
@@ -67,8 +77,14 @@ if ($result->num_rows > 0):
     </div>
   </div>
 <?php 
-  endwhile; 
-else: 
+      endwhile; 
+    else: 
 ?>
   <p class="text-muted">No staff files uploaded yet.</p>
-<?php endif; ?>
+<?php 
+    endif; 
+} else {
+    // Walang ipapakita kapag hindi LUNTIAN at hindi pa completed
+    echo '<p class="text-muted">No staff files available.</p>';
+}
+?>
