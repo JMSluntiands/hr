@@ -22,6 +22,7 @@
               j.ncc_compliance, 
               ca.client_account_name, 
               j.staff_id,
+              cl.client_name,
               j.checker_id,
               jr.job_request_id, 
               jr.job_request_type, 
@@ -40,6 +41,8 @@
               ON j.staff_id = s.staff_id
           LEFT JOIN checker c 
               ON j.checker_id = c.checker_id
+          LEFT JOIN clients cl
+              ON j.client_code = cl.client_code
           LEFT JOIN client_accounts ca 
               ON j.client_account_id = ca.client_account_id
           LEFT JOIN job_requests jr 
@@ -75,6 +78,7 @@
     "staff_name" => $row['staff_id'],
     "checker_name" => $row['checker_id'],
     "job_type" => $row['job_type'],
+    "client_name" => $row['client_name'],
     "priority" => $row['priority'],
     "plan_complexity" => $row['plan_complexity'],
     "completion_date" => $row['completion_date'],
