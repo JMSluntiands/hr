@@ -221,7 +221,7 @@
                 </div>
               </div>
 
-              <?php if ($_SESSION['role'] === 'LUNTIAN'): ?>
+              
               <!-- Staff Files -->
               <div class="card">
                 <div class="card-header">
@@ -236,7 +236,7 @@
                   <div id="staffFilesBox" class="mt-3"></div>
                 </div>
               </div>
-
+              <?php if ($_SESSION['role'] === 'LUNTIAN'): ?>
               <!-- ADMIN ONLY -->
               <?php include_once 'extension/job_view/staff_upload_files.php' ?>
               <?php endif; ?>

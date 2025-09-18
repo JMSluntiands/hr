@@ -8,6 +8,7 @@ session_start();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $reference  = $_POST['reference'] ?? '';
+    $client_account  = $_POST['client_account'] ?? '';
     $client_ref = $_POST['client_ref'] ?? '';
     $assigned   = $_POST['assigned'] ?? '';
     $checked    = $_POST['checked'] ?? '';
@@ -166,8 +167,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $job_request_type = mysqli_real_escape_string($conn, $job_request_type);
     $status      = mysqli_real_escape_string($conn, $status);
     $notes       = mysqli_real_escape_string($conn, $notes);
+    $client_account       = mysqli_real_escape_string($conn, $client_account);
     $clientID    = mysqli_real_escape_string($conn, $clientID);
     $log_date = $_POST['log_date'] ?? date("Y-m-d H:i:s");
+
+    if (!empty($client_account)) {
+      $client_code = $client_account;
+    }
 
     // ✅ Single insert query (NULLIF trick for clientID)
     $sql = "INSERT INTO jobs (

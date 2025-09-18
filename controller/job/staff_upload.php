@@ -46,11 +46,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!in_array($ext, $allowedExt)) continue;
         if ($files['size'][$i] > $maxSize) continue;
 
-        $safeName = uniqid("doc_", true) . "." . $ext;
-        $targetPath = $uploadDir . $safeName;
+        $targetPath = $uploadDir . $name;
 
         if (move_uploaded_file($files['tmp_name'][$i], $targetPath)) {
-            $uploadedFiles[] = $safeName;
+            $uploadedFiles[] = $name;
 
             // 🔹 Kung gusto i-extract ZIP, uncomment mo ito:
             /*

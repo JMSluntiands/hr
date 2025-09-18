@@ -47,6 +47,24 @@
                     <div class="col-12"><h5 class="text-center">Client Details</h5></div>
                     <input type="hidden" name="log_date" id="log_date">
 
+                    <?php if ($_SESSION['role'] === 'LUNTIAN'): ?>
+                    <div class="col-md-4 col-sm-12 mt-3">
+                      <label class="form-label">Client Account</label>
+                      <select class="form-select select" name="client_account">
+                        <option value="">Select account</option>
+                        <?php
+                          
+                          $q = mysqli_query($conn, "SELECT * FROM clients ORDER BY id");
+                          while ($r = mysqli_fetch_assoc($q)) {
+                            echo "<option value='{$r['client_code']}'>" . htmlspecialchars($r['client_name']) . "</option>";
+                          }
+                        ?>
+                      </select>
+                    </div>
+                    <?php endif; ?>
+
+                    <div class="col-md-8"></div>
+
                     <!-- Reference No. (restricted) -->
                     <?php if ($_SESSION['role'] === 'LBS' || $_SESSION['role'] === 'LUNTIAN'): ?>
                       <div class="col-md-4 col-sm-12 mt-3">

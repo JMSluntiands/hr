@@ -1,7 +1,9 @@
 <?php
+session_start();
 include '../../database/db.php';
 
 $job_id = intval($_GET['job_id'] ?? 0);
+$role   = $_SESSION['role'] ?? '';
 
 // Kunin reference number
 $ref = '';
@@ -12,7 +14,13 @@ $stmt->bind_result($ref);
 $stmt->fetch();
 $stmt->close();
 
-$sql = "SELECT * FROM staff_uploaded_files WHERE job_id = ? ORDER BY uploaded_at DESC";
+// Kung LUNTIAN → lahat, else → last upload lang
+if ($role === "LUNTIAN") {
+    $sql = "SELECT * FROM staff_uploaded_files WHERE job_id = ? ORDER BY uploaded_at DESC";
+} else {
+    $sql = "SELECT * FROM staff_uploaded_files WHERE job_id = ? ORDER BY uploaded_at DESC LIMIT 1";
+}
+
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $job_id);
 $stmt->execute();
