@@ -20,6 +20,7 @@
               j.ncc_compliance, 
               ca.client_account_name, 
               j.staff_id,
+              cl.client_name,
               j.checker_id,
               jr.job_request_id, 
               jr.job_request_type, 
@@ -37,11 +38,14 @@
               ON j.staff_id = s.staff_id
           LEFT JOIN checker c 
               ON j.checker_id = c.checker_id
+          LEFT JOIN clients cl
+              ON j.client_code = cl.client_code
           LEFT JOIN client_accounts ca 
               ON j.client_account_id = ca.client_account_id
           LEFT JOIN job_requests jr 
               ON j.job_request_id = jr.job_request_id
-          WHERE j.client_code = '$usersID' AND j.job_status IN ('Completed')
+          -- WHERE j.client_code = '$usersID' AND 
+          WHERE j.job_status IN ('Completed')
 ";
   $stmt = $conn->prepare($sql);
   $stmt->execute();

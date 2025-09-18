@@ -60,6 +60,8 @@ $(document).ready(function () {
             // Client
             `<span style="font-size: 12px">${item.client_account_name}</span><br><small>${item.ncc_compliance}</small>`,
 
+            `<span style="font-size: 12px">${item.client_name}</span>`,
+
             // Reference
             `<strong>${item.job_reference_no}</strong>`,
 
