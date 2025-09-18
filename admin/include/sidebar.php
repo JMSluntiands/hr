@@ -31,7 +31,7 @@
                   SELECT COUNT(*) 
                   FROM jobs j 
                   LEFT JOIN clients c ON j.client_code = c.client_code 
-                  WHERE c.client_name = ?
+                  WHERE c.client_name = ? AND job_status = 'Allocated'
               ");
               $stmt->bind_param("s", $_SESSION['role']);
               $stmt->execute();
