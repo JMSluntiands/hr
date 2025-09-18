@@ -119,7 +119,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             $tmpName = $_FILES['plans']['tmp_name'][$key];
             $error   = $_FILES['plans']['error'][$key];
-            $safeName = time() . "_" . preg_replace("/[^A-Za-z0-9_\.-]/", "_", $filename);
+            $safeName = $filename;
             $targetFile = $uploadDir . $safeName;
             if ($error !== UPLOAD_ERR_OK) { echo json_encode(["status"=>"error","message"=>"Upload error ($filename): code $error"]); exit; }
             if (move_uploaded_file($tmpName, $targetFile)) {
@@ -139,7 +139,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             $tmpName = $_FILES['docs']['tmp_name'][$key];
             $error   = $_FILES['docs']['error'][$key];
-            $safeName = time() . "_" . preg_replace("/[^A-Za-z0-9_\.-]/", "_", $filename);
+            $safeName = $filename;
             $targetFile = $uploadDir . $safeName;
             if ($error !== UPLOAD_ERR_OK) { echo json_encode(["status"=>"error","message"=>"Upload error ($filename): code $error"]); exit; }
             if (move_uploaded_file($tmpName, $targetFile)) {
