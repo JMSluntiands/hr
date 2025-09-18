@@ -33,11 +33,44 @@ $("#addJobForm").on("submit", function (e) {
     },
     success: function (response) {
       if (response.status === "success") {
-        toastr.success(response.message, "Success");
+        // toastr.success(response.message, "Success");
+
+        // reset form & previews
         $("#addJobForm")[0].reset();
         $("#plansPreview, #docsPreview").empty();
         $("#plansCount").text("0 files");
         $("#docsCount").text("0 files");
+
+        // 🔹 Custom toast with OK & Cancel
+        let $toast = toastr.info(
+          `
+  <div class="mt-2">
+    <p>We want to log the job</p>
+    <a href="job-new" type="button" class="btn btn-sm btn-primary me-2" id="confirmLog">OK</a>
+    <a href="job" type="button" class="btn btn-sm btn-secondary" id="cancelLog">Cancel</a>
+  </div>
+  `,
+          "Confirmation",
+          {
+            timeOut: 0,         // ⏱ wag auto-hide
+            extendedTimeOut: 0, // wag mawala pag hover
+            closeButton: true,
+            tapToDismiss: false
+          }
+        );
+
+        // 🔹 Button event listeners
+        $(document).off("click", "#confirmLog").on("click", "#confirmLog", function () {
+          toastr.clear($toast); // remove confirmation toast
+          toastr.success("Job successfully logged!", "Done ✅");
+          // 👉 dito ka pwede mag-redirect or call another function
+        });
+
+        $(document).off("click", "#cancelLog").on("click", "#cancelLog", function () {
+          toastr.clear($toast); // remove confirmation toast
+          toastr.warning("Job logging cancelled.", "Cancelled");
+        });
+
       } else {
         toastr.error(response.message, "Error");
       }
