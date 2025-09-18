@@ -61,9 +61,11 @@
                         ?>
                       </select>
                     </div>
-                    <?php endif; ?>
 
                     <div class="col-md-8"></div>
+                    <?php endif; ?>
+
+                    
 
                     <!-- Reference No. (restricted) -->
                     <?php if ($_SESSION['role'] === 'LBS' || $_SESSION['role'] === 'LUNTIAN'): ?>
