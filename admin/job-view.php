@@ -164,6 +164,8 @@
                     <button class="ql-bold"></button>
                     <button class="ql-italic"></button>
                     <button class="ql-underline"></button>
+                    <button class="ql-list" value="bullet"></button>
+                    <button class="ql-list" value="ordered"></button>
                   </div>
 
                   <!-- Rich Text Editor -->
