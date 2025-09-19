@@ -7,6 +7,9 @@ require '../../vendor/autoload.php';
 
 session_start();
 
+date_default_timezone_set('Asia/Manila'); // optional, depende sa timezone mo
+$localDatetime = date("Y-m-d H:i:s");
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $toEmail       = $_POST['toEmail'] ?? '';
     $reference     = $_POST['reference'] ?? '';
@@ -99,7 +102,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $mail->AltBody = "Job Reference: $reference\nStatus: $status\nAssessor: $assessor\nEmail: $assessorEmail";
 
         // 📌 Update job status
-        $update = $conn->prepare("UPDATE jobs SET job_status = 'Completed' WHERE job_reference_no = ?");
+        $update = $conn->prepare("UPDATE jobs SET job_status = 'Completed', completion_date = '$localDatetime' WHERE job_reference_no = ?");
         $update->bind_param("s", $reference);
         $update->execute();
 

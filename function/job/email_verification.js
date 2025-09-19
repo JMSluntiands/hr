@@ -4,6 +4,8 @@ let table = $("#jobTable").DataTable({
   destroy: true
 });
 
+
+
 function loadTrashJob() {
   $.ajax({
     url: "../controller/job/mailbox.php",
