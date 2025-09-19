@@ -168,6 +168,22 @@ try {
     $completionSQL = ", completion_date = '$safeDate'";
   }
 
+  // 🔍 Get job request type
+    $job_type = null;
+    if (!empty($jobRequest)) {
+        $sql_job_request = "SELECT job_request_type FROM job_requests WHERE job_request_id = '".mysqli_real_escape_string($conn, $job_type)."' LIMIT 1";
+        $result_job = mysqli_query($conn, $sql_job_request);
+        if ($row = mysqli_fetch_assoc($result_job)) {
+            $job_type_name = $row['job_request_type'];
+        } else {
+            echo json_encode(["status" => "error", "message" => "No job request found for ID: $job_type"]);
+            exit;
+        }
+    } else {
+        echo json_encode(["status" => "error", "message" => "No jobRequest provided"]);
+        exit;
+    }
+
   $sql = "
     UPDATE jobs SET
       job_reference_no = '$reference',
@@ -180,7 +196,8 @@ try {
       address_client = '$address',
       staff_id = '$staff_id',
       checker_id = '$checker_id',
-      job_type = '$job_type',
+      job_request_id = '$job_type',
+      job_type = '$job_type_name',
       upload_files = '$plansJson',
       upload_project_files = '$docsJson',
       last_update = '$safeDate'
