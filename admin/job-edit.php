@@ -85,7 +85,7 @@
                     <div class="col-md-4 col-sm-12 mt-3">
                       <label>Compliance</label>
                       <select class="form-select select" name="compliance">
-                        <option value="2022 (WOH)" <?php if($job['ncc_compliance']=="2022 (WOH)") echo "selected"; ?>>2022 (WHO)</option>
+                        <option value="2022 Whole of Home (WOH)" <?php if($job['ncc_compliance']=="2022 Whole of Home (WOH)") echo "selected"; ?>>2022 Whole of Home (WOH)</option>
                         <option value="2019" <?php if($job['ncc_compliance']=="2019") echo "selected"; ?>>2019</option>
                       </select>
                     </div>
