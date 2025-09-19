@@ -137,7 +137,7 @@
                 <div class="card-body" id="runCommentsBox">
                   <p class="text-muted">Loading run comments...</p>
                 </div>
-                <?php if ($_SESSION['role'] === 'LUNTIAN' || $_SESSION['role'] === 'LBS'): ?>
+                <?php if ($_SESSION['role'] === 'LUNTIAN'): ?>
                 <div class="card-footer">
                   <div class="input-group">
                     <input type="text" id="runCommentMessage" class="form-control" placeholder="Write a run comment...">
