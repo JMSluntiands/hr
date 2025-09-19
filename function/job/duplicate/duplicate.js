@@ -8,6 +8,10 @@ $("#duplicateJobForm").on("submit", function (e) {
   fd.append("removedPlans", JSON.stringify(removedPlans));
   fd.append("removedDocs", JSON.stringify(removedDocs));
 
+  // 🕒 Append local device time
+  let deviceTime = new Date().toISOString().slice(0, 19).replace("T", " ");
+  fd.append("log_date", deviceTime);
+
   $.ajax({
     url: "../controller/job/job_save_duplicate.php",
     type: "POST",

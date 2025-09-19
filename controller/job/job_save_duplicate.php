@@ -42,6 +42,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
+    $log_date = $_POST['log_date'] ?? null;
+    $log_date = $log_date ? mysqli_real_escape_string($conn, $log_date) : null;
+
     // 🚫 Validation
     if ($user_role === 'LBS' || $user_role === 'LUNTIAN') {
         if (empty($reference) || empty($assigned) || empty($checked) || empty($client_code)) {
@@ -54,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
         if (empty($reference)) $reference = null;
-        if (empty($compliance)) $compliance = "2022 (WHO)";
+        if (empty($compliance)) $compliance = "2022 Whole of Home (WOH)";
     }
 
     // 🔁 Check duplicate
@@ -193,7 +196,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 '$priority',
                 '$jobRequest',
                 '$address',
-                NOW(),
+                " . ($log_date ? "'$log_date'" : "NOW()") . ",
                 '$job_request_type',
                 '$status',
                 NULLIF('$clientID',''),
