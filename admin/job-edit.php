@@ -146,16 +146,22 @@
                     <!-- Status -->
                     <div class="col-md-12 mt-3">
                       <label>Job Status</label>
-                      <select class="form-select select" name="status">
+                      <select class="form-select select" name="status" 
+                        <?php if ($_SESSION['role'] !== 'LUNTIAN') echo 'disabled'; ?>>
                         <?php
-                          $statuses = ["Allocated","Accepted","Processing","For Checking","Awaiting Further Information","Pending","For Discussion","Revision Requested","Revised","For Email Confirmation"];
+                          $statuses = [
+                            "Allocated","Accepted","Processing","For Checking",
+                            "Awaiting Further Information","Pending","For Discussion",
+                            "Revision Requested","Revised","For Email Confirmation"
+                          ];
                           foreach ($statuses as $st) {
-                            $sel = ($job['job_status']===$st) ? "selected" : "";
+                            $sel = ($job['job_status'] === $st) ? "selected" : "";
                             echo "<option value='".htmlspecialchars($st)."' $sel>".htmlspecialchars($st)."</option>";
                           }
                         ?>
                       </select>
                     </div>
+
 
                     <!-- Notes -->
                     <div class="col-md-12 mt-3">
