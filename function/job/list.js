@@ -228,7 +228,7 @@ $(document).ready(function () {
         break;
       }
 
-      case "High (1 day)": {
+      case "High 1 day": {
         addWorkingDays(1);
         break;
       }
