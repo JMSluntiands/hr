@@ -84,7 +84,6 @@
     "completion_date" => $row['completion_date'],
     "ncc_compliance" => $row['ncc_compliance'],
     "last_update" => $last_update,
-    "completion_date" => $row['completion_date'],
     "priority" => $row['priority'],
   ];
 }
