@@ -55,16 +55,21 @@ try {
   }
 
   // Duplicate checks (exclude this job)
-  $dupRef = $conn->query("SELECT job_id FROM jobs WHERE job_reference_no = '$reference' AND job_id <> $jobID");
-  if ($dupRef->num_rows > 0) {
-    echo json_encode(['status'=>'error','message'=>'Reference No already exists']);
-    exit;
+  if ($reference !== $cur['job_reference_no']) {
+    $dupRef = $conn->query("SELECT job_id FROM jobs WHERE job_reference_no = '$reference' AND job_id <> $jobID");
+    if ($dupRef->num_rows > 0) {
+      echo json_encode(['status'=>'error','message'=>'Reference No already exists']);
+      exit;
+    }
   }
 
-  $dupClientRef = $conn->query("SELECT job_id FROM jobs WHERE client_reference_no = '$client_ref' AND job_id <> $jobID");
-  if ($dupClientRef->num_rows > 0) {
-    echo json_encode(['status'=>'error','message'=>'Client Reference already exists']);
-    exit;
+
+  if ($client_ref !== $cur['client_reference_no']) {
+    $dupClientRef = $conn->query("SELECT job_id FROM jobs WHERE client_reference_no = '$client_ref' AND job_id <> $jobID");
+    if ($dupClientRef->num_rows > 0) {
+      echo json_encode(['status'=>'error','message'=>'Client Reference already exists']);
+      exit;
+    }
   }
 
   // ✅ Duplicate Address check (ignoring spaces) only if changed

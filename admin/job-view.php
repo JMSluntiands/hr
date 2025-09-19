@@ -137,12 +137,14 @@
                 <div class="card-body" id="runCommentsBox">
                   <p class="text-muted">Loading run comments...</p>
                 </div>
+                <?php if ($_SESSION['role'] === 'LUNTIAN' || $_SESSION['role'] === 'LBS'): ?>
                 <div class="card-footer">
                   <div class="input-group">
                     <input type="text" id="runCommentMessage" class="form-control" placeholder="Write a run comment...">
                     <button class="btn btn-primary" id="btnSendRunComment" <?php echo $disabled ?>>Send</button>
                   </div>
                 </div>
+                <?php endif; ?>
               </div>
 
               <?php if ($_SESSION['role'] === 'LUNTIAN'): ?>

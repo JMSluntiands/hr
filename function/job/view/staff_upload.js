@@ -13,8 +13,8 @@ $(document).ready(function () {
   }
 });
 
-// 🔹 Upload handler (di ko ginalaw, meron ka na)
 $("#btnUploadStaffFile").on("click", function () {
+  let btn = $(this);
   let jobID = $("#jobID").val();
   let comment = $("#staffComment").val().trim();
   let files = $("#uploadDocs")[0].files;
@@ -36,6 +36,7 @@ $("#btnUploadStaffFile").on("click", function () {
     String(createdAt.getSeconds()).padStart(2, "0");
 
   formData.append("createdAt", formattedTime);
+  console.log("Uploading with job_id:", formData.get("job_id"));
 
   $.ajax({
     url: "../controller/job/staff_upload.php",
@@ -43,6 +44,10 @@ $("#btnUploadStaffFile").on("click", function () {
     data: formData,
     contentType: false,
     processData: false,
+    beforeSend: function () {
+      // 🔹 show loading state
+      btn.prop("disabled", true).html('<i class="fa fa-spinner fa-spin"></i> Uploading...');
+    },
     success: function (response) {
       if (response.success) {
         toastr.success(response.message, "Success");
@@ -55,6 +60,13 @@ $("#btnUploadStaffFile").on("click", function () {
     },
     error: function (xhr) {
       toastr.error("Error: " + xhr.responseText, "Error");
+    },
+    complete: function () {
+      // 🔹 reset button after 1.5s
+      setTimeout(function () {
+        btn.prop("disabled", false).text("Upload");
+      }, 1500);
     }
   });
 });
+
