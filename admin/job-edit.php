@@ -134,14 +134,15 @@
                       <select class="form-select select" name="job_type">
                         <?php
                           $assign = $job['job_request_id'];
-                          $q = mysqli_query($conn, "SELECT * FROM job_requests");
+                          $q = mysqli_query($conn, "SELECT job_request_id, job_request_type FROM job_requests");
                           while ($r = mysqli_fetch_assoc($q)) {
                             $sel = ($r['job_request_id']==$assign) ? "selected" : "";
-                            echo "<option value='{$r['job_request_type']}' $sel>".htmlspecialchars($r['job_request_type'])."</option>";
+                            echo "<option value='{$r['job_request_id']}' $sel>".htmlspecialchars($r['job_request_type'])."</option>";
                           }
                         ?>
                       </select>
                     </div>
+
 
                     <!-- Status -->
                     <div class="col-md-12 mt-3">

@@ -21,7 +21,7 @@ try {
   $address      = $_POST['address'] ?? null;
   $staff_id     = $_POST['staff_id'] ?? null;
   $checker_id   = $_POST['checker_id'] ?? null;
-  $job_type     = $_POST['job_type'] ?? null;
+  $job_type_id  = $_POST['job_type'] ?? 0; // ✅ now ID
   $updated_by   = $_SESSION['username'] ?? ($_SESSION['role'] ?? 'system');
 
   // 🕒 Device time from JS (fallback sa server time)
@@ -43,7 +43,6 @@ try {
   $updated_by = mysqli_real_escape_string($conn, $updated_by);
   $staff_id   = mysqli_real_escape_string($conn, $staff_id);
   $checker_id = mysqli_real_escape_string($conn, $checker_id);
-  $job_type   = mysqli_real_escape_string($conn, $job_type);
   $safeDate   = mysqli_real_escape_string($conn, $createdAt);
 
   // Load current job
@@ -62,7 +61,6 @@ try {
       exit;
     }
   }
-
 
   if ($client_ref !== $cur['client_reference_no']) {
     $dupClientRef = $conn->query("SELECT job_id FROM jobs WHERE client_reference_no = '$client_ref' AND job_id <> $jobID");
@@ -158,6 +156,22 @@ try {
     }
   }
 
+if (!empty($job_type_id)) {
+    $sql_job_request = "SELECT job_request_type FROM job_requests WHERE job_request_id = '$job_type_id' LIMIT 1";
+    $result_job = mysqli_query($conn, $sql_job_request);
+    if ($row = mysqli_fetch_assoc($result_job)) {
+        $job_type_name = mysqli_real_escape_string($conn, $row['job_request_type']);
+    } else {
+        echo json_encode(["status" => "error", "message" => "Invalid job request ID"]);
+        exit;
+    }
+} else {
+    echo json_encode(["status" => "error", "message" => "No job request selected"]);
+    exit;
+}
+
+
+
   // Update job
   $plansJson = mysqli_real_escape_string($conn, json_encode(array_values($plans)));
   $docsJson  = mysqli_real_escape_string($conn, json_encode(array_values($docs)));
@@ -167,22 +181,6 @@ try {
   if (strtolower($status) === 'completed') {
     $completionSQL = ", completion_date = '$safeDate'";
   }
-
-  // 🔍 Get job request type
-    $job_type = null;
-    if (!empty($jobRequest)) {
-        $sql_job_request = "SELECT job_request_type FROM job_requests WHERE job_request_id = '".mysqli_real_escape_string($conn, $job_type)."' LIMIT 1";
-        $result_job = mysqli_query($conn, $sql_job_request);
-        if ($row = mysqli_fetch_assoc($result_job)) {
-            $job_type_name = $row['job_request_type'];
-        } else {
-            echo json_encode(["status" => "error", "message" => "No job request found for ID: $job_type"]);
-            exit;
-        }
-    } else {
-        echo json_encode(["status" => "error", "message" => "No jobRequest provided"]);
-        exit;
-    }
 
   $sql = "
     UPDATE jobs SET
@@ -196,7 +194,7 @@ try {
       address_client = '$address',
       staff_id = '$staff_id',
       checker_id = '$checker_id',
-      job_request_id = '$job_type',
+      job_request_id = '$job_type_id',
       job_type = '$job_type_name',
       upload_files = '$plansJson',
       upload_project_files = '$docsJson',
@@ -222,7 +220,8 @@ try {
     'address_client'     => ['label'=>'Address','new'=>$address],
     'staff_id'           => ['label'=>'Assigned To','new'=>$staff_id],
     'checker_id'         => ['label'=>'Checked By','new'=>$checker_id],
-    'job_type'           => ['label'=>'Job Type','new'=>$job_type],
+    'job_request_id'     => ['label'=>'Job Request ID','new'=>$job_type_id],
+    'job_type'           => ['label'=>'Job Type','new'=>$job_type_name],
   ];
 
   foreach ($map as $field=>$info) {
