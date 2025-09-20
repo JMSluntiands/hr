@@ -169,6 +169,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // ✅ Insert
     $sql = "INSERT INTO jobs (
+                log_date,
                 client_code,
                 job_reference_no,
                 client_reference_no,
@@ -178,7 +179,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 priority,
                 job_request_id,
                 address_client,
-                log_date,
                 job_type,
                 job_status,
                 client_account_id,
@@ -187,6 +187,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 upload_project_files,
                 dwelling
             ) VALUES (
+                '$log_date',
                 '$client_code',
                 '$reference',
                 '$client_ref',
@@ -196,7 +197,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 '$priority',
                 '$jobRequest',
                 '$address',
-                " . ($log_date ? "'$log_date'" : "NOW()") . ",
                 '$job_request_type',
                 '$status',
                 NULLIF('$clientID',''),

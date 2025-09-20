@@ -8,8 +8,14 @@ $("#duplicateJobForm").on("submit", function (e) {
   fd.append("removedPlans", JSON.stringify(removedPlans));
   fd.append("removedDocs", JSON.stringify(removedDocs));
 
-  // 🕒 Append local device time
-  let deviceTime = new Date().toISOString().slice(0, 19).replace("T", " ");
+  let now = new Date();
+  let deviceTime = now.getFullYear() + "-" +
+    String(now.getMonth() + 1).padStart(2, "0") + "-" +
+    String(now.getDate()).padStart(2, "0") + " " +
+    String(now.getHours()).padStart(2, "0") + ":" +
+    String(now.getMinutes()).padStart(2, "0") + ":" +
+    String(now.getSeconds()).padStart(2, "0");
+
   fd.append("log_date", deviceTime);
 
   $.ajax({

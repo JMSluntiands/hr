@@ -2,6 +2,34 @@
 session_start();
 include '../database/db.php';
 
+// ✅ Function to get next reference no.
+function getNextReference($conn, $table, $column, $ref) {
+    // Kunin yung base (alisin yung -number kung meron)
+    $baseRef = preg_replace('/-\d+$/', '', $ref);
+    $baseRefEscaped = mysqli_real_escape_string($conn, $baseRef);
+
+    // Hanapin lahat ng existing refs na nagsisimula sa baseRef
+    $sql = "SELECT $column FROM $table WHERE $column LIKE '{$baseRefEscaped}%'";
+    $res = mysqli_query($conn, $sql);
+
+    $maxNum = 0;
+    if ($res) {
+        while ($row = mysqli_fetch_assoc($res)) {
+            $existing = $row[$column];
+            if (preg_match('/^' . preg_quote($baseRef, '/') . '(?:-(\d+))?$/', $existing, $m)) {
+                $num = isset($m[1]) ? (int)$m[1] : 0;
+                if ($num > $maxNum) {
+                    $maxNum = $num;
+                }
+            }
+        }
+    }
+
+    // Next number
+    $nextNum = $maxNum + 1;
+    return $baseRef . "-" . $nextNum;
+}
+
 // ✅ Job ID to duplicate
 $jobID = (int)($_GET['id'] ?? 0);
 $dupJob = [];
@@ -26,31 +54,19 @@ if ($jobID > 0) {
 $planFiles = json_decode($dupJob['upload_files'] ?? '[]', true);
 $docFiles  = json_decode($dupJob['upload_project_files'] ?? '[]', true);
 
-// ✅ Client Reference auto increment (-1, -2, etc.)
+// ✅ Client Reference auto increment
 $clientRef = $dupJob['client_reference_no'] ?? '';
-
 if ($clientRef) {
-    if (preg_match('/^(.*?)(?:-(\d+))?$/', $clientRef, $matches)) {
-        $baseRef = $matches[1];
-        $num = isset($matches[2]) ? (int)$matches[2] : 0;
-        $num++;
-        $clientRef = $baseRef . "-" . $num;
-    }
+    $clientRef = getNextReference($conn, "jobs", "client_reference_no", $clientRef);
 }
 
-// ✅ Job Reference auto increment (-1, -2, etc.)
+// ✅ Job Reference auto increment
 $jobRef = $dupJob['job_reference_no'] ?? '';
-
 if ($jobRef) {
-    if (preg_match('/^(.*?)(?:-(\d+))?$/', $jobRef, $matches)) {
-        $baseRef = $matches[1];
-        $num = isset($matches[2]) ? (int)$matches[2] : 0;
-        $num++;
-        $jobRef = $baseRef . "-" . $num;
-    }
+    $jobRef = getNextReference($conn, "jobs", "job_reference_no", $jobRef);
 }
-
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <?php include_once 'include/header.php' ?>
@@ -88,6 +104,7 @@ if ($jobRef) {
                 <div class="card-header"><h5>Duplicate Job Form</h5></div>
                 <div class="card-body">
                   <div class="row">
+                    <input type="hidden" name="log_date" id="log_date">
 
                     <!-- Reference No. (restricted) -->
                     <?php if ($_SESSION['role'] === 'LBS' || $_SESSION['role'] === 'LUNTIAN'): ?>
