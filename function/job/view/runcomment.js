@@ -20,6 +20,14 @@ $(document).on("click", ".view-more-run", function () {
   loadRunComments(offset, true);
 });
 
+var quill = new Quill('#commentMessage', {
+  theme: 'snow',
+  placeholder: 'Write a comment...',
+  modules: {
+    toolbar: '#runCommentsToolbar'
+  }
+});
+
 $("#btnSendRunComment").on("click", function () {
   let jobID = $("#jobID").val();
   let message = $("#runCommentMessage").val().trim();

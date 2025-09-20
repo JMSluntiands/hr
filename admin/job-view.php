@@ -139,6 +139,15 @@
                 </div>
                 <?php if ($_SESSION['role'] === 'LUNTIAN'): ?>
                 <div class="card-footer">
+
+                  <div id="runCommentsToolbar">
+                    <button class="ql-bold"></button>
+                    <button class="ql-italic"></button>
+                    <button class="ql-underline"></button>
+                    <button class="ql-list" value="bullet"></button>
+                    <button class="ql-list" value="ordered"></button>
+                  </div>
+
                   <div class="input-group">
                     <input type="text" id="runCommentMessage" class="form-control" placeholder="Write a run comment...">
                     <button class="btn btn-primary" id="btnSendRunComment" <?php echo $disabled ?>>Send</button>
