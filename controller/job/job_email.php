@@ -71,6 +71,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $mail->AddEmbeddedImage($logoPath, "logo_cid");
         }
 
+                // Attach latest PDF file
+        $stmt = $conn->prepare("
+            SELECT suf.files_json
+            FROM jobs j
+            LEFT JOIN staff_uploaded_files suf 
+                   ON suf.job_id = j.job_id
+            WHERE j.job_reference_no = ?
+            ORDER BY suf.uploaded_at DESC, suf.file_id DESC
+            LIMIT 1
+        ");
+        $stmt->bind_param("s", $reference);
+        $stmt->execute();
+        $stmt->bind_result($filesJson);
+        if ($stmt->fetch()) {
+            $files = json_decode($filesJson, true);
+            if (is_array($files)) {
+                foreach ($files as $file) {
+                    $filePath = __DIR__ . "/../../document/$reference/$file";
+                    if (file_exists($filePath)) {
+                        $mail->addAttachment($filePath);
+                    }
+                }
+            }
+        }
+        $stmt->close();
+
         // Email format
         $mail->isHTML(true);
         $mail->Subject = $subject;
