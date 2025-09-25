@@ -23,7 +23,9 @@ $("#loginButton").click(function () {
           "BPH": "admin/index",
           "B1": "admin/index",
           "BLUINQ": "admin/index",
-          "LUNTIAN": "admin/index"
+          "LUNTIAN": "admin/index",
+          "Staff": "subadmin/index",
+          "Checker": "subadmin/index"
         };
 
         // Check kung may redirect para sa role

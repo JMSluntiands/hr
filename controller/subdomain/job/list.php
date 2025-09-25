@@ -1,55 +1,60 @@
 <?php
-  include_once '../../database/db.php';
+  include_once '../../../database/db.php';
 
   session_start();
-  $user_client = $_SESSION['role'] ?? '';
+  // Checker and Staff Unique_id
+  $unique_id = $_SESSION['unique_id'];
 
-  $client = mysqli_query($conn, "SELECT * FROM clients WHERE client_name = '$user_client'");
-  $fetch_client = mysqli_fetch_array($client);
-
-  $usersID = $fetch_client['client_code'];
+  // user name
+  $user_name = $_SESSION['role'];
 
   header("Content-Type: application/json"); // Set response type
-  if ($user_client !== 'LUNTIAN') {
-    $luntian = "j.client_code = '".$usersID."' AND";
+
+  $condition = "";
+  if ($user_name === "Staff") {
+      $condition = "j.staff_id = '$unique_id'";
+  } elseif ($user_name === "Checker") {
+      $condition = "j.checker_id = '$unique_id'";
   }
+
   $sql = "SELECT DISTINCT 
-            j.job_id, 
-            j.log_date, 
-            j.client_code, 
-            j.job_reference_no, 
-            j.client_reference_no, 
-            j.ncc_compliance, 
-            ca.client_account_name, 
-            j.staff_id,
-            cl.client_name,
-            j.checker_id,
-            jr.job_request_id, 
-            jr.job_request_type, 
-            j.job_type, 
-            j.priority, 
-            j.plan_complexity, 
-            j.ncc_compliance, 
-            j.completion_date,
-            j.last_update, 
-            j.job_status,
-            j.job_type,
-            s.name AS staff_name, 
-            c.name AS checker_name
+              j.job_id, 
+              j.log_date, 
+              j.client_code, 
+              j.job_reference_no, 
+              j.client_reference_no, 
+              j.ncc_compliance, 
+              ca.client_account_name, 
+              j.staff_id,
+              cl.client_name,
+              j.checker_id,
+              jr.job_request_id, 
+              jr.job_request_type, 
+              j.job_type, 
+              j.priority, 
+              j.plan_complexity, 
+              j.ncc_compliance, 
+              j.completion_date,
+              j.last_update, 
+              j.job_status,
+              j.job_type,
+              s.name AS staff_name, 
+              c.name AS checker_name
           FROM jobs j
           LEFT JOIN staff s 
-            ON j.staff_id = s.staff_id
+              ON j.staff_id = s.staff_id
           LEFT JOIN checker c 
-            ON j.checker_id = c.checker_id
+              ON j.checker_id = c.checker_id
           LEFT JOIN clients cl
-            ON j.client_code = cl.client_code
+              ON j.client_code = cl.client_code
           LEFT JOIN client_accounts ca 
-            ON j.client_account_id = ca.client_account_id
+              ON j.client_account_id = ca.client_account_id
           LEFT JOIN job_requests jr 
-            ON j.job_request_id = jr.job_request_id
-          WHERE $luntian j.job_status NOT IN ('Deleted', 'Completed', 'For Review', 'For Email Confirmation')
-          ORDER BY  j.log_date DESC;
-";
+              ON j.job_request_id = jr.job_request_id
+          WHERE $condition
+          AND j.job_status NOT IN ('Deleted', 'Completed', 'For Review', 'For Email Confirmation')
+          ORDER BY j.log_date DESC";
+
   $stmt = $conn->prepare($sql);
   $stmt->execute();
   $result = $stmt->get_result();

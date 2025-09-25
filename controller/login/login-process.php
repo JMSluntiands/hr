@@ -19,6 +19,7 @@ $result = $query->get_result();
 if ($row = $result->fetch_assoc()) {
     $_SESSION['user_id'] = $row['id'];
     $_SESSION['role'] = $row['client_name'];
+    $_SESSION['unique_id'] = $row['unique_code'];
     echo json_encode([
         "status" => "success",
         "message" => "Login successful",
