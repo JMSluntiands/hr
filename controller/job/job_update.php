@@ -16,7 +16,7 @@ try {
   $compliance   = $_POST['compliance'] ?? null;
   $client_id    = (int)($_POST['client_account_id'] ?? 0);
   $priority     = $_POST['priority'] ?? null;
-  $status       = $_POST['status'] ?? null;
+  $status       = $_POST['status'] ?? $cur['job_status'];
   $notes        = $_POST['notes'] ?? null;
   $address      = $_POST['address'] ?? null;
   $staff_id     = $_POST['staff_id'] ?? null;

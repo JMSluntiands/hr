@@ -147,8 +147,7 @@
                     <!-- Status -->
                     <div class="col-md-12 mt-3">
                       <label>Job Status</label>
-                      <select class="form-select select" name="status" 
-                        <?php if ($_SESSION['role'] !== 'LUNTIAN') echo 'disabled'; ?>>
+                      <select class="form-select select" name="status">
                         <?php
                           $statuses = [
                             "Allocated","Accepted","Processing","For Checking",
