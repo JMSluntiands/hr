@@ -39,6 +39,7 @@ $(document).ready(function () {
       },
       { responsivePriority: 1, targets: 1 },
       { responsivePriority: 2, targets: 2 },
+      { targets: [12], visible: false, searchable: true },
       ...(userRole === "LBS" ? [
         { targets: [6, 7], visible: false }
       ] : [])
@@ -243,7 +244,11 @@ $(document).ready(function () {
               <div class="d-flex justify-content-center align-items-center text-center w-100 flex-wrap">
                 ${formatDateTime(item.completion_date)}
               </div>
-            `
+            `, `
+              <div class="d-flex justify-content-center align-items-center text-center w-100 flex-wrap">
+                <span class="text-wrap">${item.notes}</span>
+              </div>
+            `,
           ]).draw(false);
         });
         $("#jobCount").text("Total Records: " + response.count);

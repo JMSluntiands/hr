@@ -31,6 +31,7 @@
             j.plan_complexity, 
             j.ncc_compliance, 
             j.completion_date,
+            j.notes,
             j.last_update, 
             j.job_status,
             j.job_type,
@@ -85,6 +86,7 @@
     "last_update" => $last_update,
     "completion_date" => $row['completion_date'],
     "priority" => $row['priority'],
+    "notes" => $row['notes'],
   ];
 }
 
