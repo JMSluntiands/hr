@@ -64,8 +64,6 @@
   $job_ref = $row['client_code'];
   $job_ref = substr($job_ref, 0, -2); // tanggalin last 2 characters
 
-  // Example output: August 18, 2025 10:34 AM
-
   $data[] = [
     "job_id" => $row['job_id'],
     "log_date" => $formattedDate,  // already formatted
@@ -76,8 +74,8 @@
     "client_account_name" => $row['client_account_name'], // ✅ ayusin name
     "job_status" => $row['job_status'],
     "client_code" => $row['client_code'],
-    "staff_name" => $row['staff_id'],
-    "checker_name" => $row['checker_id'],
+    "staff_id" => $row['staff_id'],
+    "checker_id" => $row['checker_id'],
     "job_type" => $row['job_type'],
     "client_name" => $row['client_name'],
     "priority" => $row['priority'],

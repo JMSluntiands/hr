@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
   <?php include_once 'include/header.php' ?>
+  <style>
+    .job-type-cell {
+      white-space: normal !important;   /* ✅ allow line breaks */
+      word-break: break-word;           /* ✅ break long words */
+      max-width: 200px;                 /* optional, control column width */
+      display: inline-block;
+    }
+
+  </style>
   <body>
     <div class="main-wrapper">
       <!-- Navbar -->
