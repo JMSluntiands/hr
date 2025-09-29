@@ -41,7 +41,7 @@ $(document).ready(function () {
       { responsivePriority: 2, targets: 2 },
       { targets: [12], visible: false, searchable: true },
       ...(userRole === "LBS" ? [
-        { targets: [6, 7], visible: false }
+        { targets: [6, 8], visible: false, searchable: true }
       ] : [])
     ]
   });
@@ -206,35 +206,58 @@ $(document).ready(function () {
                 </span>
               </div>
             `,
-            `
-              <div class="d-flex justify-content-center align-items-center w-100" style="max-width:80px; min-width:80px;">
-                <select class="form-select form-select-sm staff-select" data-id="${item.job_id}">
-                  ${staffList.map(st =>
-              `<option value="${st.staff_id}" ${item.staff_id === st.staff_id ? "selected" : ""}>
-                      ${st.staff_id}
-                    </option>`
-            ).join("")}
-                </select>
-              </div>
-            `,
-            `
-              <div class="d-flex justify-content-center align-items-center w-100" style="max-width:80px; min-width:80px;">
-                <select class="form-select form-select-sm checker-select" data-id="${item.job_id}">
-                  ${checkerList.map(ch =>
-              `<option value="${ch.checker_id}" ${item.checker_id === ch.checker_id ? "selected" : ""}>
-                      ${ch.checker_id}
-                    </option>`
-            ).join("")}
-                </select>
-              </div>
-            `,
-            `
-              <div class="d-flex justify-content-center align-items-center w-100" style="max-width:150px; min-width:150px;">
-                <select class="form-select form-select-sm status-select" data-id="${item.job_id}">
-                  ${statusList.map(st => `<option value="${st}" ${item.job_status === st ? "selected" : ""}>${st}</option>`).join("")}
-                </select>
-              </div>
-            `,
+            // Staff column
+            userRole !== "LUNTIAN"
+              ? `<span><strong>${item.staff_id}</strong></span>`
+              : `
+                <div class="d-flex justify-content-center align-items-center w-100" style="max-width:80px; min-width:80px;">
+                  <select class="form-select form-select-sm staff-select" data-id="${item.job_id}">
+                    ${staffList.map(st =>
+                `<option value="${st.staff_id}" ${item.staff_id === st.staff_id ? "selected" : ""}>
+                        ${st.staff_id}
+                      </option>`).join("")}
+                  </select>
+                </div>
+              `,
+            // Checker column
+            userRole !== "LUNTIAN"
+              ? `<span><strong>${item.checker_id}</strong></span>`
+              : `
+                <div class="d-flex justify-content-center align-items-center w-100" style="max-width:80px; min-width:80px;">
+                  <select class="form-select form-select-sm checker-select" data-id="${item.job_id}">
+                    ${checkerList.map(ch =>
+                `<option value="${ch.checker_id}" ${item.checker_id === ch.checker_id ? "selected" : ""}>
+                        ${ch.checker_id}
+                      </option>`).join("")}
+                  </select>
+                </div>
+              `,
+            // Status column
+            userRole !== "LUNTIAN"
+              ? `
+                <span class="badge text-dark"
+                  style="background-color: ${item.job_status === "Pending" ? "#F86C62" :
+                item.job_status === "For Discussion" ? "#6AB9CC" :
+                  item.job_status === "Revision Requested" ? "#FAE2D4" :
+                    item.job_status === "For Email Confirmation" ? "#7DB9E3" :
+                      item.job_status === "Allocated" ? "#FFA775" :
+                        item.job_status === "Accepted" ? "#FFD2B8" :
+                          item.job_status === "Processing" ? "#FF8AD8" :
+                            item.job_status === "For Checking" ? "#CF7AFA" :
+                              item.job_status === "Cancelled" ? "#C4C4C4" :
+                                item.job_status === "Completed" ? "#69F29B" :
+                                  item.job_status === "Awaiting Further Information" ? "#EDE59A" :
+                                    "#6c757d"}">
+                  ${item.job_status}
+                </span>
+              `
+              : `
+                <div class="d-flex justify-content-center align-items-center w-100" style="max-width:150px; min-width:150px;">
+                  <select class="form-select form-select-sm status-select" data-id="${item.job_id}">
+                    ${statusList.map(st => `<option value="${st}" ${item.job_status === st ? "selected" : ""}>${st}</option>`).join("")}
+                  </select>
+                </div>
+              `,
             `
               <div class="d-flex justify-content-center align-items-center text-center w-100 flex-wrap">
                 ${computeDueDate(item.log_date, item.priority)}
@@ -244,7 +267,8 @@ $(document).ready(function () {
               <div class="d-flex justify-content-center align-items-center text-center w-100 flex-wrap">
                 ${formatDateTime(item.completion_date)}
               </div>
-            `, `
+            `,
+            `
               <div class="d-flex justify-content-center align-items-center text-center w-100 flex-wrap">
                 <span class="text-wrap">${item.notes}</span>
               </div>
