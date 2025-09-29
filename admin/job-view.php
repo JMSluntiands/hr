@@ -269,6 +269,16 @@
                 <?php include_once 'extension/job_view/assigned.php' ?>
               </div>
 
+              <div class="card">
+                <div class="card-header">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <h5 class="card-title">Complexity</h5>
+                    </div>
+                  </div>
+                </div>
+                <?php include_once 'extension/job_view/complexity.php' ?>
+              </div>
               <!-- Activity Logs -->
               <?php if ($_SESSION['role'] === 'LUNTIAN' || $_SESSION['role'] === 'LBS'): ?>
               <div class="card">

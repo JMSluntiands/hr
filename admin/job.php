@@ -70,6 +70,7 @@
                           <th>Status</th>
                           <th>Due Date</th>
                           <th>Completion Date</th>
+                          <th>Complexity</th>
                         </tr>
                       </thead>
                       <tbody id="jobBody">

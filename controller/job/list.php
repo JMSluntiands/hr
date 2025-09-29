@@ -80,7 +80,7 @@
     "job_type" => $row['job_type'],
     "client_name" => $row['client_name'],
     "priority" => $row['priority'],
-    "plan_complexity" => $row['plan_complexity'],
+    "complexity" => $row['plan_complexity'],
     "completion_date" => $row['completion_date'],
     "ncc_compliance" => $row['ncc_compliance'],
     "last_update" => $last_update,
