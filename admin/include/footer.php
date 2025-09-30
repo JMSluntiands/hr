@@ -50,5 +50,26 @@
         $('#darkModeToggle i').removeClass('fa-sun').addClass('fa-moon');
       }
     });
+    const logoutAfter = 30 * 60 * 1000; // ⚡ testing = 5s, real = 30*60*1000
+
+    // automatic logout after set time (no need for activity tracking)
+    setTimeout(() => {
+      $.ajax({
+        url: "../controller/autologout.php",
+        type: "POST",
+        dataType: "json",
+        success: function (res) {
+          if (res.status === "success") {
+            toastr.warning(res.message, "Session Expired");
+            setTimeout(() => {
+              window.location.href = "../index";
+            }, 1500);
+          }
+        },
+        error: function () {
+          toastr.error("Logout request failed.", "Error");
+        }
+      });
+    }, logoutAfter);
   });
 </script>

@@ -2,6 +2,7 @@
   <?php 
     include '../controller/auth.php'; 
     include '../database/db.php';
+    // include '../controller/autologout.php';
   ?>
   <?php
     // Disable caching
