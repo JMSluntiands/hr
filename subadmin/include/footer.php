@@ -86,4 +86,44 @@
   loadJobCounts();
   // Auto refresh every 30s
   setInterval(loadJobCounts, 30000);
+
+    let logoutTimer;
+  const logoutAfter = 30 * 60 * 1000; // 30 mins = 1800s
+
+  function startTimer() {
+    logoutTimer = setTimeout(autoLogout, logoutAfter);
+  }
+
+  function resetTimer() {
+    clearTimeout(logoutTimer);
+    startTimer();
+  }
+
+  function autoLogout() {
+    $.ajax({
+      url: "../controller/autologout.php",
+      type: "POST",
+      dataType: "json",
+      success: function (res) {
+        if (res.status === "success") {
+          toastr.warning(res.message, "Session Expired");
+          setTimeout(() => {
+            window.location.href = "../index";
+          }, 1500);
+        }
+      },
+      error: function () {
+        toastr.error("Logout request failed.", "Error");
+      }
+    });
+  }
+
+  // ✅ Start timer on page load
+  $(document).ready(function() {
+    startTimer();
+
+    // ✅ Reset timer whenever user is active
+    $(document).on("mousemove keypress click scroll", resetTimer);
+  });
+
 </script>

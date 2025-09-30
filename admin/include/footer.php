@@ -50,10 +50,19 @@
         $('#darkModeToggle i').removeClass('fa-sun').addClass('fa-moon');
       }
     });
-    const logoutAfter = 30 * 60 * 1000; // ⚡ testing = 5s, real = 30*60*1000
+    let logoutTimer;
+    const logoutAfter = 30 * 60 * 1000; // 30 mins = 1800s
 
-    // automatic logout after set time (no need for activity tracking)
-    setTimeout(() => {
+    function startTimer() {
+      logoutTimer = setTimeout(autoLogout, logoutAfter);
+    }
+
+    function resetTimer() {
+      clearTimeout(logoutTimer);
+      startTimer();
+    }
+
+    function autoLogout() {
       $.ajax({
         url: "../controller/autologout.php",
         type: "POST",
@@ -70,6 +79,15 @@
           toastr.error("Logout request failed.", "Error");
         }
       });
-    }, logoutAfter);
+    }
+
+    // ✅ Start timer on page load
+    $(document).ready(function() {
+      startTimer();
+
+      // ✅ Reset timer whenever user is active
+      $(document).on("mousemove keypress click scroll", resetTimer);
+    });
+
   });
 </script>
