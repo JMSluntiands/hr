@@ -17,6 +17,17 @@
 
       // gawa ng reference number
       $referenceNo = $role . $jobCount;
+
+      $today = date("dm"); // DDMM format
+
+      // Bilang ng jobs ngayong araw
+      $sql = "SELECT COUNT(*) as cnt FROM jobs WHERE DATE(log_date) = CURDATE()";
+      $res = mysqli_query($conn, $sql);
+      $row = mysqli_fetch_assoc($res);
+      $count = $row['cnt'] + 1; // dagdag 1 kasi bagong insert
+
+      // Gumawa ng reference number
+      $reference = "JOB" . $today . "-" . str_pad($count, 3, "0", STR_PAD_LEFT);
     ?>
 
     <div class="page-wrapper">
@@ -41,11 +52,19 @@
           <div class="row">
             <div class="col-12">
               <div class="card">
-                <div class="card-header"><h5>Add New Job</h5></div>
+                <div class="card-header d-flex justify-content-between align-items-center">
+                  <div>
+                    <h5>Add New Job</h5>
+                  </div>
+                  <div>
+                    <h5><?php echo $reference ?></h5>
+                  </div>
+                </div>
                 <div class="card-body">
                   <div class="row">
                     <div class="col-12"><h5 class="text-center">Client Details</h5></div>
                     <input type="hidden" name="log_date" id="log_date">
+                    <input type="hidden" name="jreference" value="<?php echo $reference ?>">
 
                     <?php if ($_SESSION['role'] === 'LUNTIAN'): ?>
                     <div class="col-md-4 col-sm-12 mt-3">
@@ -64,8 +83,6 @@
 
                     <div class="col-md-8"></div>
                     <?php endif; ?>
-
-                    
 
                     <!-- Reference No. (restricted) -->
                     <?php if ($_SESSION['role'] === 'LBS' || $_SESSION['role'] === 'LUNTIAN'): ?>

@@ -7,6 +7,7 @@ require '../../vendor/autoload.php';
 session_start();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $jreference  = $_POST['jreference'] ?? '';
     $reference  = $_POST['reference'] ?? '';
     $client_account  = $_POST['client_account'] ?? '';
     $client_ref = $_POST['client_ref'] ?? '';
@@ -157,6 +158,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Escape other fields
     $client_code = mysqli_real_escape_string($conn, $client_code);
     $reference   = mysqli_real_escape_string($conn, $reference);
+    $jreference   = mysqli_real_escape_string($conn, $jreference);
     $client_ref  = mysqli_real_escape_string($conn, $client_ref);
     $assigned    = mysqli_real_escape_string($conn, $assigned);
     $checked     = mysqli_real_escape_string($conn, $checked);
@@ -177,6 +179,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // ✅ Single insert query (NULLIF trick for clientID)
     $sql = "INSERT INTO jobs (
+                reference,
                 client_code,
                 job_reference_no,
                 client_reference_no,
@@ -194,6 +197,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 upload_files,
                 upload_project_files
             ) VALUES (
+                '$jreference',
                 '$client_code',
                 '$reference',
                 '$client_ref',
