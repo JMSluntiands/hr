@@ -127,6 +127,5 @@
         minute: "2-digit",
       });
     }
-
   </script>
 </html>
