@@ -18,7 +18,7 @@
             <div class="row">
               <div class="col-sm-12">
                 <div class="page-sub-header">
-                  <h3 class="page-title">Welcome <?php echo $users_name ?>!</h3>
+                  <h3 class="page-title">Welcome <?php echo $_SESSION['role'] ?>!</h3>
                   <ul class="breadcrumb">
                     <li class="breadcrumb-item">
                       <a href="index">Home</a>
