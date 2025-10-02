@@ -51,11 +51,17 @@
                           <th>Action</th>
                           <th>Log Date</th>
                           <th>Client</th>
+                          <th>Client Name</th>
                           <th>Reference</th>
-                          <th>Client Ref</th>
-                          <th>Assigned</th>
+                          <th>Job Type</th>
+                          <th>Priority</th>
+                          <!-- <th>Client Ref</th> -->
+                          <th>Staff</th>
+                          <th>Checker</th>
                           <th>Status</th>
+                          <th>Due Date</th>
                           <th>Completion Date</th>
+                          <th>Complexity</th>
                         </tr>
                       </thead>
                       <tbody id="jobBody">
