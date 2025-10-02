@@ -32,8 +32,10 @@
               j.plan_complexity, 
               j.ncc_compliance, 
               j.completion_date,
+              j.notes,
               j.last_update, 
               j.job_status,
+              j.job_type,
               s.name AS staff_name, 
               c.name AS checker_name
           FROM jobs j
@@ -77,14 +79,18 @@
     "client_account_name" => $row['client_account_name'], // ✅ ayusin name
     "job_status" => $row['job_status'],
     "client_code" => $row['client_code'],
-    "staff_name" => $row['staff_id'],
-    "checker_name" => $row['checker_id'],
+    "staff_id" => $row['staff_id'],
+    "checker_id" => $row['checker_id'],
+    "job_type" => $row['job_type'],
     "client_name" => $row['client_name'],
-    "plan_complexity" => $row['plan_complexity'],
+    "priority" => $row['priority'],
+    "complexity" => $row['plan_complexity'],
     "completion_date" => $row['completion_date'],
     "ncc_compliance" => $row['ncc_compliance'],
     "last_update" => $last_update,
+    "completion_date" => $row['completion_date'],
     "priority" => $row['priority'],
+    "notes" => $row['notes'],
   ];
 }
 
