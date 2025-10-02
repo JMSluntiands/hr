@@ -33,7 +33,6 @@ $sql = "
         j.ncc_compliance, 
         ca.client_account_name, 
         j.staff_id,
-        cl.client_name,
         j.checker_id,
         jr.job_request_id, 
         jr.job_request_type, 

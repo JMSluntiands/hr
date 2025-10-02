@@ -12,6 +12,8 @@
   header("Content-Type: application/json"); // Set response type
   if ($user_client !== 'LUNTIAN') {
     $luntian = "j.client_code = '".$usersID."' AND";
+  } else {
+    $luntian = '';
   }
 
   $sql = "SELECT DISTINCT 
