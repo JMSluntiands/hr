@@ -211,8 +211,15 @@
                 <div class="card-header">
                   <div class="d-flex justify-content-between align-items-center">
                     <div>
-                      <h5 class="card-title">Client Uploaded Plans</h5>
+                      <h5 class="card-title mb-0">Client Uploaded Plans</h5>
                     </div>
+                    <?php if ($status === "Allocated"): ?>
+                      <button class="btn btn-sm btn-success add-files" 
+                              data-ref="<?php echo htmlspecialchars($ref); ?>" 
+                              data-column="upload_files">
+                        <i class="fa fa-plus"></i> Add Files
+                      </button>
+                    <?php endif; ?>
                   </div>
                 </div>
                 <div class="card-body">
@@ -225,15 +232,21 @@
                 <div class="card-header">
                   <div class="d-flex justify-content-between align-items-center">
                     <div>
-                      <h5 class="card-title">Client Uploaded Documents</h5>
+                      <h5 class="card-title mb-0">Client Uploaded Documents</h5>
                     </div>
+                    <?php if ($status === "Allocated"): ?>
+                      <button class="btn btn-sm btn-success add-files"
+                              data-ref="<?php echo htmlspecialchars($ref); ?>"
+                              data-column="upload_project_files">
+                        <i class="fa fa-plus"></i> Add Files
+                      </button>
+                    <?php endif; ?>
                   </div>
                 </div>
                 <div class="card-body">
                   <?php include_once 'extension/job_view/document.php' ?>
                 </div>
               </div>
-
               
               <!-- Staff Files -->
               <div class="card">
@@ -310,6 +323,9 @@
   <script src="../function/job/view/staff.js?v=<?php echo time(); ?>"></script>
   <script src="../function/job/view/statusBadge.js?v=<?php echo time(); ?>"></script>
   <script src="../function/job/view/staff_upload.js?v=<?php echo time(); ?>"></script>
+  <script src="../function/job/view/delete_plan.js?v=<?php echo time(); ?>"></script>
+  <script src="../function/job/view/delete_project_files.js?v=<?php echo time(); ?>"></script>
+  <script src="../function/job/view/add_plan_files.js?v<?php echo time(); ?>"></script>
   <script>
     function getBadgeColor(status) {
       switch (status) {

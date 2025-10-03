@@ -91,17 +91,29 @@ $(document).ready(function () {
     "Revision Requested", "Revised"
   ];
 
+  function getSafeDate() {
+    let createdAt = new Date();
+    return createdAt.getFullYear() + "-" +
+      String(createdAt.getMonth() + 1).padStart(2, "0") + "-" +
+      String(createdAt.getDate()).padStart(2, "0") + " " +
+      String(createdAt.getHours()).padStart(2, "0") + ":" +
+      String(createdAt.getMinutes()).padStart(2, "0") + ":" +
+      String(createdAt.getSeconds()).padStart(2, "0");
+  }
+
+
   function updateJobField(jobId, field, newVal) {
-    console.log("📤 Sending:", { jobId, field, newVal });
+    // console.log("📤 Sending:", { jobId, field, newVal });
     $.post(
       "../controller/job/update_field.php",
       {
         job_id: jobId,
         field: field,
-        value: newVal
+        value: newVal,
+        safeDate: getSafeDate()
       },
       function (res) {
-        console.log("📥 Response:", res);
+        // console.log("📥 Response:", res);
         if (res.status === "success") {
           toastr.success(res.message || `${field} updated successfully`);
           if (field === "job_status") {

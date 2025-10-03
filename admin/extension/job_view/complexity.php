@@ -38,6 +38,17 @@ $(document).ready(function() {
     let value = $(this).data("value");
     let jobID = $("#jobID").val();
 
+    function getSafeDate() {
+      let createdAt = new Date();
+      return createdAt.getFullYear() + "-" +
+        String(createdAt.getMonth() + 1).padStart(2, "0") + "-" +
+        String(createdAt.getDate()).padStart(2, "0") + " " +
+        String(createdAt.getHours()).padStart(2, "0") + ":" +
+        String(createdAt.getMinutes()).padStart(2, "0") + ":" +
+        String(createdAt.getSeconds()).padStart(2, "0");
+    }
+
+
     // Update UI agad (highlight stars)
     $(".complexity-star").each(function() {
       if ($(this).data("value") <= value) {
@@ -51,23 +62,21 @@ $(document).ready(function() {
     $.ajax({
       url: "../controller/job/update_complexity.php",
       type: "POST",
-      data: { job_id: jobID, complexity: value },
-      success: function(res) {
-        try {
-          let r = JSON.parse(res);
-          if (r.status === "success") {
-            toastr.success("Complexity updated to " + value, "Success");
-          } else {
-            toastr.error(r.message || "Update failed", "Error");
-          }
-        } catch (e) {
-          toastr.error("Invalid response", "Error");
+      dataType: "json", // ✅ para automatic JSON parse
+      data: { job_id: jobID, complexity: value, safeDate: getSafeDate() },
+      success: function(r) {
+        if (r.status === "success") {
+          toastr.success("Complexity updated to " + value, "Success");
+          loadActivityLogs();
+        } else {
+          toastr.error(r.message || "Update failed", "Error");
         }
       },
       error: function() {
         toastr.error("AJAX error", "Error");
       }
     });
+
   });
 });
 </script>
