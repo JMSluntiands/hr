@@ -36,7 +36,7 @@ $("#btnUploadStaffFile").on("click", function () {
     String(createdAt.getSeconds()).padStart(2, "0");
 
   formData.append("createdAt", formattedTime);
-  console.log("Uploading with job_id:", formData.get("job_id"));
+  // console.log("Uploading with job_id:", formData.get("job_id"));
 
   $.ajax({
     url: "../controller/job/staff_upload.php",
@@ -54,6 +54,7 @@ $("#btnUploadStaffFile").on("click", function () {
         $("#uploadDocs").val("");
         $("#staffComment").val("");
         loadStaffFiles(jobID); // refresh list
+        loadActivityLogs();
       } else {
         toastr.error(response.message || "Upload failed", "Error");
       }

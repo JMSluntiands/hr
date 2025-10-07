@@ -180,7 +180,10 @@
                     <!-- Notes -->
                     <div class="col-md-12 mt-3">
                       <label>Notes</label>
-                      <textarea class="form-control" name="notes" rows="3"><?php echo htmlspecialchars($job['notes'] ?? ''); ?></textarea>
+                      <!-- Div para sa Quill editor -->
+                      <div id="notesEditor" style="height:150px;"></div>
+                      <!-- Hidden input para ma-submit yung content -->
+                      <input type="hidden" name="notes" id="notesInput">
                     </div>
 
                     <div class="col-md-6 col-sm-12 mt-3">
@@ -253,10 +256,34 @@
       $('.select').select2({ width:'100%', minimumResultsForSearch: 2, });
     });
   </script>
+  <script>
+    // Initialize Quill editor
+    var quill = new Quill('#notesEditor', {
+      theme: 'snow',
+      placeholder: 'Write notes here...',
+      modules: {
+        toolbar: [
+          ['bold', 'italic', 'underline'],
+          [{ 'list': 'ordered' }, { 'list': 'bullet' }]
+        ]
+      }
+    });
+
+    // Kung may laman galing PHP, i-set sa editor
+    <?php if (!empty($job['notes'])): ?>
+      quill.root.innerHTML = <?php echo json_encode($job['notes']); ?>;
+    <?php endif; ?>
+
+    // Before submit, lagay yung editor content sa hidden input
+    $('#addJobForm').on('submit', function () {
+      $('#notesInput').val(quill.root.innerHTML);
+    });
+  </script>
   <script src="../function/job/new/file_preview.js?v=<?php echo time(); ?>"></script>
   <script src="../function/job/new/remove_file.js?v=<?php echo time(); ?>"></script>
   <script src="../function/job/new/save_job.js?v=<?php echo time(); ?>"></script>
   <script src="../function/job/new/upload_document.js?v=<?php echo time(); ?>"></script>
   <script src="../function/job/new/upload_plans.js?v=<?php echo time(); ?>"></script>
+  
 </body>
 </html>

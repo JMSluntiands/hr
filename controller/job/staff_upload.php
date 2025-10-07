@@ -86,6 +86,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->bind_param("issss", $job_id, $jsonFiles, $comment, $uploaded_by, $safeDate);
 
         if ($stmt->execute()) {
+            // 📝 Activity log message
+            $desc = mysqli_real_escape_string($conn, 
+                "📂 {$uploaded_by} uploaded file(s): " . implode(", ", $uploadedFiles)
+            );
+            $conn->query("
+                INSERT INTO activity_log (job_id, activity_type, activity_description, updated_by, activity_date)
+                VALUES ($job_id, 'Upload', '$desc', '$uploaded_by', '$safeDate')
+            ");
+
             echo json_encode([
                 'success'   => true,
                 'message'   => 'Files uploaded successfully',
@@ -95,6 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             echo json_encode(['success' => false, 'message' => 'DB insert failed: ' . $stmt->error]);
         }
+
     } else {
         echo json_encode(['success' => false, 'message' => 'No valid files uploaded.']);
     }

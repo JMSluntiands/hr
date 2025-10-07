@@ -35,18 +35,25 @@ if ($result->num_rows > 0) {
             </small>
           </div>
           <div class="comment-body mt-1">
-            <!-- ✅ Output raw HTML (safe kasi ikaw ang nag-save galing Quill) -->
+            <!-- ✅ Raw HTML from Quill -->
             <?= $row['message'] ?>
           </div>
         </div>
         <?php
     }
 
-    // View More button
-    if ($result->num_rows == $limit) {
+    // View More button kung may kasunod pa
+    $countStmt = $conn->prepare("SELECT COUNT(*) as total FROM comments WHERE job_id = ?");
+    $countStmt->bind_param("i", $jobID);
+    $countStmt->execute();
+    $countRes = $countStmt->get_result()->fetch_assoc();
+    $total = $countRes['total'] ?? 0;
+
+    if ($offset + $limit < $total) {
         ?>
         <div class="text-center mt-2">
-          <button class="btn btn-outline-primary btn-sm view-more" data-offset="<?= $offset + $limit ?>">
+          <button class="btn btn-outline-primary btn-sm view-more" 
+                  data-offset="<?= $offset + $limit ?>">
             View More
           </button>
         </div>
@@ -58,3 +65,15 @@ if ($result->num_rows > 0) {
     }
 }
 ?>
+
+<!-- 🔥 Ensure bullet and numbered lists are visible -->
+<style>
+.comment-body ul {
+  list-style-type: disc;
+  margin-left: 20px;
+}
+.comment-body ol {
+  list-style-type: decimal;
+  margin-left: 20px;
+}
+</style>

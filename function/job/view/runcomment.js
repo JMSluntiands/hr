@@ -1,6 +1,7 @@
 let runCommentOffset = 0;
 const runCommentLimit = 5;
 
+// Load run comments
 function loadRunComments(offset = 0, append = false) {
   let jobID = $("#jobID").val();
   $.get("../controller/job/view_run_comments.php", { job_id: jobID, offset: offset }, function (data) {
@@ -11,28 +12,30 @@ function loadRunComments(offset = 0, append = false) {
     }
   });
 }
-
 loadRunComments();
 
+// View more run comments
 $(document).on("click", ".view-more-run", function () {
   let offset = $(this).data("offset");
   $(this).remove();
   loadRunComments(offset, true);
 });
 
-var quill = new Quill('#commentMessage', {
+// ✅ Quill editor for RUN comments
+var runQuill = new Quill('#runCommentMessage', {
   theme: 'snow',
-  placeholder: 'Write a comment...',
+  placeholder: 'Write a run comment...',
   modules: {
     toolbar: '#runCommentsToolbar'
   }
 });
 
+// Send run comment
 $("#btnSendRunComment").on("click", function () {
   let jobID = $("#jobID").val();
-  let message = $("#runCommentMessage").val().trim();
+  let message = runQuill.root.innerHTML.trim(); // ✅ get HTML
 
-  if (message === "") {
+  if (message === "" || message === "<p><br></p>") {
     toastr.warning("Please enter a run comment.");
     return;
   }
@@ -49,7 +52,7 @@ $("#btnSendRunComment").on("click", function () {
     success: function (response) {
       if (response.success) {
         toastr.success(response.message, "Success");
-        $("#runCommentMessage").val("");
+        runQuill.setContents([]); // ✅ clear editor correctly
         loadRunComments();
       } else {
         toastr.error(response.message || "Failed to add run comment", "Error");

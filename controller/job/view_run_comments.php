@@ -2,40 +2,78 @@
 include '../../database/db.php';
 session_start();
 
-$jobID = $_GET['job_id'] ?? 0;
-$offset = $_GET['offset'] ?? 0;
-$limit = 5;
+$jobID  = intval($_GET['job_id'] ?? 0);
+$offset = intval($_GET['offset'] ?? 0);
+$limit  = 5;
 
-$sql = "SELECT name, message, created_at 
-        FROM run_comments 
-        WHERE job_id = '$jobID' 
-        ORDER BY run_comment_id DESC 
-        LIMIT $limit OFFSET $offset";
-$result = mysqli_query($conn, $sql);
+if (!$jobID) {
+    echo "<p class='text-muted'>Invalid job.</p>";
+    exit;
+}
 
-if(mysqli_num_rows($result) > 0){
-  while($row = mysqli_fetch_assoc($result)){
-    echo '<div class="mb-2">';
-    echo '<div class="d-flex justify-content-between">';
-    echo '<strong>'.htmlspecialchars($row['name']).'</strong>';
-    echo '<small class="text-muted">'.$row['created_at'].'</small>';
-    echo '</div>';
-    echo '<div>'.nl2br(htmlspecialchars($row['message'])).'</div>';
-    echo '<hr>';
-    echo '</div>';
-  }
+$stmt = $conn->prepare("
+    SELECT name, message, created_at
+    FROM run_comments
+    WHERE job_id = ?
+    ORDER BY run_comment_id DESC
+    LIMIT ?, ?
+");
+$stmt->bind_param("iii", $jobID, $offset, $limit);
+$stmt->execute();
+$result = $stmt->get_result();
 
-  // check kung may next batch pa
-  $countSql = "SELECT COUNT(*) as total FROM run_comments WHERE job_id = '$jobID'";
-  $countResult = mysqli_query($conn, $countSql);
-  $total = mysqli_fetch_assoc($countResult)['total'];
+if ($result->num_rows > 0) {
+    while ($row = $result->fetch_assoc()) {
+        ?>
+        <div class="comment border-bottom pb-2 mb-2">
+          <div class="d-flex justify-content-between">
+            <strong class="text-primary">
+              <?= htmlspecialchars($row['name']) ?>
+            </strong>
+            <small class="text-muted">
+              <?= htmlspecialchars($row['created_at']) ?>
+            </small>
+          </div>
+          <div class="comment-body mt-1">
+            <!-- ✅ Raw HTML output from Quill (with bullets/lists) -->
+            <?= $row['message'] ?>
+          </div>
+        </div>
+        <?php
+    }
 
-  if($offset + $limit < $total){
-    echo '<button class="btn btn-link text-primary p-0 view-more-run" data-offset="'.($offset + $limit).'">View More</button>';
-  }
+    // check kung may next batch pa
+    $countStmt = $conn->prepare("SELECT COUNT(*) as total FROM run_comments WHERE job_id = ?");
+    $countStmt->bind_param("i", $jobID);
+    $countStmt->execute();
+    $countRes = $countStmt->get_result()->fetch_assoc();
+    $total = $countRes['total'] ?? 0;
+
+    if ($offset + $limit < $total) {
+        ?>
+        <div class="text-center mt-2">
+          <button class="btn btn-outline-primary btn-sm view-more-run" 
+                  data-offset="<?= $offset + $limit ?>">
+            View More
+          </button>
+        </div>
+        <?php
+    }
 } else {
-  if ($offset == 0) {
-    echo '<p class="text-muted">No run comments yet.</p>';
-  }
+    if ($offset == 0) {
+        echo "<p class='text-muted'>No run comments yet.</p>";
+    }
 }
 ?>
+
+<!-- 🔥 Ensure bullets are visible -->
+<style>
+.comment-body ul {
+  list-style-type: disc;
+  margin-left: 20px;
+}
+.comment-body ol {
+  list-style-type: decimal;
+  margin-left: 20px;
+}
+</style>

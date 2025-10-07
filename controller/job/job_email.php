@@ -79,7 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           <div class="row"><span class="label">Storey:</span> <span class="value">'.$row['dwelling'].'</span></div>
           <div class="row"><span class="label">Priority:</span> <span class="value">'.$row['priority'].'</span></div>
           <div class="row"><span class="label">Plan Complexity:</span> <span class="value">'.$row['plan_complexity'].'</span></div>
-          <div class="row"><span class="label">Job Status:</span> <span class="value">'.$status.'</span></div>
+          <div class="row"><span class="label">Job Status:</span> <span class="value">Completed</span></div>
           <div class="row"><span class="label">Assessor:</span> <span class="value">'.$assessor.' ('.$assessorEmail.')</span></div>
           <div class="row"><span class="label">Staff ID:</span> <span class="value">'.$row['staff_id'].'</span></div>
           <div class="row"><span class="label">Checker ID:</span> <span class="value">'.$row['checker_id'].'</span></div>
@@ -132,7 +132,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 foreach ($files as $file) {
                     $filePath = __DIR__ . "/../../document/$reference/$file";
                     if (file_exists($filePath)) {
-                        $mail->addAttachment($filePath);
+                      $mail->addAttachment($filePath);
                     }
                 }
             }
@@ -154,7 +154,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <h2 style="margin-top:20px;">Hi there!</h2>
             <p style="font-size:16px; font-weight:bold; color:#ff9800;">' . htmlspecialchars($reference) . '</p>
             <p style="margin:5px 0;">Status has been updated to</p>
-            <p style="font-size:16px; font-weight:bold; color:#ff9800;">' . htmlspecialchars($status) . '</p>
+            <p style="font-size:16px; font-weight:bold; color:#ff9800;">Completed</p>
             <div style="margin-top:20px;">
               <p>Assessor: <b>' . htmlspecialchars($assessor) . '</b></p>
               <p>Assessor Email: <a href="mailto:' . htmlspecialchars($assessorEmail) . '">' . htmlspecialchars($assessorEmail) . '</a></p>

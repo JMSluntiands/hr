@@ -21,7 +21,6 @@ $(document).on("click", ".view-more", function () {
   loadComments(offset, true);
 });
 
-
 var quill = new Quill('#commentMessage', {
   theme: 'snow',
   placeholder: 'Write a comment...',
@@ -33,7 +32,7 @@ var quill = new Quill('#commentMessage', {
 // ✅ Send Comment
 $("#btnSendComment").on("click", function () {
   let jobID = $("#jobID").val();
-  let message = quill.root.innerHTML.trim();
+  let message = quill.root.innerHTML.trim(); // ✅ keeps <ul>, <ol>, <li>
 
   if (message === "" || message === "<p><br></p>") {
     toastr.warning("Please enter a comment.");
@@ -52,7 +51,7 @@ $("#btnSendComment").on("click", function () {
     success: function (response) {
       if (response.success) {
         toastr.success(response.message, "Success");
-        quill.root.innerHTML = ""; // clear editor
+        quill.setContents([]); // ✅ proper clear
         loadComments();
       } else {
         toastr.error(response.message || "Failed to add comment", "Error");
