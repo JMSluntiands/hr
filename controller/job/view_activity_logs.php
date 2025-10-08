@@ -26,8 +26,9 @@ if (mysqli_num_rows($res) > 0): ?>
           </small>
         </div>
         <p class="mb-1">
-          <?php echo nl2br(htmlspecialchars($log['activity_description'])); ?>
+          <?php echo $log['activity_description']; ?>
         </p>
+
         <small class="text-secondary">
           Updated by: <strong><?php echo htmlspecialchars($log['updated_by']); ?></strong>
         </small>

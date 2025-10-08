@@ -15,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    // 🔹 Kunin job_reference_no gamit get_result()
+    // 🔹 Kunin job_reference_no
     $ref = '';
     $stmt = $conn->prepare("SELECT job_reference_no FROM jobs WHERE job_id = ?");
     $stmt->bind_param("i", $job_id);
@@ -56,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!in_array($ext, $allowedExt)) continue;
         if ($files['size'][$i] > $maxSize) continue;
 
-        $safeName   = $name; // sanitize
+        $safeName   = $name; // TODO: optional sanitization
         $targetPath = $uploadDir . $safeName;
 
         if (move_uploaded_file($files['tmp_name'][$i], $targetPath)) {
@@ -79,6 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $jsonFiles = json_encode($uploadedFiles);
         $safeDate  = $createdAt ?: date("Y-m-d H:i:s");
 
+        // ✅ Save sa staff_uploaded_files
         $stmt = $conn->prepare("
             INSERT INTO staff_uploaded_files (job_id, files_json, comment, uploaded_by, uploaded_at) 
             VALUES (?, ?, ?, ?, ?)
@@ -86,13 +87,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->bind_param("issss", $job_id, $jsonFiles, $comment, $uploaded_by, $safeDate);
 
         if ($stmt->execute()) {
-            // 📝 Activity log message
-            $desc = mysqli_real_escape_string($conn, 
-                "📂 {$uploaded_by} uploaded file(s): " . implode(", ", $uploadedFiles)
-            );
+            // 📝 Activity log message (kasama notes rich text)
+            $desc = "📂 {$uploaded_by} uploaded file(s): " . implode(", ", $uploadedFiles);
+            if (!empty($comment)) {
+                $desc .= "<br><strong>📝 Notes:</strong><br>" . $comment;
+            }
+
+            $descSafe = mysqli_real_escape_string($conn, $desc);
+
             $conn->query("
                 INSERT INTO activity_log (job_id, activity_type, activity_description, updated_by, activity_date)
-                VALUES ($job_id, 'Upload', '$desc', '$uploaded_by', '$safeDate')
+                VALUES ($job_id, 'Upload', '$descSafe', '$uploaded_by', '$safeDate')
             ");
 
             echo json_encode([

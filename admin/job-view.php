@@ -22,6 +22,10 @@
     #plan-list, #plans-list, #docs-list {
       margin-left: 0 !important;
     }
+
+    #activityLogs > ul {
+      margin-left: 0 !important;
+    }
   </style>
   <body>
     <div class="main-wrapper">

@@ -40,8 +40,7 @@ if ($sql) {
       while ($row = $result->fetch_assoc()):
         $files = json_decode($row['files_json'], true);
 ?>
-  <div class="card mb-2">
-    <div class="card-body">
+
       <?php foreach ($files as $f): 
         $filePath = "../document/" . $ref . "/" . $f;
       ?>
@@ -75,8 +74,7 @@ if ($sql) {
       <small class="text-muted float-end">
         <?php echo date("M d, Y h:i A", strtotime($row['uploaded_at'])); ?>
       </small>
-    </div>
-  </div>
+
 <?php 
       endwhile; 
     else: 
