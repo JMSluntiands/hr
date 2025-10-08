@@ -79,6 +79,9 @@
     </div>
 
     <?php include_once 'include/footer.php' ?>
+    <script>
+      var userRole = "<?php echo $_SESSION['role'] ?? ''; ?>";
+    </script>
   </body>
   <script src="../function/job/list_completed.js?v=<?php echo time(); ?>"></script>
 </html>

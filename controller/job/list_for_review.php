@@ -3,7 +3,7 @@ include_once '../../database/db.php';
 session_start();
 
 $user_role   = $_SESSION['role'] ?? '';
-$user_client = $_SESSION['role'] ?? ''; // ginagamit mo pa sa query sa clients
+$user_client = $_SESSION['client_name'] ?? ''; // dapat naka-store client name sa session
 
 // Kunin client_code kung hindi LUNTIAN
 $usersID = null;
@@ -44,7 +44,6 @@ $sql = "
         j.notes,
         j.last_update, 
         j.job_status,
-        j.job_type,
         s.name AS staff_name, 
         c.name AS checker_name
     FROM jobs j
@@ -84,19 +83,40 @@ while ($row = $result->fetch_assoc()) {
         "client_account_name" => $row['client_account_name'],
         "job_status" => $row['job_status'],
         "client_code" => $row['client_code'],
-        "staff_name" => $row['staff_name'],   // fixed: dati staff_id lang
-        "checker_name" => $row['checker_name'], // fixed: dati checker_id lang
+        "staff_id" => $row['staff_id'],
+        "staff_name" => $row['staff_name'],
+        "checker_id" => $row['checker_id'],
+        "checker_name" => $row['checker_name'],
         "plan_complexity" => $row['plan_complexity'],
         "completion_date" => $row['completion_date'],
         "ncc_compliance" => $row['ncc_compliance'],
         "last_update" => $last_update,
+        "notes" => $row['notes']
     ];
 }
 
-$response = ["data" => $data, "count" => count($data)];
+// staff list
+$staffList = [];
+$resStaff = mysqli_query($conn, "SELECT staff_id, name FROM staff ORDER BY staff_id");
+while ($s = mysqli_fetch_assoc($resStaff)) {
+  $staffList[] = $s;
+}
+
+// checker list
+$checkerList = [];
+$resChecker = mysqli_query($conn, "SELECT checker_id, name FROM checker ORDER BY checker_id");
+while ($c = mysqli_fetch_assoc($resChecker)) {
+  $checkerList[] = $c;
+}
+
+$response = [
+    "data" => $data,
+    "count" => count($data),
+    "staffList" => $staffList,
+    "checkerList" => $checkerList
+];
 
 echo json_encode($response);
 
 $stmt->close();
 $conn->close();
-?>

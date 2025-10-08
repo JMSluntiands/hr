@@ -1,6 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
   <?php include_once 'include/header.php' ?>
+  <style>
+    .py-1 ol {
+      list-style-type: decimal;
+      margin-left: 1.5em;
+    }
+    .py-1 ul {
+      list-style-type: disc;
+      margin-left: 1.5em;
+    }
+    .card-body ul {
+      list-style-type: disc;
+      margin-left: 1.5rem;
+    }
+    .card-body ol {
+      list-style-type: decimal;
+      margin-left: 1.5rem;
+    }
+
+    #plan-list, #plans-list, #docs-list {
+      margin-left: 0 !important;
+    }
+  </style>
   <body>
     <div class="main-wrapper">
       <!-- Navbar -->
@@ -121,7 +143,7 @@
                 </div>
                 <div class="card-body">
                   <div class="py-1">
-                    <span><?php echo $notes ?></span>
+                    <?php echo $notes ?>
                   </div>
                 </div>
               </div>
@@ -348,20 +370,16 @@
     }
 
     function applyBadgeColor(el, status) {
-      $(el).css("background-color", getBadgeColor(status));
+      $(el).css({
+        "background-color": getBadgeColor(status),
+        "color": "#000" // optional para laging readable
+      });
     }
 
-    // Initial load
     $(document).ready(function () {
-      let badge = $("#statusBadge");
-      let currentStatus = badge.data("status");
-      applyBadgeColor(badge, currentStatus);
-
-      // When dropdown changes
-      $("#jobStatus").on("change", function () {
-        let newStatus = $(this).val();
-        $("#statusBadge").text(newStatus).data("status", newStatus);
-        applyBadgeColor("#statusBadge", newStatus);
+      $(".badge-status").each(function () {
+        let status = $(this).text().trim();
+        applyBadgeColor(this, status);
       });
     });
 

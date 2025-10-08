@@ -45,7 +45,7 @@ $("#addJobForm").on("submit", function (e) {
         let $toast = toastr.info(
           `
   <div class="mt-2">
-    <p>We want to log the job</p>
+    <p>Do you want to log a new job?</p>
     <a href="job-new" type="button" class="btn btn-sm btn-primary me-2" id="confirmLog">OK</a>
     <a href="job" type="button" class="btn btn-sm btn-secondary" id="cancelLog">Cancel</a>
   </div>

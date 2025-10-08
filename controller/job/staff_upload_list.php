@@ -70,7 +70,8 @@ if ($sql) {
         </div>
       <?php endforeach; ?>
 
-      <p class="mt-2 mb-0"><strong>Notes:</strong> <br><?php echo htmlspecialchars($row['comment']); ?></p>
+      <p class="mt-2 mb-0"><strong>Notes:</strong><br><?php echo $row['comment']; ?></p>
+
       <small class="text-muted float-end">
         <?php echo date("M d, Y h:i A", strtotime($row['uploaded_at'])); ?>
       </small>

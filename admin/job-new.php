@@ -1,6 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <?php include_once 'include/header.php' ?>
+<style>
+  .ql-editor ol {
+    list-style-type: decimal !important;
+    margin-left: 1.5em !important;
+  }
+  .ql-editor ul {
+    list-style-type: disc !important;
+    margin-left: 1.5em !important;
+  }
+
+</style>
 <body>
   <div class="main-wrapper">
     <?php include_once 'include/navbar.php' ?>
@@ -191,7 +202,7 @@
                         Upload Plans 
                         <span class="badge bg-secondary" id="plansCount">0 files</span>
                       </label>
-                      <input type="file" class="form-control" id="uploadPlans" multiple accept="application/pdf" name="plans[]"  style="height:30px!important">
+                      <input type="file" class="form-control" id="uploadPlans" multiple accept=".pdf, .zip,application/pdf,application/zip" name="plans[]"  style="height:30px!important">
                       <div id="plansPreview" class="mt-2"></div>
                     </div>
 
@@ -200,7 +211,7 @@
                         Upload Document
                         <span class="badge bg-secondary" id="docsCount">0 files</span>
                       </label>
-                      <input type="file" class="form-control" id="uploadDocs" multiple accept="application/pdf" name="docs[]"  style="height:30px!important">
+                      <input type="file" class="form-control" id="uploadDocs" multiple accept=".pdf, .zip,application/pdf,application/zip" name="docs[]"  style="height:30px!important">
                       <div id="docsPreview" class="mt-2"></div>
                     </div>
 
@@ -232,7 +243,6 @@
                         ?>
                       </select>
                     </div>
-
 
                     <div class="col-12 mt-4">
                       <button type="submit" class="btn btn-primary">Add Job</button>

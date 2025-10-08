@@ -5,6 +5,14 @@ function loadStaffFiles(jobID) {
   });
 }
 
+window.staffQuill = new Quill('#staffCommentEditor', {
+  theme: 'snow',
+  placeholder: 'Add comment...',
+  modules: {
+    toolbar: '#staffCommentToolbar'
+  }
+});
+
 // 🔹 Initial load on page ready
 $(document).ready(function () {
   let jobID = $("#jobID").val();
@@ -16,11 +24,20 @@ $(document).ready(function () {
 $("#btnUploadStaffFile").on("click", function () {
   let btn = $(this);
   let jobID = $("#jobID").val();
-  let comment = $("#staffComment").val().trim();
+
+  // 📝 kunin Quill editor content
+  let quillContent = staffQuill.root.innerHTML.trim();
+  $("#staffCommentInput").val(quillContent);
+
   let files = $("#uploadDocs")[0].files;
 
   if (files.length === 0) {
     toastr.warning("Please select at least one PDF file.");
+    return;
+  }
+
+  if (quillContent === "" || quillContent === "<p><br></p>") {
+    toastr.warning("Please add a comment.");
     return;
   }
 
@@ -36,7 +53,6 @@ $("#btnUploadStaffFile").on("click", function () {
     String(createdAt.getSeconds()).padStart(2, "0");
 
   formData.append("createdAt", formattedTime);
-  // console.log("Uploading with job_id:", formData.get("job_id"));
 
   $.ajax({
     url: "../controller/job/staff_upload.php",
@@ -45,14 +61,13 @@ $("#btnUploadStaffFile").on("click", function () {
     contentType: false,
     processData: false,
     beforeSend: function () {
-      // 🔹 show loading state
       btn.prop("disabled", true).html('<i class="fa fa-spinner fa-spin"></i> Uploading...');
     },
     success: function (response) {
       if (response.success) {
         toastr.success(response.message, "Success");
         $("#uploadDocs").val("");
-        $("#staffComment").val("");
+        staffQuill.root.innerHTML = ""; // reset editor
         loadStaffFiles(jobID); // refresh list
         loadActivityLogs();
       } else {
@@ -63,11 +78,9 @@ $("#btnUploadStaffFile").on("click", function () {
       toastr.error("Error: " + xhr.responseText, "Error");
     },
     complete: function () {
-      // 🔹 reset button after 1.5s
       setTimeout(function () {
         btn.prop("disabled", false).text("Upload");
       }, 1500);
     }
   });
 });
-
