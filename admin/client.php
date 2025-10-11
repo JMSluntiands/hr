@@ -77,7 +77,7 @@
 
     function loadClients() {
       $.ajax({
-        url: "../controller/client/fetch_clients.php",
+        url: "../controller/client/fetch-clients.php",
         type: "GET",
         dataType: "json",
         success: function (response) {
@@ -95,11 +95,8 @@
           response.data.forEach(item => {
             table.row.add([
               `<div class="d-flex justify-content-center">
-                <a href="edit_client.php?id=${item.id}" class="btn btn-sm btn-primary me-1">
+                <a href="client-edit.php?id=${item.id}" class="btn btn-sm btn-primary me-1">
                   <i class="fa fa-edit"></i> Edit
-                </a>
-                <a href="delete_client.php?id=${item.id}" class="btn btn-sm btn-danger">
-                  <i class="fa fa-trash"></i> Delete
                 </a>
               </div>`,
               formatDate(item.log_date),
@@ -127,5 +124,28 @@
         minute: "2-digit",
       });
     }
+
+    // function deleteClient(id) {
+    //   if (!confirm("Are you sure you want to delete this client?")) return;
+
+    //   $.ajax({
+    //     url: "../controller/client/delete-client.php",
+    //     type: "POST",
+    //     data: { id },
+    //     dataType: "json",
+    //     success: function (res) {
+    //       if (res.status === "success") {
+    //         toastr.success(res.message);
+    //         loadClients(); // refresh table
+    //       } else {
+    //         toastr.error(res.message);
+    //       }
+    //     },
+    //     error: function (xhr) {
+    //       toastr.error("Error deleting client: " + xhr.responseText);
+    //     }
+    //   });
+    // }
+
   </script>
 </html>
