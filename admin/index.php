@@ -23,13 +23,13 @@ $row = mysqli_fetch_assoc($res);
 $completedJobs = $row['cnt'] ?? 0;
 
 // For Review Jobs (today)
-$sql = "SELECT COUNT(*) as cnt FROM jobs $where AND job_status = 'For Review'";
+$sql = "SELECT COUNT(*) as cnt FROM jobs $where AND job_status = 'Processing'";
 $res = mysqli_query($conn, $sql);
 $row = mysqli_fetch_assoc($res);
 $forReviewJobs = $row['cnt'] ?? 0;
 
 // For Email Verification (today)
-$sql = "SELECT COUNT(*) as cnt FROM jobs $where AND job_status = 'For Email Verification'";
+$sql = "SELECT COUNT(*) as cnt FROM jobs $where AND job_status = 'Pending'";
 $res = mysqli_query($conn, $sql);
 $row = mysqli_fetch_assoc($res);
 $forEmailVerification = $row['cnt'] ?? 0;
@@ -102,7 +102,7 @@ $forEmailVerification = $row['cnt'] ?? 0;
                       <div class="card-body d-flex align-items-center justify-content-between text-white">
                         <div>
                           <h2 class="mb-0" style="font-size:25px;"><?php echo $forReviewJobs; ?></h2>
-                          <p class="mb-0" style="font-size:12px;">For Review</p>
+                          <p class="mb-0" style="font-size:12px;">Processing</p>
                         </div>
                         <div>
                           <i class="fas fa-search fa-2x"></i>
@@ -117,7 +117,7 @@ $forEmailVerification = $row['cnt'] ?? 0;
                       <div class="card-body d-flex align-items-center justify-content-between text-white">
                         <div>
                           <h2 class="mb-0" style="font-size:25px;"><?php echo $forEmailVerification; ?></h2>
-                          <p class="mb-0" style="font-size:12px;">For Email Verification</p>
+                          <p class="mb-0" style="font-size:12px;">Pending</p>
                         </div>
                         <div>
                           <i class="fas fa-envelope-open-text fa-2x"></i>
