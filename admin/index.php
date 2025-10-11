@@ -6,32 +6,35 @@ include '../database/db.php';
 $role = $_SESSION['role'] ?? '';
 
 // Kung LUNTIAN, walang filter. Kung hindi, filter by client_code
-$where = ($role === 'LUNTIAN') ? "" : "WHERE client_code = '" . mysqli_real_escape_string($conn, $role) . "'";
+$where = ($role === 'LUNTIAN') 
+  ? "WHERE DATE(log_date) = CURDATE()" 
+  : "WHERE client_code = '" . mysqli_real_escape_string($conn, $role) . "' AND DATE(log_date) = CURDATE()";
 
-// Total Jobs
+// Total Jobs (today)
 $sql = "SELECT COUNT(*) as cnt FROM jobs $where";
 $res = mysqli_query($conn, $sql);
 $row = mysqli_fetch_assoc($res);
 $totalJobs = $row['cnt'] ?? 0;
 
-// Completed Jobs
-$sql = "SELECT COUNT(*) as cnt FROM jobs $where " . ($where ? "AND" : "WHERE") . " job_status = 'Completed'";
+// Completed Jobs (today)
+$sql = "SELECT COUNT(*) as cnt FROM jobs $where AND job_status = 'Completed'";
 $res = mysqli_query($conn, $sql);
 $row = mysqli_fetch_assoc($res);
 $completedJobs = $row['cnt'] ?? 0;
 
-// For Review Jobs
-$sql = "SELECT COUNT(*) as cnt FROM jobs $where " . ($where ? "AND" : "WHERE") . " job_status = 'For Review'";
+// For Review Jobs (today)
+$sql = "SELECT COUNT(*) as cnt FROM jobs $where AND job_status = 'For Review'";
 $res = mysqli_query($conn, $sql);
 $row = mysqli_fetch_assoc($res);
 $forReviewJobs = $row['cnt'] ?? 0;
 
-// For Email Verification
-$sql = "SELECT COUNT(*) as cnt FROM jobs $where " . ($where ? "AND" : "WHERE") . " job_status = 'For Email Verification'";
+// For Email Verification (today)
+$sql = "SELECT COUNT(*) as cnt FROM jobs $where AND job_status = 'For Email Verification'";
 $res = mysqli_query($conn, $sql);
 $row = mysqli_fetch_assoc($res);
 $forEmailVerification = $row['cnt'] ?? 0;
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
