@@ -118,7 +118,7 @@
           <li class="submenu">
             <a href="#"><i class="si si-people"></i> <span>Client</span> <span class="menu-arrow"></span></a>
             <ul class="removeActive">
-              <li><a href="client-create">Create Client</a></li>
+              <li><a href="client-add">Create Client</a></li>
               <li><a href="client">Client List</a></li>
             </ul>
           </li>
