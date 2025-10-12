@@ -123,26 +123,27 @@
             </ul>
           </li>
           <li class="submenu">
-            <a href="#"><i class="si si-user"></i> <span>Account</span> <span class="menu-arrow"></span></a>
+            <a href="#"><i class="si si-user"></i> <span>Checker</span> <span class="menu-arrow"></span></a>
             <ul class="removeActive">
-              <li><a href="creatediscount">Create</a></li>
+              <li><a href="creatediscount">Create Checker</a></li>
+              <li><a href="discount">Discount</a></li>
+            </ul>
+          </li>
+          <li class="submenu">
+            <a href="#"><i class="si si-user"></i> <span>Staff</span> <span class="menu-arrow"></span></a>
+            <ul class="removeActive">
+              <li><a href="creatediscount">Create Staff</a></li>
               <li><a href="discount">Discount</a></li>
             </ul>
           </li>
           <li class="submenu">
             <a href="#"><i class="si si-note"></i> <span>Job Request</span> <span class="menu-arrow"></span></a>
             <ul class="removeActive">
-              <li><a href="creatediscount">Create</a></li>
-              <li><a href="discount">Discount</a></li>
+              <li><a href="creatediscount">Create Job Type</a></li>
+              <li><a href="discount">Job Type List</a></li>
             </ul>
           </li>
-          <li class="submenu">
-            <a href="#"><i class="si si-user"></i> <span>User</span> <span class="menu-arrow"></span></a>
-            <ul class="removeActive">
-              <li><a href="creatediscount">Create</a></li>
-              <li><a href="discount">Discount</a></li>
-            </ul>
-          </li>
+
         <?php endif; ?>
       </ul>
     </div>

@@ -17,7 +17,7 @@
                 <h3 class="page-title">Welcome <?php echo $_SESSION['role'] ?>!</h3>
                 <ul class="breadcrumb">
                   <li class="breadcrumb-item"><a href="index">Home</a></li>
-                  <li class="breadcrumb-item"><a href="client">Client List</a></li>
+                  <li class="breadcrumb-item"><a href="client.php">Client List</a></li>
                   <li class="breadcrumb-item active">Add New Client</li>
                 </ul>
               </div>
@@ -25,19 +25,20 @@
           </div>
         </div>
 
-        <form id="addClientForm">
+        <!-- Add Client Form -->
+        <form id="addClientForm" class="shadow p-4 rounded bg-white">
           <div class="mb-3">
-            <label>Client Code</label>
+            <label class="form-label fw-bold">Client Code</label>
             <input type="text" name="client_code" class="form-control" placeholder="Enter client code" required>
           </div>
 
           <div class="mb-3">
-            <label>Client Name</label>
+            <label class="form-label fw-bold">Client Name</label>
             <input type="text" name="client_name" class="form-control" placeholder="Enter client name" required>
           </div>
 
           <div class="mb-3">
-            <label>Client Email</label>
+            <label class="form-label fw-bold">Client Email</label>
             <input type="email" name="client_email" class="form-control" placeholder="Enter client email" required>
           </div>
 
@@ -52,25 +53,28 @@
   <?php include_once 'include/footer.php' ?>
 
   <script>
-    $("#addClientForm").submit(function(e) {
-      e.preventDefault();
+    $(document).ready(function() {
+      // ✅ Handle form submission
+      $("#addClientForm").submit(function(e) {
+        e.preventDefault();
 
-      $.ajax({
-        url: "../controller/client/add-client.php",
-        type: "POST",
-        data: $(this).serialize(),
-        dataType: "json",
-        success: function(res) {
-          if (res.status === "success") {
-            toastr.success(res.message);
-            setTimeout(() => window.location.href = "client.php", 1500);
-          } else {
-            toastr.error(res.message);
+        $.ajax({
+          url: "../controller/client/add-client.php",
+          type: "POST",
+          data: $(this).serialize(),
+          dataType: "json",
+          success: function(res) {
+            if (res.status === "success") {
+              toastr.success(res.message);
+              setTimeout(() => window.location.href = "client.php", 1500);
+            } else {
+              toastr.error(res.message);
+            }
+          },
+          error: function(xhr) {
+            toastr.error("Error adding client: " + xhr.responseText);
           }
-        },
-        error: function(xhr) {
-          toastr.error("Error adding client: " + xhr.responseText);
-        }
+        });
       });
     });
   </script>

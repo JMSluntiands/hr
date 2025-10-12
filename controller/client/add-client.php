@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    // Check if code already exists
+    // Check if client_code already exists
     $check = $conn->prepare("SELECT id FROM clients WHERE client_code = ?");
     $check->bind_param("s", $client_code);
     $check->execute();
@@ -25,14 +25,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    // Insert client
-    $stmt = $conn->prepare("INSERT INTO clients (client_code, client_name, client_email) VALUES (?, ?, ?)");
-    $stmt->bind_param("sss", $client_code, $client_name, $client_email);
+    // ✅ Start transaction
+    $conn->begin_transaction();
 
-    if ($stmt->execute()) {
-        echo json_encode(['status' => 'success', 'message' => 'Client added successfully.']);
-    } else {
-        echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $conn->error]);
+    try {
+        // 1️⃣ Insert into clients table
+        $stmt = $conn->prepare("INSERT INTO clients (client_code, client_name, client_email) VALUES (?, ?, ?)");
+        $stmt->bind_param("sss", $client_code, $client_name, $client_email);
+        $stmt->execute();
+
+        // 2️⃣ Create login entry in user_logins
+        $defaultPassword = md5('password'); // 🔐 Default MD5 password
+
+        $stmt2 = $conn->prepare("
+            INSERT INTO user_logins (unique_code, username, password, client_name)
+            VALUES (?, ?, ?, ?)
+        ");
+        $stmt2->bind_param("ssss", $client_code, $client_email, $defaultPassword, $client_name);
+        $stmt2->execute();
+
+        // ✅ Commit both inserts
+        $conn->commit();
+
+        echo json_encode(['status' => 'success', 'message' => 'Client and user login added successfully.']);
+    } catch (Exception $e) {
+        $conn->rollback();
+        echo json_encode(['status' => 'error', 'message' => 'Transaction failed: ' . $e->getMessage()]);
     }
 }
 ?>
