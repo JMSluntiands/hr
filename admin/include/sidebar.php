@@ -125,15 +125,15 @@
           <li class="submenu">
             <a href="#"><i class="si si-user"></i> <span>Checker</span> <span class="menu-arrow"></span></a>
             <ul class="removeActive">
-              <li><a href="creatediscount">Create Checker</a></li>
-              <li><a href="discount">Discount</a></li>
+              <li><a href="checker-add">Create Checker</a></li>
+              <li><a href="checker">Checker List</a></li>
             </ul>
           </li>
           <li class="submenu">
             <a href="#"><i class="si si-user"></i> <span>Staff</span> <span class="menu-arrow"></span></a>
             <ul class="removeActive">
-              <li><a href="creatediscount">Create Staff</a></li>
-              <li><a href="discount">Discount</a></li>
+              <li><a href="staff-add">Create Staff</a></li>
+              <li><a href="staff">Staff List</a></li>
             </ul>
           </li>
           <li class="submenu">
