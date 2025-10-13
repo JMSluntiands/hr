@@ -139,8 +139,8 @@
           <li class="submenu">
             <a href="#"><i class="si si-note"></i> <span>Job Request</span> <span class="menu-arrow"></span></a>
             <ul class="removeActive">
-              <li><a href="creatediscount">Create Job Type</a></li>
-              <li><a href="discount">Job Type List</a></li>
+              <li><a href="job-type-add">Create Job Type</a></li>
+              <li><a href="job-type">Job Type List</a></li>
             </ul>
           </li>
 
