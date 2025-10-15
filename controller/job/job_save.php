@@ -74,13 +74,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // 🔍 Normalize address for duplicate checking
     $normalizedAddress = strtolower(preg_replace('/\s+/', '', $address));
-    $sql_check_address = "SELECT COUNT(*) as cnt FROM jobs WHERE REPLACE(LOWER(address_client), ' ', '') = '" . mysqli_real_escape_string($conn, $normalizedAddress) . "'";
+    $sql_check_address = "
+        SELECT COUNT(*) as cnt 
+        FROM jobs 
+        WHERE REPLACE(LOWER(address_client), ' ', '') = '" . mysqli_real_escape_string($conn, $normalizedAddress) . "'
+        AND job_status != 'Completed'
+    ";
     $result_addr = mysqli_query($conn, $sql_check_address);
     $row_addr = mysqli_fetch_assoc($result_addr);
+
     if ($row_addr['cnt'] > 0) {
-        echo json_encode(["status" => "error", "message" => "Duplicate job address found (ignoring spaces)."]);
+        echo json_encode(["status" => "error", "message" => "Duplicate job address found (ignoring spaces) for active/incomplete job."]);
         exit;
     }
+
 
     // 🔁 Duplicate reference check
     $sql_check = "SELECT COUNT(*) as cnt FROM jobs WHERE job_reference_no = '".mysqli_real_escape_string($conn, $reference)."'";
