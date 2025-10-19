@@ -29,15 +29,13 @@
       // gawa ng reference number
       $referenceNo = $role . $jobCount;
 
-      $today = date("dm"); // DDMM format
+      $today = date("dm");
 
-      // Bilang ng jobs ngayong araw
       $sql = "SELECT COUNT(*) as cnt FROM jobs WHERE DATE(log_date) = CURDATE()";
       $res = mysqli_query($conn, $sql);
       $row = mysqli_fetch_assoc($res);
-      $count = $row['cnt'] + 1; // dagdag 1 kasi bagong insert
+      $count = $row['cnt'] + 1;
 
-      // Gumawa ng reference number
       $reference = "JOB" . $today . "-" . str_pad($count, 3, "0", STR_PAD_LEFT);
     ?>
 
