@@ -39,7 +39,7 @@
                       <span id="jobCount" class="text-muted">Total Records: 0</span>
                     </div>
                     <div class="">
-                      <a class="btn text-white btn-danger" href="job-new">New Job</a>
+                      <!-- <a class="btn text-white btn-danger" href="job-new">New Job</a> -->
                     </div>
                   </div>
                 </div>
