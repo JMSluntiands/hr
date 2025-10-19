@@ -29,6 +29,7 @@
       // gawa ng reference number
       $referenceNo = $role . $jobCount;
 
+      date_default_timezone_set('Asia/Manila');
       $today = date("dm");
 
       $sql = "SELECT COUNT(*) as cnt FROM jobs WHERE DATE(log_date) = CURDATE()";
