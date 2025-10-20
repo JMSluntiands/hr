@@ -159,6 +159,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <p>Assessor: <b>' . htmlspecialchars($assessor) . '</b></p>
               <p>Assessor Email: <a href="mailto:' . htmlspecialchars($assessorEmail) . '">' . htmlspecialchars($assessorEmail) . '</a></p>
             </div>
+            <br>
+            <br>
+            <div style="margin-top:20px;">
+              <b>Submission Notes:</b><br>
+              Click or copy & paste link to browser to access NatHERS Climate Zone Map <br> https://experience.arcgis.com/experience/321aeff3c1684765bbe9ebba2f0c9051/page/Map-viewer?org=digitalatlas
+            </div>
           </div>
         ';
         $mail->AltBody = "Job Reference: $reference\nStatus: $status\nAssessor: $assessor\nEmail: $assessorEmail";
