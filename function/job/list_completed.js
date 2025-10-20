@@ -9,7 +9,12 @@ $(document).ready(function () {
     buttons: [],
     columnDefs: [
       { responsivePriority: 1, targets: 0 },
-      { responsivePriority: 2, targets: -1 }
+      { responsivePriority: 2, targets: -1 },
+
+      // 🔹 Hide client_name if userRole is not LUNTIAN
+      ...(userRole !== "LUNTIAN" ? [
+        { targets: [3], visible: false, searchable: true }
+      ] : [])
     ]
   });
 
@@ -24,15 +29,8 @@ $(document).ready(function () {
           return;
         }
 
-        // ✅ Import staffList & checkerList
         let staffList = response.staffList || [];
         let checkerList = response.checkerList || [];
-        let statusList = [
-          "Pending", "For Discussion", "Revision Requested",
-          "For Email Confirmation", "Allocated", "Accepted",
-          "Processing", "For Checking", "Cancelled",
-          "Completed", "Awaiting Further Information"
-        ];
 
         function formatDateTime(datetimeStr) {
           if (!datetimeStr) return "";
@@ -57,7 +55,6 @@ $(document).ready(function () {
 
         response.data.forEach(item => {
           table.row.add([
-            // 🔹 Action
             `<div class="d-flex justify-content-center gap-1">
               <a class="btn btn-sm btn-info text-white rounded-0" title="View" href="job-view?id=${item.job_id}">
                 <i class="si si-eye"></i>
@@ -76,7 +73,6 @@ $(document).ready(function () {
             `<div class="text-center"><strong>${item.job_reference_no}</strong></div>`,
             `<div class="text-center"><span>${item.job_type}</span></div>`,
 
-            // 🔹 Priority
             `<div class="text-center">
               <span class="badge text-dark" 
                 style="background-color: ${item.priority === "Top (COB)" ? "#F74639" :
@@ -87,11 +83,10 @@ $(document).ready(function () {
             </div>`,
 
             `<span><strong>${item.staff_id}</strong></span>`,
-
             `<span><strong>${item.checker_id}</strong></span>`,
 
             `<span class="badge text-dark"
-                  style="background-color: ${item.job_status === "Pending" ? "#F86C62" :
+              style="background-color: ${item.job_status === "Pending" ? "#F86C62" :
               item.job_status === "For Discussion" ? "#6AB9CC" :
                 item.job_status === "Revision Requested" ? "#FAE2D4" :
                   item.job_status === "For Email Confirmation" ? "#7DB9E3" :
@@ -103,17 +98,16 @@ $(document).ready(function () {
                               item.job_status === "Completed" ? "#69F29B" :
                                 item.job_status === "Awaiting Further Information" ? "#EDE59A" :
                                   "#6c757d"}">
-                  ${item.job_status}
-                </span>`,
+              ${item.job_status}
+            </span>`,
 
             `<div class="text-center">${computeDueDate(item.log_date, item.priority)}</div>`,
             `<div class="text-center">${formatDateTime(item.completion_date)}</div>`,
 
-            // 🔹 Complexity stars
             `<div class="text-center">
               ${[1, 2, 3, 4, 5].map(i =>
               `<i class="fa fa-star ${i <= item.complexity ? 'text-warning' : 'text-secondary'}" 
-                  style="font-size:12px; margin:0 2px;"></i>`
+                    style="font-size:12px; margin:0 2px;"></i>`
             ).join("")}
              </div>`,
 

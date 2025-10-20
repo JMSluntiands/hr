@@ -40,11 +40,19 @@ $(document).ready(function () {
       { responsivePriority: 1, targets: 1 },
       { responsivePriority: 2, targets: 2 },
       { targets: [13], visible: false, searchable: true },
+
+      // hide some columns depending on role
       ...(userRole === "LBS" ? [
         { targets: [6, 8], visible: false, searchable: true }
+      ] : []),
+
+      // hide client_name if not LUNTIAN
+      ...(userRole !== "LUNTIAN" ? [
+        { targets: [3], visible: false, searchable: true }
       ] : [])
     ]
   });
+
 
   let statusFilter = `
     <select id="statusFilter" class="form-select form-select-sm d-inline-block mb-2 p-1" style="width:200px;">
