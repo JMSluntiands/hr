@@ -83,20 +83,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $result_addr = mysqli_query($conn, $sql_check_address);
     $row_addr = mysqli_fetch_assoc($result_addr);
 
-    if ($row_addr['cnt'] > 0) {
-        echo json_encode(["status" => "error", "message" => "Duplicate job address found (ignoring spaces) for active/incomplete job."]);
-        exit;
-    }
+    // if ($row_addr['cnt'] > 0) {
+    //     echo json_encode(["status" => "error", "message" => "Duplicate job address found (ignoring spaces) for active/incomplete job."]);
+    //     exit;
+    // }
 
 
     // 🔁 Duplicate reference check
     $sql_check = "SELECT COUNT(*) as cnt FROM jobs WHERE job_reference_no = '".mysqli_real_escape_string($conn, $reference)."'";
     $result_check = mysqli_query($conn, $sql_check);
     $row = mysqli_fetch_assoc($result_check);
-    if ($row['cnt'] > 0) {
-        echo json_encode(["status"=>"error","message"=>"Duplicate found: job_reference_no already exists."]);
-        exit;
-    }
+    // if ($row['cnt'] > 0) {
+    //     echo json_encode(["status"=>"error","message"=>"Duplicate found: job_reference_no already exists."]);
+    //     exit;
+    // }
 
     // 📁 File upload setup
     $folderName = $reference ?: (!empty($client_ref) ? $client_ref : "AUTO_" . time());
