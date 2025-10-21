@@ -94,9 +94,7 @@ $(document).ready(function () {
   }
 
   let statusList = [
-    "Allocated", "Accepted", "Processing", "For Checking",
-    "Awaiting Further Information", "Pending", "For Discussion",
-    "Revision Requested", "Revised"
+    "Cancelled", "For Email Confirmation"
   ];
 
   function getSafeDate() {
@@ -252,7 +250,7 @@ $(document).ready(function () {
                   </select>
                 </div>
               `,
-            // Status column
+            // Status column - UPDATED
             userRole !== "LUNTIAN"
               ? `
                 <span class="badge text-dark"
@@ -271,13 +269,25 @@ $(document).ready(function () {
                   ${item.job_status}
                 </span>
               `
-              : `
-                <div class="d-flex justify-content-center align-items-center w-100" style="max-width:150px; min-width:150px;">
-                  <select class="form-select form-select-sm status-select" data-id="${item.job_id}">
-                    ${statusList.map(st => `<option value="${st}" ${item.job_status === st ? "selected" : ""}>${st}</option>`).join("")}
-                  </select>
-                </div>
-              `,
+              : (function () {
+                // Always include special statuses
+                let special = ["Cancelled", "For Email Confirmation"];
+                // Build options array. If actual status exists and is not one of the special ones, include it
+                let options = special.slice();
+                if (item.job_status && special.indexOf(item.job_status) === -1) {
+                  // include actual status and make it first so it's selected and visible
+                  options.unshift(item.job_status);
+                }
+                // Determine which value should be selected
+                let selectedVal = item.job_status && item.job_status.trim() !== "" ? item.job_status : "Cancelled";
+                return `
+                  <div class="d-flex justify-content-center align-items-center w-100" style="max-width:180px; min-width:150px;">
+                    <select class="form-select form-select-sm status-select" data-id="${item.job_id}">
+                      ${options.map(st => `<option value="${st}" ${st === selectedVal ? "selected" : ""}>${st}</option>`).join("")}
+                    </select>
+                  </div>
+                `;
+              })(),
             `
               <div class="d-flex justify-content-center align-items-center text-center w-100 flex-wrap">
                 ${computeDueDate(item.log_date, item.priority)}
