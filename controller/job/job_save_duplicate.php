@@ -3,6 +3,7 @@ include '../../database/db.php';
 session_start();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $jreference  = $_POST['jreference'] ?? '';
     $sourceID   = $_POST['source_job_id'] ?? 0;
     $reference  = $_POST['reference'] ?? '';
     $client_ref = $_POST['client_ref'] ?? '';
@@ -154,6 +155,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // ✅ Escape fields
     $client_code = mysqli_real_escape_string($conn, $client_code);
     $reference   = mysqli_real_escape_string($conn, $reference);
+    $jreference  = mysqli_real_escape_string($conn, $jreference);
     $client_ref  = mysqli_real_escape_string($conn, $client_ref);
     $assigned    = mysqli_real_escape_string($conn, $assigned);
     $checked     = mysqli_real_escape_string($conn, $checked);
@@ -169,6 +171,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // ✅ Insert
     $sql = "INSERT INTO jobs (
+                reference, 
                 log_date,
                 client_code,
                 job_reference_no,
@@ -187,6 +190,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 upload_project_files,
                 dwelling
             ) VALUES (
+                '$jreference',
                 '$log_date',
                 '$client_code',
                 '$reference',

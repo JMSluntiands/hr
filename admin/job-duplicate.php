@@ -92,6 +92,18 @@ if ($jobRef) {
           </div>
         </div>
 
+        <?php 
+          date_default_timezone_set('Asia/Manila');
+          $today = date("dm");
+
+          $sql = "SELECT COUNT(*) as cnt FROM jobs WHERE DATE(log_date) = CURDATE()";
+          $res = mysqli_query($conn, $sql);
+          $row = mysqli_fetch_assoc($res);
+          $count = $row['cnt'] + 1;
+
+          $reference = "JOB" . $today . "-" . str_pad($count, 3, "0", STR_PAD_LEFT);
+        ?>
+
         <form id="duplicateJobForm" enctype="multipart/form-data">
           <input type="hidden" name="source_job_id" value="<?= $jobID ?>">
           <!-- Hidden inputs to keep track of kept old files -->
@@ -101,10 +113,18 @@ if ($jobRef) {
           <div class="row">
             <div class="col-12">
               <div class="card">
-                <div class="card-header"><h5>Duplicate Job Form</h5></div>
+                <div class="card-header d-flex justify-content-between align-items-center">
+                  <div>
+                    <h5>Duplicate Job Form</h5>
+                  </div>
+                  <div>
+                    <h5><?php echo $reference ?></h5>
+                  </div>
+                </div>
                 <div class="card-body">
                   <div class="row">
                     <input type="hidden" name="log_date" id="log_date">
+                    <input type="hidden" name="jreference" value="<?php echo $reference ?>">
 
                     <!-- Reference No. (restricted) -->
                     <?php if ($_SESSION['role'] === 'LBS' || $_SESSION['role'] === 'LUNTIAN'): ?>
