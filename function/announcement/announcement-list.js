@@ -86,8 +86,8 @@ function loadAnnouncements() {
           item.title,
           item.message,
           item.status,
-          formatDate(item.start_date),
-          item.end_date ? formatDate(item.end_date) : '—'
+          item.start_date,
+          item.end_date
         ]).draw(false);
       });
 

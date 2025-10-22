@@ -64,48 +64,49 @@
   </div>
 
   <!-- 🔹 Add Modal -->
-  <div class="modal fade" id="addAnnouncementModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-        <form id="addAnnouncementForm">
-          <div class="modal-header">
-            <h5 class="modal-title" id="addModalLabel">Add Announcement</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+<div class="modal fade" id="addAnnouncementModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form id="addAnnouncementForm">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addModalLabel">Add Announcement</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label>Title</label>
+            <input type="text" class="form-control" name="title" required>
           </div>
-          <div class="modal-body">
-            <div class="mb-3">
-              <label>Title</label>
-              <input type="text" class="form-control" name="title" required>
+          <div class="mb-3">
+            <label>Message</label>
+            <textarea class="form-control" name="message" rows="4" required></textarea>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label>Start Date</label>
+              <input type="date" class="form-control" name="start_date" required>
             </div>
-            <div class="mb-3">
-              <label>Message</label>
-              <textarea class="form-control" name="message" rows="4" required></textarea>
-            </div>
-            <div class="row">
-              <div class="col-md-6 mb-3">
-                <label>Start Date</label>
-                <input type="datetime-local" class="form-control" name="start_date">
-              </div>
-              <div class="col-md-6 mb-3">
-                <label>End Date</label>
-                <input type="datetime-local" class="form-control" name="end_date">
-              </div>
-            </div>
-            <div class="mb-3">
-              <label>Status</label>
-              <select class="form-control" name="status">
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
+            <div class="col-md-6 mb-3">
+              <label>End Date</label>
+              <input type="date" class="form-control" name="end_date">
             </div>
           </div>
-          <div class="modal-footer">
-            <button type="submit" class="btn btn-success">Save</button>
+          <div class="mb-3">
+            <label>Status</label>
+            <select class="form-control" name="status">
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
           </div>
-        </form>
-      </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-success">Save</button>
+        </div>
+      </form>
     </div>
   </div>
+</div>
+
 
   <!-- 🔹 Update Announcement Modal -->
 <div class="modal fade" id="editAnnouncementModal" tabindex="-1" aria-labelledby="editAnnouncementLabel" aria-hidden="true">
@@ -132,11 +133,11 @@
           <div class="row">
             <div class="col-md-6 mb-3">
               <label class="form-label fw-bold">Start Date</label>
-              <input type="datetime-local" class="form-control" id="edit_start_date" name="start_date" required>
+              <input type="date" class="form-control" id="edit_start_date" name="start_date" required>
             </div>
             <div class="col-md-6 mb-3">
               <label class="form-label fw-bold">End Date</label>
-              <input type="datetime-local" class="form-control" id="edit_end_date" name="end_date">
+              <input type="date" class="form-control" id="edit_end_date" name="end_date">
             </div>
           </div>
 
@@ -158,7 +159,36 @@
 </div>
 
 
+
   <?php include_once 'include/footer.php' ?>
 </body>
+<script>
+$(document).ready(function () {
+  function setMinDate() {
+    const now = new Date();
+    const formattedNow = now.toISOString().slice(0, 16); // format: YYYY-MM-DDTHH:mm
+
+    // 🔹 Set minimum for Add modal fields
+    $('input[name="start_date"]').attr('min', formattedNow);
+    $('input[name="end_date"]').attr('min', formattedNow);
+  }
+
+  // 🔹 Run on page load
+  setMinDate();
+
+  // 🔹 Update end date when start date changes
+  $(document).on('change', 'input[name="start_date"]', function () {
+    const startDate = $(this).val();
+    const form = $(this).closest('form');
+    form.find('input[name="end_date"]').attr('min', startDate);
+  });
+
+  // 🔹 When Edit modal is opened
+  $('#editAnnouncementModal').on('show.bs.modal', function () {
+    setMinDate();
+  });
+});
+</script>
+
 <script src="../function/announcement/announcement-list.js?v=<?php echo time(); ?>"></script>
 </html>

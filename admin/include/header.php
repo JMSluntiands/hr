@@ -259,7 +259,7 @@
       display: flex;
       align-items: center;
       overflow: hidden;
-      z-index: 9999;
+      z-index: 2999;
       font-family: 'Poppins', sans-serif;
       border-bottom: 2px solid #004d40;
     }
@@ -286,5 +286,10 @@
       0% { transform: translateX(0%); }
       100% { transform: translateX(-100%); }
     }
+
+    .modal {
+      z-index: 3000 !important;
+    }
+
   </style>
 </head>
