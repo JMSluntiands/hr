@@ -143,6 +143,13 @@
               <li><a href="job-type">Job Type List</a></li>
             </ul>
           </li>
+          <li class="submenu">
+            <a href="#"><i class="si si-note"></i> <span>Announcement</span> <span class="menu-arrow"></span></a>
+            <ul class="removeActive">
+              <!-- <li><a href="job-type-add">Create Job Type</a></li> -->
+              <li><a href="announcement">Announcement List</a></li>
+            </ul>
+          </li>
 
         <?php endif; ?>
       </ul>
