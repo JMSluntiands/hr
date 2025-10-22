@@ -34,11 +34,11 @@
       <?php 
         $jobID = $_GET['id'];
       ?>
-
+      <?php include_once 'include/announcement.php' ?>
       <!-- Sidebar -->
       <?php include_once 'include/sidebar.php' ?>
       
-      <div class="page-wrapper">
+      <div class="page-wrapper" style="padding-top: 105px;">
         <div class="content container-fluid">
 
           <div class="page-header">

@@ -246,5 +246,45 @@
     body.dark-mode .card-footer .btn:hover {
       background-color: #0b5ed7;
     }
+
+    /* ===== Fixed Announcement Bar (Visible Below Navbar) ===== */
+    .announcement-bar-fixed {
+      position: fixed;
+      top: 65px; /* Adjust based on navbar height */
+      left: 0;
+      width: 100%;
+      height: 40px;
+      background: #333;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      overflow: hidden;
+      z-index: 9999;
+      font-family: 'Poppins', sans-serif;
+      border-bottom: 2px solid #004d40;
+    }
+
+    .announcement-text {
+      white-space: nowrap;
+      display: inline-block;
+      animation: slideText 10s linear infinite;
+    }
+
+    .announcement-text span {
+      padding-left: 100%;
+      display: inline-block;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .announcement-text:hover {
+      animation-play-state: paused;
+      cursor: pointer;
+    }
+
+    @keyframes slideText {
+      0% { transform: translateX(0%); }
+      100% { transform: translateX(-100%); }
+    }
   </style>
 </head>

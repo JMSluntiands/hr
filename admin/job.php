@@ -11,11 +11,11 @@
 
   </style>
   <body>
-    <div class="main-wrapper">
+    <div class="main-wrapper" style="padding-top: 55px;">
       <!-- Navbar -->
       <?php include_once 'include/navbar.php' ?>
       
-
+      <?php include_once 'include/announcement.php' ?>
       <!-- Sidebar -->
       <?php include_once 'include/sidebar.php' ?>
       
