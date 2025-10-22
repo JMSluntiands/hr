@@ -271,7 +271,12 @@ $(document).ready(function () {
               `
               : (function () {
                 // Always include special statuses
-                let special = ["Cancelled", "For Email Confirmation"];
+                let special = [
+                  "Pending", "For Discussion", "Revision Requested",
+                  "For Email Confirmation", "Allocated", "Accepted",
+                  "Processing", "For Checking", "Cancelled",
+                  "Completed", "Awaiting Further Information",
+                  "For Review", "Revised"];
                 // Build options array. If actual status exists and is not one of the special ones, include it
                 let options = special.slice();
                 if (item.job_status && special.indexOf(item.job_status) === -1) {
