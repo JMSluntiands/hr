@@ -1,7 +1,17 @@
-$('#togglePassword').click(function () {
-  let passwordField = $('#password');
-  let type = passwordField.attr('type') === 'password' ? 'text' : 'password';
-  passwordField.attr('type', type);
-  $('#eyeOpen').toggleClass('hidden');
-  $('#eyeClosed').toggleClass('hidden');
+$(document).ready(function() {
+  $("#togglePassword").click(function() {
+    const passwordInput = $("#password");
+    const eyeOpen = $("#eyeOpen");
+    const eyeClosed = $("#eyeClosed");
+    
+    if (passwordInput.attr("type") === "password") {
+      passwordInput.attr("type", "text");
+      eyeOpen.addClass("hidden");
+      eyeClosed.removeClass("hidden");
+    } else {
+      passwordInput.attr("type", "password");
+      eyeOpen.removeClass("hidden");
+      eyeClosed.addClass("hidden");
+    }
+  });
 });

@@ -6,19 +6,18 @@
 
         // Kung naka-login na
         if (isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
+          // Simplified roles: admin at employee lang
           $roleRedirects = [
-              "LBS"     => "admin/index",
-              "BPH"     => "admin/index",
-              "B1"      => "admin/index",
-              "BLUINQ"  => "admin/index",
-              "LUNTIAN" => "admin/index"
+              "admin"    => "admin/index",
+              "Admin"    => "admin/index",
+              "employee" => "employee/index",
+              "Employee" => "employee/index"
           ];
 
-          // Redirect sa tamang admin page
-          if (array_key_exists($_SESSION['role'], $roleRedirects)) {
-              header("Location: " . $roleRedirects[$_SESSION['role']]);
-              exit;
-          }
+          $role = $_SESSION['role'];
+          $target = $roleRedirects[$role] ?? "admin/index"; // default admin kung may hindi kilalang role
+          header("Location: " . $target);
+          exit;
         }
       ?>
 

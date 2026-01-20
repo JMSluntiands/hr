@@ -1,57 +1,8 @@
 <?php
-  $mailCount = 0; // default para sure na may value
-
-  // count para sa mailbox
-  $stmt = $conn->prepare("SELECT COUNT(*) FROM jobs WHERE job_status = 'For Email Confirmation'");
-  $stmt->execute();
-  $stmt->bind_result($mailCount);
-  $stmt->fetch();
-  $stmt->close();
-
+  // Disabled all jobs-related counters to avoid missing-table errors
+  $mailCount = 0;
   $listCount = 0;
-  $reviewCount = 0; // ✅ for review counter
-
-  if ($_SESSION['role'] === 'LUNTIAN') {
-      // bilangin lahat ng allocated jobs
-      $stmt = $conn->prepare("SELECT COUNT(*) FROM jobs WHERE job_status = 'Allocated'");
-      $stmt->execute();
-      $stmt->bind_result($listCount);
-      $stmt->fetch();
-      $stmt->close();
-
-      // bilangin lahat ng for review jobs
-      $stmt = $conn->prepare("SELECT COUNT(*) FROM jobs WHERE job_status = 'For Review'");
-      $stmt->execute();
-      $stmt->bind_result($reviewCount);
-      $stmt->fetch();
-      $stmt->close();
-  } else {
-      // bilangin jobs na naka-link sa client name = role
-      $stmt = $conn->prepare("
-          SELECT COUNT(*) 
-          FROM jobs j 
-          LEFT JOIN clients c ON j.client_code = c.client_code 
-          WHERE c.client_name = ? AND job_status = 'Allocated'
-      ");
-      $stmt->bind_param("s", $_SESSION['role']);
-      $stmt->execute();
-      $stmt->bind_result($listCount);
-      $stmt->fetch();
-      $stmt->close();
-
-      // bilangin jobs na naka-link sa client name = role AND For Review
-      $stmt = $conn->prepare("
-          SELECT COUNT(*) 
-          FROM jobs j 
-          LEFT JOIN clients c ON j.client_code = c.client_code 
-          WHERE c.client_name = ? AND job_status = 'For Review'
-      ");
-      $stmt->bind_param("s", $_SESSION['role']);
-      $stmt->execute();
-      $stmt->bind_result($reviewCount);
-      $stmt->fetch();
-      $stmt->close();
-  }
+  $reviewCount = 0;
 ?>
 
 <div class="sidebar" id="sidebar">

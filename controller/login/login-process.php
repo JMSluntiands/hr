@@ -2,29 +2,49 @@
 session_start();
 include '../../database/db.php'; // mysqli connection
 
+header('Content-Type: application/json');
+
 $email = $_POST['email'] ?? '';
 $password = $_POST['password'] ?? '';
 
 if (empty($email) || empty($password)) {
-    echo json_encode(["status" => "error", "message" => "Please fill in all fields"]);
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Please fill in all fields',
+    ]);
     exit;
 }
 
-$password = md5($password);
-$query = $conn->prepare("SELECT * FROM user_logins WHERE username = ? AND password = ?");
-$query->bind_param("ss", $email, $password);
-$query->execute();
-$result = $query->get_result();
+// Use the same hashing style as before (md5)
+$hashedPassword = md5($password);
 
-if ($row = $result->fetch_assoc()) {
-    $_SESSION['user_id'] = $row['id'];
-    $_SESSION['role'] = $row['client_name'];
-    $_SESSION['unique_id'] = $row['unique_code'];
+$stmt = $conn->prepare('SELECT id, email, password, role FROM user_login WHERE email = ? AND password = ? LIMIT 1');
+if (!$stmt) {
     echo json_encode([
-        "status" => "success",
-        "message" => "Login successful",
-        "role" => $row['client_name']
+        'status' => 'error',
+        'message' => 'Database error.',
+    ]);
+    exit;
+}
+
+$stmt->bind_param('ss', $email, $hashedPassword);
+$stmt->execute();
+$result = $stmt->get_result();
+$user = $result->fetch_assoc();
+$stmt->close();
+
+if ($user) {
+    $_SESSION['user_id'] = $user['id'];
+    $_SESSION['role'] = $user['role'] ?? 'employee';
+
+    echo json_encode([
+        'status' => 'success',
+        'message' => 'Login successful',
+        'role' => $_SESSION['role'],
     ]);
 } else {
-    echo json_encode(["status" => "error", "message" => "Invalid email or password"]);
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Invalid email or password',
+    ]);
 }

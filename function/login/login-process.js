@@ -2,6 +2,17 @@ $("#loginButton").click(function () {
   let email = $("#email").val().trim();
   let password = $("#password").val().trim();
 
+  if (!email || !password) {
+    Toastify({
+      text: "Please fill in all fields",
+      duration: 3000,
+      gravity: "top",
+      position: "right",
+      backgroundColor: "#e3342f",
+    }).showToast();
+    return;
+  }
+
   $.ajax({
     url: "controller/login/login-process.php",
     method: "POST",
@@ -13,27 +24,21 @@ $("#loginButton").click(function () {
         duration: 3000,
         gravity: "top",
         position: "right",
-        backgroundColor: response.status === "success" ? "#38a169" : "#e3342f"
+        backgroundColor: response.status === "success" ? "#38a169" : "#e3342f",
       }).showToast();
 
       if (response.status === "success") {
-        // Role → Redirect Map
-        let roleRedirects = {
-          "LBS": "admin/index",
-          "BPH": "admin/index",
-          "B1": "admin/index",
-          "BLUINQ": "admin/index",
-          "LUNTIAN": "admin/index",
-          "Staff": "subadmin/index",
-          "Checker": "subadmin/index"
-        };
+        // Simple role-based redirect
+        let role = response.role || "";
+        let target = "admin/index";
 
-        // Check kung may redirect para sa role
-        if (roleRedirects[response.role]) {
-          setTimeout(() => {
-            window.location.href = roleRedirects[response.role];
-          }, 1000); // delay para makita muna yung toast
+        if (role.toLowerCase() === "employee") {
+          target = "employee/index";
         }
+
+        setTimeout(function () {
+          window.location.href = target;
+        }, 800);
       }
     },
     error: function (xhr, status, error) {
@@ -43,8 +48,9 @@ $("#loginButton").click(function () {
         duration: 4000,
         gravity: "top",
         position: "right",
-        backgroundColor: "#e3342f"
+        backgroundColor: "#e3342f",
       }).showToast();
-    }
+    },
   });
 });
+
