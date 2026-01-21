@@ -1,0 +1,51 @@
+<?php
+/**
+ * Setup script to create employees table
+ * Run this file once to create the employees table in your database
+ */
+
+// Include database connection
+include 'db.php';
+
+if (!$conn) {
+    die("Database connection failed!");
+}
+
+// SQL to create employees table
+$sql = "CREATE TABLE IF NOT EXISTS `employees` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `employee_id` varchar(50) NOT NULL UNIQUE,
+  `full_name` varchar(255) NOT NULL,
+  `email` varchar(255) NOT NULL UNIQUE,
+  `phone` varchar(20) NOT NULL,
+  `position` varchar(100) NOT NULL,
+  `department` varchar(100) NOT NULL,
+  `date_hired` date NOT NULL,
+  `status` enum('Active','Inactive') NOT NULL DEFAULT 'Active',
+  `address` text DEFAULT NULL,
+  `birthdate` date DEFAULT NULL,
+  `gender` enum('Male','Female') DEFAULT NULL,
+  `sss` varchar(50) DEFAULT NULL,
+  `philhealth` varchar(50) DEFAULT NULL,
+  `pagibig` varchar(50) DEFAULT NULL,
+  `tin` varchar(50) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_employee_id` (`employee_id`),
+  UNIQUE KEY `unique_email` (`email`),
+  KEY `idx_status` (`status`),
+  KEY `idx_department` (`department`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
+
+// Execute the query
+if ($conn->query($sql) === TRUE) {
+    echo "✅ Employees table created successfully!<br>";
+    echo "The table is ready to use.<br>";
+    echo "<a href='../admin/staff-add.php'>Go to Add Employee Page</a>";
+} else {
+    echo "❌ Error creating table: " . $conn->error;
+}
+
+$conn->close();
+?>

@@ -39,7 +39,7 @@ $recentRequests = [
                 extend: {
                     fontFamily: { inter: ['Inter', 'sans-serif'] },
                     colors: {
-                        luntianBlue: '#2563eb',
+                        luntianBlue: '#FA9800',
                         luntianLight: '#f3f4ff'
                     }
                 }
@@ -49,16 +49,16 @@ $recentRequests = [
 </head>
 <body class="font-inter bg-[#f1f5f9] min-h-screen">
     <!-- Sidebar (fixed) -->
-    <aside class="fixed inset-y-0 left-0 w-64 bg-[#1d4ed8] text-white flex flex-col">
-        <div class="p-6 flex items-center gap-4 border-b border-blue-500/40">
+    <aside class="fixed inset-y-0 left-0 w-64 bg-[#FA9800] text-black flex flex-col">
+        <div class="p-6 flex items-center gap-4 border-b border-[#FA9800]/40">
             <div class="w-14 h-14 rounded-full overflow-hidden bg-white/10 flex items-center justify-center">
                 <span class="text-2xl font-semibold">
                     <?php echo strtoupper(substr($employeeName, 0, 1)); ?>
                 </span>
             </div>
             <div>
-                <div class="font-semibold text-sm"><?php echo htmlspecialchars($employeeName); ?></div>
-                <div class="text-xs text-blue-100">Employee</div>
+                <div class="font-bold text-sm"><?php echo htmlspecialchars($employeeName); ?></div>
+                <div class="text-xs font-bold">Employee</div>
             </div>
         </div>
         <nav class="flex-1 p-4 space-y-2">
@@ -87,8 +87,8 @@ $recentRequests = [
                 <span>My Request</span>
             </a>
         </nav>
-        <div class="p-4 border-t border-blue-500/40">
-            <a href="../logout.php" class="block text-xs text-blue-100 hover:text-white">Logout</a>
+        <div class="p-4 border-t border-white/20">
+            <a href="../logout.php" class="block text-xs font-medium text-white/80 hover:text-white">Logout</a>
         </div>
     </aside>
 
@@ -152,7 +152,7 @@ $recentRequests = [
             <section class="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex flex-col justify-between">
                 <h2 class="text-sm font-semibold text-slate-700 mb-4">Quick Actions</h2>
                 <div class="space-y-3 text-sm">
-                    <button class="w-full py-2.5 rounded-lg bg-[#1d4ed8] text-white text-sm font-medium hover:bg-[#1e40af]">
+                    <button class="w-full py-2.5 rounded-lg bg-[#FA9800] text-white text-sm font-medium hover:bg-[#d18a15]">
                         New Leave Request
                     </button>
                     <button class="w-full py-2.5 rounded-lg bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200">
@@ -216,7 +216,7 @@ $recentRequests = [
           e.preventDefault();
 
           // Remove any active state from all links
-          $('.js-side-link').removeClass('bg-[#f1f5f9] text-[#1d4ed8] font-medium rounded-l-none rounded-r-full');
+          $('.js-side-link').removeClass('bg-[#f1f5f9] text-[#FA9800] font-medium rounded-l-none rounded-r-full');
           $('.js-side-link').addClass('rounded-lg');
 
           // Load only the right content

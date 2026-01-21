@@ -25,7 +25,7 @@ $department   = $_SESSION['department'] ?? 'IT Department';
                 extend: {
                     fontFamily: { inter: ['Inter', 'sans-serif'] },
                     colors: {
-                        luntianBlue: '#2563eb',
+                        luntianBlue: '#FA9800',
                         luntianLight: '#f3f4ff'
                     }
                 }
@@ -35,46 +35,58 @@ $department   = $_SESSION['department'] ?? 'IT Department';
 </head>
 <body class="font-inter bg-[#f1f5f9] min-h-screen">
     <!-- Sidebar (fixed) -->
-    <aside class="fixed inset-y-0 left-0 w-64 bg-[#1d4ed8] text-white flex flex-col">
-        <div class="p-6 flex items-center gap-4 border-b border-blue-500/40">
-            <div class="w-14 h-14 rounded-full overflow-hidden bg-white/10 flex items-center justify-center">
-                <span class="text-2xl font-semibold">
+    <aside class="fixed inset-y-0 left-0 w-64 bg-[#d97706] text-white flex flex-col">
+        <div class="p-6 flex items-center gap-4 border-b border-white/20">
+            <div class="w-14 h-14 rounded-full overflow-hidden bg-white/20 flex items-center justify-center">
+                <span class="text-2xl font-semibold text-white">
                     <?php echo strtoupper(substr($employeeName, 0, 1)); ?>
                 </span>
             </div>
             <div>
-                <div class="font-semibold text-sm"><?php echo htmlspecialchars($employeeName); ?></div>
-                <div class="text-xs text-blue-100">Employee</div>
+                <div class="font-medium text-sm text-white"><?php echo htmlspecialchars($employeeName); ?></div>
+                <div class="text-xs text-white/80">Employee</div>
             </div>
         </div>
         <nav class="flex-1 p-4 space-y-2">
             <!-- Dashboard -->
             <a href="index.php"
                data-url="index.php"
-               class="js-side-link flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 text-sm">
+               class="js-side-link flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 text-sm font-medium text-white">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                </svg>
                 <span>Dashboard</span>
             </a>
             <!-- My Profile -->
             <a href="profile.php"
                data-url="profile.php"
-               class="js-side-link flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 text-sm">
+               class="js-side-link flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 text-sm font-medium text-white">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
                 <span>My Profile</span>
             </a>
             <!-- My Time Off -->
             <a href="timeoff.php"
                data-url="timeoff.php"
-               class="js-side-link flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 text-sm">
+               class="js-side-link flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 text-sm font-medium text-white">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
                 <span>My Time Off</span>
             </a>
             <!-- My Request -->
             <a href="request.php"
                data-url="request.php"
-               class="js-side-link flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 text-sm">
+               class="js-side-link flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 text-sm font-medium text-white">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
                 <span>My Request</span>
             </a>
         </nav>
-        <div class="p-4 border-t border-blue-500/40">
-            <a href="../logout.php" class="block text-xs text-blue-100 hover:text-white">Logout</a>
+        <div class="p-4 border-t border-white/20">
+            <a href="../logout.php" class="block text-xs font-medium text-white/80 hover:text-white">Logout</a>
         </div>
     </aside>
 
@@ -99,7 +111,7 @@ $department   = $_SESSION['department'] ?? 'IT Department';
         <!-- Summary Cards (SL / VL) -->
         <div class="flex items-center justify-between mb-3">
             <div></div>
-            <button class="inline-flex items-center px-4 py-2 rounded-lg bg-[#1d4ed8] text-white text-xs font-medium shadow-sm hover:bg-[#1e40af]">
+            <button class="inline-flex items-center px-4 py-2 rounded-lg bg-[#FA9800] text-white text-xs font-medium shadow-sm hover:bg-[#d18a15]">
                 + Add New Request
             </button>
         </div>
