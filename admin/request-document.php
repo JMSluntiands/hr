@@ -83,10 +83,10 @@ if ($conn) {
                 </div>
             </div>
             <div class="dropdown-container">
-                <button type="button" id="request-dropdown-btn" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-white hover:bg-white/10 cursor-pointer transition-colors">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
-                    <span>Request</span>
-                    <svg id="request-arrow" class="w-4 h-4 ml-auto transition-transform pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                <button type="button" id="request-dropdown-btn" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-white hover:bg-white/10 cursor-pointer transition-colors relative z-10 select-none" style="pointer-events: auto;">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
+                    <span class="flex-1 text-left">Request</span>
+                    <svg id="request-arrow" class="w-4 h-4 flex-shrink-0 ml-auto transition-transform pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
                 </button>
                 <div id="request-dropdown" class="hidden space-y-1 mt-1">
                     <a href="request-leaves" class="flex items-center gap-3 pl-11 pr-3 py-2 text-sm text-white hover:bg-white/10 rounded-lg">Request Leaves</a>
@@ -190,6 +190,18 @@ if ($conn) {
         </div>
     </div>
 
+    <style>
+        #request-dropdown-btn {
+            position: relative;
+            z-index: 10;
+            -webkit-tap-highlight-color: transparent;
+        }
+        #request-dropdown-btn svg,
+        #request-dropdown-btn span {
+            pointer-events: none;
+            user-select: none;
+        }
+    </style>
     <script>
         $(function() {
             $('#docRequestsTable').DataTable({
@@ -204,36 +216,93 @@ if ($conn) {
             });
             $('#cancelDeclineDoc').on('click', function() { $('#declineDocModal').addClass('hidden'); });
             $('#declineDocModal').on('click', function(e) { if (e.target === this) $('#declineDocModal').addClass('hidden'); });
-        });
 
-        document.addEventListener('DOMContentLoaded', function() {
-            var empBtn = document.getElementById('employees-dropdown-btn');
-            var empDD = document.getElementById('employees-dropdown');
-            var empAr = document.getElementById('employees-arrow');
-            var lvBtn = document.getElementById('leaves-dropdown-btn');
-            var lvDD = document.getElementById('leaves-dropdown');
-            var lvAr = document.getElementById('leaves-arrow');
-            var reqBtn = document.getElementById('request-dropdown-btn');
-            var reqDD = document.getElementById('request-dropdown');
-            var reqAr = document.getElementById('request-arrow');
-            function closeAll(exclude) {
-                if (exclude !== 'emp' && empDD) { empDD.classList.add('hidden'); if (empAr) empAr.style.transform = 'rotate(0deg)'; }
-                if (exclude !== 'lv' && lvDD) { lvDD.classList.add('hidden'); if (lvAr) lvAr.style.transform = 'rotate(0deg)'; }
-                if (exclude !== 'req' && reqDD) { reqDD.classList.add('hidden'); if (reqAr) reqAr.style.transform = 'rotate(0deg)'; }
+            // Dropdown functionality
+            const employeesBtn = document.getElementById('employees-dropdown-btn');
+            const employeesDropdown = document.getElementById('employees-dropdown');
+            const employeesArrow = document.getElementById('employees-arrow');
+            const leavesBtn = document.getElementById('leaves-dropdown-btn');
+            const leavesDropdown = document.getElementById('leaves-dropdown');
+            const leavesArrow = document.getElementById('leaves-arrow');
+            const requestBtn = document.getElementById('request-dropdown-btn');
+            const requestDropdown = document.getElementById('request-dropdown');
+            const requestArrow = document.getElementById('request-arrow');
+
+            function closeOtherDropdowns(exclude) {
+                if (exclude !== 'employees' && employeesDropdown) { employeesDropdown.classList.add('hidden'); if (employeesArrow) employeesArrow.style.transform = 'rotate(0deg)'; }
+                if (exclude !== 'leaves' && leavesDropdown) { leavesDropdown.classList.add('hidden'); if (leavesArrow) leavesArrow.style.transform = 'rotate(0deg)'; }
+                if (exclude !== 'request' && requestDropdown) { requestDropdown.classList.add('hidden'); if (requestArrow) requestArrow.style.transform = 'rotate(0deg)'; }
             }
-            function toggle(dd, ar) {
-                if (!dd) return;
-                var h = dd.classList.contains('hidden');
-                dd.classList.toggle('hidden');
-                if (ar) ar.style.transform = h ? 'rotate(180deg)' : 'rotate(0deg)';
+
+            function toggleRequestDropdown() {
+                if (!requestDropdown || !requestBtn) return;
+                closeOtherDropdowns('request');
+                const isHidden = requestDropdown.classList.contains('hidden');
+                requestDropdown.classList.toggle('hidden');
+                if (isHidden) {
+                    if (requestArrow) requestArrow.style.transform = 'rotate(180deg)';
+                } else {
+                    if (requestArrow) requestArrow.style.transform = 'rotate(0deg)';
+                }
             }
-            if (empBtn) empBtn.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); closeAll('emp'); toggle(empDD, empAr); });
-            if (lvBtn) lvBtn.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); closeAll('lv'); toggle(lvDD, lvAr); });
-            if (reqBtn) reqBtn.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); closeAll('req'); toggle(reqDD, reqAr); });
+
+            function toggleEmployeesDropdown() {
+                if (!employeesDropdown || !employeesBtn) return;
+                closeOtherDropdowns('employees');
+                const isHidden = employeesDropdown.classList.contains('hidden');
+                employeesDropdown.classList.toggle('hidden');
+                if (isHidden) {
+                    if (employeesArrow) employeesArrow.style.transform = 'rotate(180deg)';
+                } else {
+                    if (employeesArrow) employeesArrow.style.transform = 'rotate(0deg)';
+                }
+            }
+
+            function toggleLeavesDropdown() {
+                if (!leavesDropdown || !leavesBtn) return;
+                closeOtherDropdowns('leaves');
+                const isHidden = leavesDropdown.classList.contains('hidden');
+                leavesDropdown.classList.toggle('hidden');
+                if (isHidden) {
+                    if (leavesArrow) leavesArrow.style.transform = 'rotate(180deg)';
+                } else {
+                    if (leavesArrow) leavesArrow.style.transform = 'rotate(0deg)';
+                }
+            }
+
+            if (employeesBtn) {
+                $(employeesBtn).on('click', function(e) { e.preventDefault(); e.stopPropagation(); toggleEmployeesDropdown(); });
+            }
+            if (leavesBtn) {
+                $(leavesBtn).on('click', function(e) { e.preventDefault(); e.stopPropagation(); toggleLeavesDropdown(); });
+            }
+            if (requestBtn) {
+                $(requestBtn).on('click', function(e) { 
+                    e.preventDefault(); 
+                    e.stopPropagation(); 
+                    toggleRequestDropdown(); 
+                });
+                // Also handle clicks on the button using vanilla JS as fallback
+                requestBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    toggleRequestDropdown();
+                }, true);
+            }
+
             document.addEventListener('click', function(e) {
-                if (empBtn && empDD && !empBtn.contains(e.target) && !empDD.contains(e.target)) { empDD.classList.add('hidden'); if (empAr) empAr.style.transform = 'rotate(0deg)'; }
-                if (lvBtn && lvDD && !lvBtn.contains(e.target) && !lvDD.contains(e.target)) { lvDD.classList.add('hidden'); if (lvAr) lvAr.style.transform = 'rotate(0deg)'; }
-                if (reqBtn && reqDD && !reqBtn.contains(e.target) && !reqDD.contains(e.target)) { reqDD.classList.add('hidden'); if (reqAr) reqAr.style.transform = 'rotate(0deg)'; }
+                if (employeesBtn && employeesDropdown && !employeesBtn.contains(e.target) && !employeesDropdown.contains(e.target)) {
+                    employeesDropdown.classList.add('hidden');
+                    if (employeesArrow) employeesArrow.style.transform = 'rotate(0deg)';
+                }
+                if (leavesBtn && leavesDropdown && !leavesBtn.contains(e.target) && !leavesDropdown.contains(e.target)) {
+                    leavesDropdown.classList.add('hidden');
+                    if (leavesArrow) leavesArrow.style.transform = 'rotate(0deg)';
+                }
+                if (requestBtn && requestDropdown && !requestBtn.contains(e.target) && !requestDropdown.contains(e.target)) {
+                    requestDropdown.classList.add('hidden');
+                    if (requestArrow) requestArrow.style.transform = 'rotate(0deg)';
+                }
             });
         });
     </script>

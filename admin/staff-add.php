@@ -174,12 +174,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $defaultPassword = md5('PASSWORD'); // Default password
             $employeeRole = 'employee';
             
-            $loginStmt = $conn->prepare("INSERT INTO user_login (email, password, role, name) VALUES (?, ?, ?, ?)");
+            $loginStmt = $conn->prepare("INSERT INTO user_login (email, password, role) VALUES (?, ?, ?)");
             if (!$loginStmt) {
                 throw new Exception('Error preparing user_login insert: ' . $conn->error);
             }
             
-            $loginStmt->bind_param("ssss", $email, $defaultPassword, $employeeRole, $fullName);
+            $loginStmt->bind_param("sss", $email, $defaultPassword, $employeeRole);
             
             if (!$loginStmt->execute()) {
                 throw new Exception('Error creating user login: ' . $loginStmt->error);

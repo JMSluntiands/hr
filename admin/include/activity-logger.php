@@ -4,6 +4,7 @@
  * Usage: logActivity($conn, $action, $entityType, $entityId, $description)
  */
 
+if (!function_exists('logActivity')) {
 function logActivity($conn, $action, $entityType, $entityId = null, $description = null) {
     if (!$conn || !isset($_SESSION['user_id'])) {
         return false;
@@ -19,4 +20,5 @@ function logActivity($conn, $action, $entityType, $entityId = null, $description
     $stmt->close();
     
     return $result;
+}
 }

@@ -10,7 +10,6 @@ if (!isset($_SESSION['user_id'])) {
 // Include database connection
 include '../database/db.php';
 include 'include/activity-logger.php';
-include 'include/activity-logger.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $employeeId = (int)($_POST['employee_id'] ?? 0);
