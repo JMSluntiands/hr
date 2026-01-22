@@ -86,6 +86,12 @@ $recentRequests = [
                class="js-side-link flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 text-sm">
                 <span>My Request</span>
             </a>
+            <!-- Settings -->
+            <a href="settings.php"
+               data-url="settings.php"
+               class="js-side-link flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 text-sm">
+                <span>Settings</span>
+            </a>
         </nav>
         <div class="p-4 border-t border-white/20">
             <a href="../logout.php" class="block text-xs font-medium text-white/80 hover:text-white">Logout</a>
@@ -95,6 +101,32 @@ $recentRequests = [
     <!-- Main Content (scrollable only on the right side) -->
     <main class="ml-64 min-h-screen p-8 overflow-y-auto">
         <div id="main-inner">
+        <!-- Default Password Notice -->
+        <?php if (isset($_SESSION['is_default_password']) && $_SESSION['is_default_password']): ?>
+        <div id="defaultPasswordNotice" class="mb-6 bg-amber-50 border-l-4 border-amber-400 p-4 rounded-lg">
+            <div class="flex items-start">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-amber-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <div class="ml-3 flex-1">
+                    <p class="text-sm font-medium text-amber-800">
+                        <strong>Security Notice:</strong> You are currently using a default password. Please change your password immediately for security purposes.
+                    </p>
+                    <div class="mt-3">
+                        <a href="settings.php" class="inline-flex items-center px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 transition-colors">
+                            Change Password Now
+                        </a>
+                        <button type="button" id="dismissNotice" class="ml-3 text-sm text-amber-700 hover:text-amber-900 underline">
+                            Dismiss
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+        
         <!-- Top Bar -->
         <div class="flex items-center justify-between mb-8">
             <h1 class="text-2xl font-semibold text-slate-800">
@@ -251,6 +283,11 @@ $recentRequests = [
             const typeOk = type === 'all' || type === rowType;
             $(this).toggle(statusOk && typeOk);
           });
+        });
+
+        // Dismiss default password notice
+        $('#dismissNotice').on('click', function() {
+          $('#defaultPasswordNotice').fadeOut(300);
         });
       });
     </script>

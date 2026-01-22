@@ -36,11 +36,26 @@ $stmt->close();
 if ($user) {
     $_SESSION['user_id'] = $user['id'];
     $_SESSION['role'] = $user['role'] ?? 'employee';
+    
+    // Check if password is default (common defaults: password123, 123456789, password, admin123)
+    $defaultPasswords = ['password123', '123456789', 'password', 'admin123', '123456'];
+    $isDefaultPassword = in_array(strtolower($password), array_map('strtolower', $defaultPasswords));
+    
+    // Also check if password matches common default patterns
+    if (!$isDefaultPassword) {
+        // Check if password is all numbers or very simple
+        if (preg_match('/^[0-9]{6,}$/', $password) || strlen($password) <= 6) {
+            $isDefaultPassword = true;
+        }
+    }
+    
+    $_SESSION['is_default_password'] = $isDefaultPassword;
 
     echo json_encode([
         'status' => 'success',
         'message' => 'Login successful',
         'role' => $_SESSION['role'],
+        'is_default_password' => $isDefaultPassword,
     ]);
 } else {
     echo json_encode([
