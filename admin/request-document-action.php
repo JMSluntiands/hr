@@ -6,6 +6,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 include '../database/db.php';
+include 'include/activity-logger.php';
 
 $msg = '';
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
@@ -26,6 +27,17 @@ if ($chk && $chk->num_rows > 0) {
     $hasApprovedByName = true;
 }
 
+// Get document request details for logging
+$drStmt = $conn->prepare("SELECT dr.*, e.full_name FROM document_requests dr JOIN employees e ON dr.employee_id = e.id WHERE dr.id = ?");
+$drStmt->bind_param('i', $id);
+$drStmt->execute();
+$drResult = $drStmt->get_result();
+$drData = $drResult->fetch_assoc();
+$drStmt->close();
+
+$empName = $drData['full_name'] ?? 'Unknown';
+$docType = $drData['document_type'] ?? 'Unknown';
+
 if ($action === 'approve') {
     if ($hasApprovedByName) {
         $stmt = $conn->prepare("UPDATE document_requests SET status = 'Approved', approved_by = ?, approved_at = NOW(), approved_by_name = ?, rejection_reason = NULL WHERE id = ?");
@@ -35,6 +47,7 @@ if ($action === 'approve') {
         $stmt->bind_param('ii', $adminId, $id);
     }
     if ($stmt->execute()) {
+        logActivity($conn, 'Approve Document Request', 'Document Request', $id, "Approved $docType request for $empName");
         $_SESSION['request_document_msg'] = '✓ Document request approved.';
     } else {
         $_SESSION['request_document_msg'] = 'Failed to approve.';
@@ -50,6 +63,7 @@ if ($action === 'approve') {
     $stmt = $conn->prepare("UPDATE document_requests SET status = 'Rejected', rejection_reason = ?, approved_by = NULL, approved_at = NULL WHERE id = ?");
     $stmt->bind_param('si', $reason, $id);
     if ($stmt->execute()) {
+        logActivity($conn, 'Decline Document Request', 'Document Request', $id, "Declined $docType request for $empName. Reason: " . substr($reason, 0, 100));
         $_SESSION['request_document_msg'] = 'Document request declined.';
     } else {
         $_SESSION['request_document_msg'] = 'Failed to decline.';

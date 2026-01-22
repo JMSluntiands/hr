@@ -10,33 +10,23 @@ $role      = $_SESSION['role'] ?? 'admin';
 
 include '../database/db.php';
 
-$msg = '';
-if (isset($_SESSION['request_document_msg'])) {
-    $msg = $_SESSION['request_document_msg'];
-    unset($_SESSION['request_document_msg']);
-}
-
-$list = [];
+$logs = [];
 if ($conn) {
-    $sql = "SELECT dr.*, e.full_name, e.employee_id 
-            FROM document_requests dr 
-            JOIN employees e ON dr.employee_id = e.id 
-            ORDER BY dr.created_at DESC";
+    $sql = "SELECT * FROM activity_logs ORDER BY created_at DESC LIMIT 500";
     $res = $conn->query($sql);
     if ($res && $res->num_rows > 0) {
         while ($row = $res->fetch_assoc()) {
-            $list[] = $row;
+            $logs[] = $row;
         }
     }
 }
-
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Request Document - Admin</title>
+    <title>Activity Log - Admin</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
@@ -90,10 +80,10 @@ if ($conn) {
                 </button>
                 <div id="request-dropdown" class="hidden space-y-1 mt-1">
                     <a href="request-leaves" class="flex items-center gap-3 pl-11 pr-3 py-2 text-sm text-white hover:bg-white/10 rounded-lg">Request Leaves</a>
-                    <a href="request-document" class="flex items-center gap-3 pl-11 pr-3 py-2 text-sm text-white bg-white/10 rounded-lg">Request Document</a>
+                    <a href="request-document" class="flex items-center gap-3 pl-11 pr-3 py-2 text-sm text-white hover:bg-white/10 rounded-lg">Request Document</a>
                 </div>
             </div>
-            <a href="activity-log" class="flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-white hover:bg-white/10 cursor-pointer transition-colors">
+            <a href="activity-log" class="flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-white bg-white/10">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                 <span>Activity Log</span>
             </a>
@@ -114,54 +104,47 @@ if ($conn) {
     <main class="ml-64 min-h-screen overflow-y-auto p-8">
         <div class="flex items-center justify-between mb-6">
             <div>
-                <h1 class="text-2xl font-semibold text-slate-800">Request Document</h1>
-                <p class="text-sm text-slate-500 mt-1">Approve or decline document requests</p>
+                <h1 class="text-2xl font-semibold text-slate-800">Activity Log</h1>
+                <p class="text-sm text-slate-500 mt-1">View all system activities and actions</p>
             </div>
         </div>
 
-        <?php if ($msg): ?>
-        <div class="mb-6 px-4 py-3 rounded-lg <?php echo strpos($msg, '✓') !== false ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'; ?>">
-            <?php echo htmlspecialchars($msg); ?>
-        </div>
-        <?php endif; ?>
-
         <div class="bg-white rounded-xl shadow-sm border border-slate-100">
             <div class="p-6">
-                <table id="docRequestsTable" class="min-w-full text-sm">
+                <table id="activityTable" class="min-w-full text-sm">
                     <thead>
                         <tr class="border-b border-slate-200">
-                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Employee</th>
-                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Document</th>
-                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Date</th>
-                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Status</th>
-                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Actions</th>
+                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Date & Time</th>
+                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">User</th>
+                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Action</th>
+                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Entity Type</th>
+                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Description</th>
+                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">IP Address</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($list as $r):
-                            $status = $r['status'] ?? 'Pending';
-                            $statusClass = $status === 'Approved' ? 'bg-emerald-100 text-emerald-700' : ($status === 'Rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700');
-                        ?>
+                        <?php foreach ($logs as $log): ?>
                         <tr class="border-b border-slate-100 hover:bg-slate-50">
+                            <td class="px-4 py-3 text-slate-600"><?php echo !empty($log['created_at']) ? date('M d, Y H:i:s', strtotime($log['created_at'])) : '—'; ?></td>
                             <td class="px-4 py-3">
-                                <div class="font-medium text-slate-700"><?php echo htmlspecialchars($r['full_name'] ?? ''); ?></div>
-                                <div class="text-xs text-slate-500"><?php echo htmlspecialchars($r['employee_id'] ?? ''); ?></div>
-                            </td>
-                            <td class="px-4 py-3 text-slate-700"><?php echo htmlspecialchars($r['document_type'] ?? ''); ?></td>
-                            <td class="px-4 py-3 text-slate-600"><?php echo !empty($r['created_at']) ? date('M d, Y H:i', strtotime($r['created_at'])) : '—'; ?></td>
-                            <td class="px-4 py-3">
-                                <span class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium <?php echo $statusClass; ?>"><?php echo $status; ?></span>
+                                <div class="font-medium text-slate-700"><?php echo htmlspecialchars($log['user_name'] ?? 'Unknown'); ?></div>
+                                <div class="text-xs text-slate-500">ID: <?php echo (int)$log['user_id']; ?></div>
                             </td>
                             <td class="px-4 py-3">
-                                <?php if ($status === 'Pending'): ?>
-                                <div class="flex items-center gap-2">
-                                    <a href="request-document-action.php?action=approve&id=<?php echo (int)$r['id']; ?>" class="text-emerald-600 hover:text-emerald-700">Approve</a>
-                                    <button type="button" class="decline-doc-btn text-red-600 hover:text-red-700" data-id="<?php echo (int)$r['id']; ?>">Decline</button>
-                                </div>
-                                <?php else: ?>
-                                —
-                                <?php endif; ?>
+                                <span class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium 
+                                    <?php 
+                                    $action = $log['action'] ?? '';
+                                    echo strpos($action, 'Approve') !== false ? 'bg-emerald-100 text-emerald-700' : 
+                                         (strpos($action, 'Decline') !== false || strpos($action, 'Reject') !== false ? 'bg-red-100 text-red-700' : 
+                                         (strpos($action, 'Add') !== false || strpos($action, 'Create') !== false ? 'bg-blue-100 text-blue-700' : 
+                                         (strpos($action, 'Update') !== false ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-700'))); 
+                                    ?>">
+                                    <?php echo htmlspecialchars($action); ?>
+                                </span>
                             </td>
+                            <td class="px-4 py-3 text-slate-700"><?php echo htmlspecialchars($log['entity_type'] ?? '—'); ?></td>
+                            <td class="px-4 py-3 text-slate-600"><?php echo htmlspecialchars($log['description'] ?? '—'); ?></td>
+                            <td class="px-4 py-3 text-slate-500 text-xs"><?php echo htmlspecialchars($log['ip_address'] ?? '—'); ?></td>
                         </tr>
                         <?php endforeach; ?>
                     </tbody>
@@ -170,40 +153,13 @@ if ($conn) {
         </div>
     </main>
 
-    <div id="declineDocModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl shadow-xl max-w-md w-full">
-            <div class="p-6 border-b border-slate-200">
-                <h2 class="text-lg font-semibold text-slate-800">Decline Document Request</h2>
-            </div>
-            <form action="request-document-action.php" method="post" class="p-6 space-y-4">
-                <input type="hidden" name="action" value="decline">
-                <input type="hidden" name="id" id="declineDocId" value="">
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-2">Reason for declining <span class="text-red-500">*</span></label>
-                    <textarea name="rejection_reason" rows="3" required class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]"></textarea>
-                </div>
-                <div class="flex justify-end gap-3">
-                    <button type="button" id="cancelDeclineDoc" class="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50">Cancel</button>
-                    <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Decline</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <script>
         $(function() {
-            $('#docRequestsTable').DataTable({
-                pageLength: 10,
-                order: [[2, 'desc']],
-                language: { search: '', searchPlaceholder: 'Search...', emptyTable: 'No document requests found.' }
+            $('#activityTable').DataTable({
+                pageLength: 25,
+                order: [[0, 'desc']],
+                language: { search: '', searchPlaceholder: 'Search activities...', emptyTable: 'No activity logs found.' }
             });
-            $(document).on('click', '.decline-doc-btn', function() {
-                $('#declineDocId').val($(this).data('id'));
-                $('#declineDocModal form textarea').val('');
-                $('#declineDocModal').removeClass('hidden');
-            });
-            $('#cancelDeclineDoc').on('click', function() { $('#declineDocModal').addClass('hidden'); });
-            $('#declineDocModal').on('click', function(e) { if (e.target === this) $('#declineDocModal').addClass('hidden'); });
         });
 
         document.addEventListener('DOMContentLoaded', function() {
