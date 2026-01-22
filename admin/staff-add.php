@@ -38,6 +38,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $pagibig = trim($_POST['pagibig'] ?? '');
     $tin = trim($_POST['tin'] ?? '');
     
+    // Initialize errors array
+    $errors = [];
+    
     // Validate government IDs if provided
     if (!empty($sss)) {
         // Remove dashes for validation, SSS should be 10 digits: XX-XXXXXXX-X
@@ -70,9 +73,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors[] = 'TIN number must be 12 digits (format: XXX-XXX-XXX-XXX)';
         }
     }
-    
-    // Validation
-    $errors = [];
     
     if (empty($fullName)) {
         $errors[] = 'Full Name is required';
@@ -261,6 +261,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </a>
                     <a href="staff" class="flex items-center gap-3 pl-11 pr-3 py-2 text-sm text-white">
                         List of Employee
+                    </a>
+                </div>
+            </div>
+            <!-- Leaves Dropdown -->
+            <div class="dropdown-container">
+                <button type="button" id="leaves-dropdown-btn" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-white">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <span>Leaves</span>
+                    <svg id="leaves-arrow" class="w-4 h-4 ml-auto transition-transform text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </button>
+                <div id="leaves-dropdown" class="hidden space-y-1 mt-1">
+                    <a href="leaves-allocation" class="flex items-center gap-3 pl-11 pr-3 py-2 text-sm text-white">
+                        Allocation of Leave
+                    </a>
+                    <a href="leaves-summary" class="flex items-center gap-3 pl-11 pr-3 py-2 text-sm text-white">
+                        Leave Summary per Employee
                     </a>
                 </div>
             </div>
@@ -611,14 +631,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             const employeesBtn = document.getElementById('employees-dropdown-btn');
             const employeesDropdown = document.getElementById('employees-dropdown');
             const employeesArrow = document.getElementById('employees-arrow');
+            const leavesBtn = document.getElementById('leaves-dropdown-btn');
+            const leavesDropdown = document.getElementById('leaves-dropdown');
+            const leavesArrow = document.getElementById('leaves-arrow');
 
             function toggleEmployeesDropdown() {
                 const isHidden = employeesDropdown.classList.contains('hidden');
+                if (!leavesDropdown.classList.contains('hidden')) {
+                    leavesDropdown.classList.add('hidden');
+                    leavesArrow.style.transform = 'rotate(0deg)';
+                }
                 employeesDropdown.classList.toggle('hidden');
                 if (isHidden) {
                     employeesArrow.style.transform = 'rotate(180deg)';
                 } else {
                     employeesArrow.style.transform = 'rotate(0deg)';
+                }
+            }
+
+            function toggleLeavesDropdown() {
+                const isHidden = leavesDropdown.classList.contains('hidden');
+                if (!employeesDropdown.classList.contains('hidden')) {
+                    employeesDropdown.classList.add('hidden');
+                    employeesArrow.style.transform = 'rotate(0deg)';
+                }
+                leavesDropdown.classList.toggle('hidden');
+                if (isHidden) {
+                    leavesArrow.style.transform = 'rotate(180deg)';
+                } else {
+                    leavesArrow.style.transform = 'rotate(0deg)';
                 }
             }
 
@@ -629,12 +670,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 });
             }
 
-            // Close dropdown when clicking outside
+            if (leavesBtn) {
+                leavesBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    toggleLeavesDropdown();
+                });
+            }
+
+            // Close dropdowns when clicking outside
             document.addEventListener('click', function(e) {
                 if (employeesBtn && employeesDropdown && 
                     !employeesBtn.contains(e.target) && !employeesDropdown.contains(e.target)) {
                     employeesDropdown.classList.add('hidden');
                     employeesArrow.style.transform = 'rotate(0deg)';
+                }
+                if (leavesBtn && leavesDropdown && 
+                    !leavesBtn.contains(e.target) && !leavesDropdown.contains(e.target)) {
+                    leavesDropdown.classList.add('hidden');
+                    leavesArrow.style.transform = 'rotate(0deg)';
                 }
             });
         });

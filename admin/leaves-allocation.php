@@ -13,14 +13,18 @@ $role      = $_SESSION['role'] ?? 'admin';
 // Include database connection
 include '../database/db.php';
 
-// Fetch employees from database
+$success = isset($_SESSION['success_message']) ? $_SESSION['success_message'] : '';
+$error = isset($_SESSION['error_message']) ? $_SESSION['error_message'] : '';
+unset($_SESSION['success_message']);
+unset($_SESSION['error_message']);
+
+// Fetch employees for allocation
 $employees = [];
-$departments = [];
 if ($conn) {
-    // Fetch all employees
-    $query = "SELECT id, employee_id, full_name, email, phone, position, department, date_hired, status 
+    $query = "SELECT id, employee_id, full_name, email, department 
               FROM employees 
-              ORDER BY created_at DESC";
+              WHERE status = 'Active'
+              ORDER BY full_name ASC";
     $result = $conn->query($query);
     
     if ($result && $result->num_rows > 0) {
@@ -28,13 +32,21 @@ if ($conn) {
             $employees[] = $row;
         }
     }
+}
+
+// Fetch leave allocations
+$allocations = [];
+if ($conn) {
+    $allocQuery = "SELECT la.*, e.full_name, e.employee_id 
+                   FROM leave_allocations la
+                   JOIN employees e ON la.employee_id = e.id
+                   WHERE la.year = YEAR(CURDATE())
+                   ORDER BY e.full_name ASC, la.leave_type ASC";
+    $allocResult = $conn->query($allocQuery);
     
-    // Fetch unique departments for filter dropdown
-    $deptQuery = "SELECT DISTINCT department FROM employees WHERE department IS NOT NULL AND department != '' ORDER BY department";
-    $deptResult = $conn->query($deptQuery);
-    if ($deptResult && $deptResult->num_rows > 0) {
-        while ($deptRow = $deptResult->fetch_assoc()) {
-            $departments[] = $deptRow['department'];
+    if ($allocResult && $allocResult->num_rows > 0) {
+        while ($row = $allocResult->fetch_assoc()) {
+            $allocations[] = $row;
         }
     }
 }
@@ -44,7 +56,7 @@ if ($conn) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>List of Employee - Admin</title>
+    <title>Allocation of Leave - Admin</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
@@ -107,7 +119,7 @@ if ($conn) {
             </div>
             <!-- Leaves Dropdown -->
             <div class="dropdown-container">
-                <button type="button" id="leaves-dropdown-btn" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-white">
+                <button type="button" id="leaves-dropdown-btn" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 font-medium text-white">
                     <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
@@ -117,7 +129,7 @@ if ($conn) {
                     </svg>
                 </button>
                 <div id="leaves-dropdown" class="hidden space-y-1 mt-1">
-                    <a href="leaves-allocation" class="flex items-center gap-3 pl-11 pr-3 py-2 text-sm text-white">
+                    <a href="leaves-allocation" class="flex items-center gap-3 pl-11 pr-3 py-2 text-sm text-white bg-white/10">
                         Allocation of Leave
                     </a>
                     <a href="leaves-summary" class="flex items-center gap-3 pl-11 pr-3 py-2 text-sm text-white">
@@ -154,88 +166,69 @@ if ($conn) {
         <!-- Header -->
         <div class="flex items-center justify-between mb-6">
             <div>
-                <h1 class="text-2xl font-semibold text-slate-800">List of Employee</h1>
-                <p class="text-sm text-slate-500 mt-1">Manage and view all employees in the system</p>
+                <h1 class="text-2xl font-semibold text-slate-800">Allocation of Leave</h1>
+                <p class="text-sm text-slate-500 mt-1">Manage leave allocations for employees</p>
             </div>
-            <a href="staff-add" class="inline-flex items-center gap-2 px-4 py-2 bg-[#d97706] text-white rounded-lg hover:bg-[#b45309] font-medium text-sm">
+            <button onclick="openAllocationModal()" class="inline-flex items-center gap-2 px-4 py-2 bg-[#d97706] text-white rounded-lg hover:bg-[#b45309] font-medium text-sm">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                 </svg>
-                Add New Employee
-            </a>
+                Allocate Leave
+            </button>
         </div>
 
-        <!-- Filters -->
-        <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4 mb-6">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                    <label class="block text-xs font-medium text-slate-700 mb-1">Search</label>
-                    <input type="text" id="searchInput" placeholder="Search by name, email..." 
-                           class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]">
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-slate-700 mb-1">Department</label>
-                    <select id="departmentFilter" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]">
-                        <option value="">All Departments</option>
-                        <?php foreach ($departments as $dept): ?>
-                        <option value="<?php echo htmlspecialchars($dept); ?>"><?php echo htmlspecialchars($dept); ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-slate-700 mb-1">Status</label>
-                    <select id="statusFilter" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]">
-                        <option value="">All Status</option>
-                        <option value="Active">Active</option>
-                        <option value="Inactive">Inactive</option>
-                    </select>
-                </div>
-            </div>
+        <!-- Success/Error Messages -->
+        <?php if ($success): ?>
+        <div class="mb-6 bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-lg">
+            <?php echo $success; ?>
         </div>
+        <?php endif; ?>
+        
+        <?php if ($error): ?>
+        <div class="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+            <?php echo $error; ?>
+        </div>
+        <?php endif; ?>
 
         <!-- DataTable -->
         <div class="bg-white rounded-xl shadow-sm border border-slate-100">
             <div class="p-6">
-                <table id="employeeTable" class="min-w-full text-sm">
+                <table id="allocationTable" class="min-w-full text-sm">
                     <thead>
                         <tr class="border-b border-slate-200">
-                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide">Employee ID</th>
-                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide">Name</th>
-                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide">Email</th>
-                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide">Position</th>
-                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide">Department</th>
-                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide">Status</th>
-                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide">Date Hired</th>
+                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide">Employee</th>
+                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide">Leave Type</th>
+                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide">Total Days</th>
+                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide">Used Days</th>
+                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide">Remaining Days</th>
+                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide">Year</th>
                             <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wide">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($employees as $emp): ?>
+                        <?php foreach ($allocations as $alloc): ?>
                         <tr class="border-b border-slate-100 hover:bg-slate-50">
-                            <td class="px-4 py-3 text-slate-700"><?php echo htmlspecialchars($emp['employee_id'] ?? ''); ?></td>
-                            <td class="px-4 py-3 text-slate-700 font-medium"><?php echo htmlspecialchars($emp['full_name'] ?? ''); ?></td>
-                            <td class="px-4 py-3 text-slate-600"><?php echo htmlspecialchars($emp['email'] ?? ''); ?></td>
-                            <td class="px-4 py-3 text-slate-700"><?php echo htmlspecialchars($emp['position'] ?? ''); ?></td>
-                            <td class="px-4 py-3 text-slate-700"><?php echo htmlspecialchars($emp['department'] ?? ''); ?></td>
+                            <td class="px-4 py-3 text-slate-700">
+                                <div>
+                                    <div class="font-medium"><?php echo htmlspecialchars($alloc['full_name']); ?></div>
+                                    <div class="text-xs text-slate-500"><?php echo htmlspecialchars($alloc['employee_id']); ?></div>
+                                </div>
+                            </td>
+                            <td class="px-4 py-3 text-slate-700"><?php echo htmlspecialchars($alloc['leave_type']); ?></td>
+                            <td class="px-4 py-3 text-slate-700"><?php echo (int)$alloc['total_days']; ?></td>
+                            <td class="px-4 py-3 text-slate-700"><?php echo (int)$alloc['used_days']; ?></td>
                             <td class="px-4 py-3">
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?php echo ($emp['status'] ?? 'Active') === 'Active' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'; ?>">
-                                    <?php echo htmlspecialchars($emp['status'] ?? 'Active'); ?>
+                                <span class="font-medium <?php echo (int)$alloc['remaining_days'] > 0 ? 'text-emerald-600' : 'text-red-600'; ?>">
+                                    <?php echo (int)$alloc['remaining_days']; ?>
                                 </span>
                             </td>
-                            <td class="px-4 py-3 text-slate-600"><?php echo !empty($emp['date_hired']) ? date('M d, Y', strtotime($emp['date_hired'])) : 'N/A'; ?></td>
+                            <td class="px-4 py-3 text-slate-600"><?php echo htmlspecialchars($alloc['year']); ?></td>
                             <td class="px-4 py-3">
-                                <div class="flex items-center gap-2">
-                                    <button class="text-[#d97706] hover:text-[#b45309]" title="Edit" onclick="editEmployee(<?php echo $emp['id']; ?>)">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                        </svg>
-                                    </button>
-                                    <button class="text-red-600 hover:text-red-700" title="Delete" onclick="deleteEmployee(<?php echo $emp['id']; ?>, '<?php echo htmlspecialchars($emp['full_name'], ENT_QUOTES); ?>')">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                        </svg>
-                                    </button>
-                                </div>
+                                <button class="text-[#d97706] hover:text-[#b45309]" title="Edit" onclick="editAllocation(<?php echo $alloc['id']; ?>)">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                </button>
                             </td>
                         </tr>
                         <?php endforeach; ?>
@@ -245,49 +238,81 @@ if ($conn) {
         </div>
     </main>
 
+    <!-- Allocation Modal -->
+    <div id="allocationModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+        <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4">
+            <div class="p-6 border-b border-slate-200">
+                <h2 class="text-xl font-semibold text-slate-800">Allocate Leave</h2>
+            </div>
+            <form id="allocationForm" method="POST" action="leaves-allocation-process.php" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Employee <span class="text-red-500">*</span></label>
+                    <select name="employee_id" required class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]">
+                        <option value="">Select Employee</option>
+                        <?php foreach ($employees as $emp): ?>
+                        <option value="<?php echo $emp['id']; ?>"><?php echo htmlspecialchars($emp['full_name'] . ' (' . $emp['employee_id'] . ')'); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Leave Type <span class="text-red-500">*</span></label>
+                    <select name="leave_type" required class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]">
+                        <option value="">Select Leave Type</option>
+                        <option value="Sick Leave">Sick Leave</option>
+                        <option value="Vacation Leave">Vacation Leave</option>
+                        <option value="Emergency Leave">Emergency Leave</option>
+                        <option value="Bereavement Leave">Bereavement Leave</option>
+                        <option value="Maternity Leave">Maternity Leave</option>
+                        <option value="Paternity Leave">Paternity Leave</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Total Days <span class="text-red-500">*</span></label>
+                    <input type="number" name="total_days" required min="0" class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Year <span class="text-red-500">*</span></label>
+                    <input type="number" name="year" required value="<?php echo date('Y'); ?>" min="2020" max="2099" class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]">
+                </div>
+                <div class="flex justify-end gap-3 pt-4">
+                    <button type="button" onclick="closeAllocationModal()" class="px-6 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 font-medium">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-6 py-2 bg-[#d97706] text-white rounded-lg hover:bg-[#b45309] font-medium">
+                        Allocate
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         $(document).ready(function() {
-            var table = $('#employeeTable').DataTable({
+            $('#allocationTable').DataTable({
                 pageLength: 10,
                 lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
-                order: [[6, 'desc']], // Sort by Date Hired (column 6) descending
+                order: [[0, 'asc']],
                 language: {
                     search: "",
-                    searchPlaceholder: "Search employees...",
-                    emptyTable: "No employees found. <a href='staff-add' class='text-[#d97706] hover:underline'>Add your first employee</a>"
-                },
-                dom: '<"flex justify-between items-center mb-4"<"flex gap-2"l><"flex gap-2"f>>rt<"flex justify-between items-center mt-4"<"text-sm text-slate-600"i><"flex gap-2"p>>',
-            });
-
-            // Custom search
-            $('#searchInput').on('keyup', function() {
-                table.search(this.value).draw();
-            });
-
-            // Department filter
-            $('#departmentFilter').on('change', function() {
-                table.column(4).search(this.value).draw();
-            });
-
-            // Status filter
-            $('#statusFilter').on('change', function() {
-                table.column(5).search(this.value).draw();
+                    searchPlaceholder: "Search allocations...",
+                    emptyTable: "No leave allocations found."
+                }
             });
         });
 
-        // Edit and Delete functions
-        function editEmployee(id) {
+        function openAllocationModal() {
+            document.getElementById('allocationModal').classList.remove('hidden');
+        }
+
+        function closeAllocationModal() {
+            document.getElementById('allocationModal').classList.add('hidden');
+        }
+
+        function editAllocation(id) {
             // TODO: Implement edit functionality
-            window.location.href = 'staff-edit.php?id=' + id;
+            alert('Edit functionality coming soon for allocation ID: ' + id);
         }
-        
-        function deleteEmployee(id, name) {
-            if (confirm('Are you sure you want to delete employee: ' + name + '?')) {
-                // TODO: Implement delete functionality via AJAX or form submission
-                window.location.href = 'staff-delete.php?id=' + id;
-            }
-        }
-        
+
         // Dropdown functionality
         document.addEventListener('DOMContentLoaded', function() {
             const employeesBtn = document.getElementById('employees-dropdown-btn');
@@ -297,49 +322,38 @@ if ($conn) {
             const leavesDropdown = document.getElementById('leaves-dropdown');
             const leavesArrow = document.getElementById('leaves-arrow');
 
-            function toggleEmployeesDropdown() {
-                const isHidden = employeesDropdown.classList.contains('hidden');
-                if (!leavesDropdown.classList.contains('hidden')) {
-                    leavesDropdown.classList.add('hidden');
-                    leavesArrow.style.transform = 'rotate(0deg)';
-                }
-                employeesDropdown.classList.toggle('hidden');
+            function toggleDropdown(btn, dropdown, arrow) {
+                const isHidden = dropdown.classList.contains('hidden');
+                dropdown.classList.toggle('hidden');
                 if (isHidden) {
-                    employeesArrow.style.transform = 'rotate(180deg)';
+                    arrow.style.transform = 'rotate(180deg)';
                 } else {
-                    employeesArrow.style.transform = 'rotate(0deg)';
-                }
-            }
-
-            function toggleLeavesDropdown() {
-                const isHidden = leavesDropdown.classList.contains('hidden');
-                if (!employeesDropdown.classList.contains('hidden')) {
-                    employeesDropdown.classList.add('hidden');
-                    employeesArrow.style.transform = 'rotate(0deg)';
-                }
-                leavesDropdown.classList.toggle('hidden');
-                if (isHidden) {
-                    leavesArrow.style.transform = 'rotate(180deg)';
-                } else {
-                    leavesArrow.style.transform = 'rotate(0deg)';
+                    arrow.style.transform = 'rotate(0deg)';
                 }
             }
 
             if (employeesBtn) {
                 employeesBtn.addEventListener('click', function(e) {
                     e.stopPropagation();
-                    toggleEmployeesDropdown();
+                    if (!leavesDropdown.classList.contains('hidden')) {
+                        leavesDropdown.classList.add('hidden');
+                        leavesArrow.style.transform = 'rotate(0deg)';
+                    }
+                    toggleDropdown(employeesBtn, employeesDropdown, employeesArrow);
                 });
             }
 
             if (leavesBtn) {
                 leavesBtn.addEventListener('click', function(e) {
                     e.stopPropagation();
-                    toggleLeavesDropdown();
+                    if (!employeesDropdown.classList.contains('hidden')) {
+                        employeesDropdown.classList.add('hidden');
+                        employeesArrow.style.transform = 'rotate(0deg)';
+                    }
+                    toggleDropdown(leavesBtn, leavesDropdown, leavesArrow);
                 });
             }
 
-            // Close dropdowns when clicking outside
             document.addEventListener('click', function(e) {
                 if (employeesBtn && employeesDropdown && 
                     !employeesBtn.contains(e.target) && !employeesDropdown.contains(e.target)) {

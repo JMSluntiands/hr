@@ -10,10 +10,33 @@ if (!isset($_SESSION['user_id'])) {
 $adminName = $_SESSION['name'] ?? 'Admin User';
 $role      = $_SESSION['role'] ?? 'admin';
 
-// Dummy values – palitan mo na lang pag may real data
-$totalEmployees   = 24;
-$openRequests     = 5;
-$pendingApprovals = 3;
+// Include database connection
+include '../database/db.php';
+
+// Get counts from database
+$totalEmployees = 0;
+$openRequests = 0;
+$pendingApprovals = 0;
+
+if ($conn) {
+    // Count total employees
+    $empResult = $conn->query("SELECT COUNT(*) as total FROM employees WHERE status = 'Active'");
+    if ($empResult && $row = $empResult->fetch_assoc()) {
+        $totalEmployees = (int)$row['total'];
+    }
+    
+    // Count open leave requests
+    $leaveResult = $conn->query("SELECT COUNT(*) as total FROM leave_requests WHERE status = 'Pending'");
+    if ($leaveResult && $row = $leaveResult->fetch_assoc()) {
+        $openRequests = (int)$row['total'];
+    }
+    
+    // Count pending approvals (leave requests with pending status)
+    $pendingResult = $conn->query("SELECT COUNT(*) as total FROM leave_requests WHERE status = 'Pending'");
+    if ($pendingResult && $row = $pendingResult->fetch_assoc()) {
+        $pendingApprovals = (int)$row['total'];
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -61,21 +84,41 @@ $pendingApprovals = 3;
             </a>
             <!-- Employees Dropdown -->
             <div class="dropdown-container">
-                <button type="button" id="employees-dropdown-btn" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-white">
+                <button type="button" id="employees-dropdown-btn" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-white hover:bg-white/10 cursor-pointer transition-colors">
                     <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                     </svg>
                     <span>Employees</span>
-                    <svg id="employees-arrow" class="w-4 h-4 ml-auto transition-transform text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg id="employees-arrow" class="w-4 h-4 ml-auto transition-transform text-white pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                     </svg>
                 </button>
                 <div id="employees-dropdown" class="hidden space-y-1 mt-1">
-                    <a href="staff-add" class="flex items-center gap-3 pl-11 pr-3 py-2 text-sm text-white">
+                    <a href="staff-add" class="flex items-center gap-3 pl-11 pr-3 py-2 text-sm text-white hover:bg-white/10 rounded-lg transition-colors">
                         Add New Employee
                     </a>
-                    <a href="staff" class="flex items-center gap-3 pl-11 pr-3 py-2 text-sm text-white">
+                    <a href="staff" class="flex items-center gap-3 pl-11 pr-3 py-2 text-sm text-white hover:bg-white/10 rounded-lg transition-colors">
                         List of Employee
+                    </a>
+                </div>
+            </div>
+            <!-- Leaves Dropdown -->
+            <div class="dropdown-container">
+                <button type="button" id="leaves-dropdown-btn" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-white hover:bg-white/10 cursor-pointer transition-colors">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <span>Leaves</span>
+                    <svg id="leaves-arrow" class="w-4 h-4 ml-auto transition-transform text-white pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </button>
+                <div id="leaves-dropdown" class="hidden space-y-1 mt-1">
+                    <a href="leaves-allocation" class="flex items-center gap-3 pl-11 pr-3 py-2 text-sm text-white hover:bg-white/10 rounded-lg transition-colors">
+                        Allocation of Leave
+                    </a>
+                    <a href="leaves-summary" class="flex items-center gap-3 pl-11 pr-3 py-2 text-sm text-white hover:bg-white/10 rounded-lg transition-colors">
+                        Leave Summary per Employee
                     </a>
                 </div>
             </div>
@@ -175,30 +218,87 @@ $pendingApprovals = 3;
     <script>
         // Dropdown functionality
         document.addEventListener('DOMContentLoaded', function() {
+            // Declare all variables first
             const employeesBtn = document.getElementById('employees-dropdown-btn');
             const employeesDropdown = document.getElementById('employees-dropdown');
             const employeesArrow = document.getElementById('employees-arrow');
+            const leavesBtn = document.getElementById('leaves-dropdown-btn');
+            const leavesDropdown = document.getElementById('leaves-dropdown');
+            const leavesArrow = document.getElementById('leaves-arrow');
+
+            console.log('Dropdown elements:', {
+                employeesBtn: !!employeesBtn,
+                employeesDropdown: !!employeesDropdown,
+                leavesBtn: !!leavesBtn,
+                leavesDropdown: !!leavesDropdown
+            });
 
             function toggleEmployeesDropdown() {
+                if (!employeesDropdown || !employeesBtn) return;
                 const isHidden = employeesDropdown.classList.contains('hidden');
+                // Close leaves dropdown if open
+                if (leavesDropdown && !leavesDropdown.classList.contains('hidden')) {
+                    leavesDropdown.classList.add('hidden');
+                    if (leavesArrow) leavesArrow.style.transform = 'rotate(0deg)';
+                }
                 employeesDropdown.classList.toggle('hidden');
                 if (isHidden) {
-                    employeesArrow.style.transform = 'rotate(180deg)';
+                    if (employeesArrow) employeesArrow.style.transform = 'rotate(180deg)';
                 } else {
-                    employeesArrow.style.transform = 'rotate(0deg)';
+                    if (employeesArrow) employeesArrow.style.transform = 'rotate(0deg)';
                 }
             }
 
-            employeesBtn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                toggleEmployeesDropdown();
-            });
-
-            // Close dropdown when clicking outside
-            document.addEventListener('click', function(e) {
-                if (!employeesBtn.contains(e.target) && !employeesDropdown.contains(e.target)) {
+            function toggleLeavesDropdown() {
+                if (!leavesDropdown || !leavesBtn) return;
+                const isHidden = leavesDropdown.classList.contains('hidden');
+                // Close employees dropdown if open
+                if (employeesDropdown && !employeesDropdown.classList.contains('hidden')) {
                     employeesDropdown.classList.add('hidden');
-                    employeesArrow.style.transform = 'rotate(0deg)';
+                    if (employeesArrow) employeesArrow.style.transform = 'rotate(0deg)';
+                }
+                leavesDropdown.classList.toggle('hidden');
+                if (isHidden) {
+                    if (leavesArrow) leavesArrow.style.transform = 'rotate(180deg)';
+                } else {
+                    if (leavesArrow) leavesArrow.style.transform = 'rotate(0deg)';
+                }
+            }
+
+            // Add event listeners
+            if (employeesBtn) {
+                employeesBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('Employees button clicked');
+                    toggleEmployeesDropdown();
+                });
+            } else {
+                console.error('Employees button not found!');
+            }
+
+            if (leavesBtn) {
+                leavesBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('Leaves button clicked');
+                    toggleLeavesDropdown();
+                });
+            } else {
+                console.error('Leaves button not found!');
+            }
+
+            // Close dropdowns when clicking outside
+            document.addEventListener('click', function(e) {
+                if (employeesBtn && employeesDropdown && 
+                    !employeesBtn.contains(e.target) && !employeesDropdown.contains(e.target)) {
+                    employeesDropdown.classList.add('hidden');
+                    if (employeesArrow) employeesArrow.style.transform = 'rotate(0deg)';
+                }
+                if (leavesBtn && leavesDropdown && 
+                    !leavesBtn.contains(e.target) && !leavesDropdown.contains(e.target)) {
+                    leavesDropdown.classList.add('hidden');
+                    if (leavesArrow) leavesArrow.style.transform = 'rotate(0deg)';
                 }
             });
         });
