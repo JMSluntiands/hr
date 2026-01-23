@@ -17,6 +17,30 @@ include 'include/activity-logger.php';
 $success = '';
 $error = '';
 
+// Get employee ID from URL
+$employeeId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+
+if (!$employeeId) {
+    header('Location: staff.php');
+    exit;
+}
+
+// Fetch existing employee data
+$employee = null;
+if ($conn) {
+    $stmt = $conn->prepare("SELECT * FROM employees WHERE id = ?");
+    $stmt->bind_param("i", $employeeId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $employee = $result->fetch_assoc();
+    $stmt->close();
+    
+    if (!$employee) {
+        header('Location: staff.php');
+        exit;
+    }
+}
+
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Get form data
@@ -84,9 +108,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $errors[] = 'Invalid email format';
     } else {
-        // Check if email already exists
-        $stmt = $conn->prepare("SELECT id FROM employees WHERE email = ?");
-        $stmt->bind_param("s", $email);
+        // Check if email already exists (excluding current employee)
+        $stmt = $conn->prepare("SELECT id FROM employees WHERE email = ? AND id != ?");
+        $stmt->bind_param("si", $email, $employeeId);
         $stmt->execute();
         $result = $stmt->get_result();
         if ($result->num_rows > 0) {
@@ -211,7 +235,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Add New Employee - Admin</title>
+    <title>Edit Employee - Admin</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script>
@@ -373,7 +397,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-2">Full Name <span class="text-red-500">*</span></label>
                             <input type="text" name="full_name" id="full_name" required 
-                                   value="<?php echo htmlspecialchars($_POST['full_name'] ?? ''); ?>"
+                                   value="<?php echo htmlspecialchars($_POST['full_name'] ?? ($employee['full_name'] ?? '')); ?>"
                                    class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]"
                                    minlength="3">
                             <span class="error-message text-red-500 text-xs mt-1 hidden"></span>
@@ -390,7 +414,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <div class="relative">
                                 <span class="absolute left-4 top-2 text-slate-500">09</span>
                                 <input type="tel" name="phone" id="phone" required 
-                                       value="<?php echo htmlspecialchars(preg_replace('/^09/', '', $_POST['phone'] ?? '')); ?>"
+                                       value="<?php echo htmlspecialchars(preg_replace('/^09/', '', $_POST['phone'] ?? ($employee['phone'] ?? ''))); ?>"
                                        pattern="[0-9]{9}" placeholder="123456789" maxlength="9"
                                        class="w-full pl-12 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]"
                                        oninput="this.value = this.value.replace(/[^0-9]/g, ''); if(this.value.length > 9) this.value = this.value.slice(0, 9);">
@@ -401,15 +425,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-2">Birthdate</label>
                             <input type="date" name="birthdate" id="birthdate"
-                                   value="<?php echo htmlspecialchars($_POST['birthdate'] ?? ''); ?>"
+                                   value="<?php echo htmlspecialchars($_POST['birthdate'] ?? ($employee['birthdate'] ?? '')); ?>"
                                    class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-2">Gender</label>
                             <select name="gender" id="gender" class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]">
                                 <option value="">Select Gender</option>
-                                <option value="Male" <?php echo (isset($_POST['gender']) && $_POST['gender'] === 'Male') ? 'selected' : ''; ?>>Male</option>
-                                <option value="Female" <?php echo (isset($_POST['gender']) && $_POST['gender'] === 'Female') ? 'selected' : ''; ?>>Female</option>
+                                <option value="Male" <?php echo ((isset($_POST['gender']) && $_POST['gender'] === 'Male') || (!isset($_POST['gender']) && ($employee['gender'] ?? '') === 'Male')) ? 'selected' : ''; ?>>Male</option>
+                                <option value="Female" <?php echo ((isset($_POST['gender']) && $_POST['gender'] === 'Female') || (!isset($_POST['gender']) && ($employee['gender'] ?? '') === 'Female')) ? 'selected' : ''; ?>>Female</option>
                             </select>
                         </div>
                         <div class="md:col-span-2">
@@ -427,7 +451,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-2">Position <span class="text-red-500">*</span></label>
                             <input type="text" name="position" id="position" required 
-                                   value="<?php echo htmlspecialchars($_POST['position'] ?? ''); ?>"
+                                   value="<?php echo htmlspecialchars($_POST['position'] ?? ($employee['position'] ?? '')); ?>"
                                    class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]">
                             <span class="error-message text-red-500 text-xs mt-1 hidden"></span>
                         </div>
@@ -446,7 +470,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-2">Date Hired <span class="text-red-500">*</span></label>
                             <input type="date" name="date_hired" id="date_hired" required 
-                                   value="<?php echo htmlspecialchars($_POST['date_hired'] ?? ''); ?>"
+                                   value="<?php echo htmlspecialchars($_POST['date_hired'] ?? ($employee['date_hired'] ?? '')); ?>"
                                    class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]">
                             <span class="error-message text-red-500 text-xs mt-1 hidden"></span>
                         </div>
@@ -467,7 +491,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-2">SSS Number</label>
                             <input type="text" name="sss" id="sss" 
-                                   value="<?php echo htmlspecialchars($_POST['sss'] ?? ''); ?>"
+                                   value="<?php echo htmlspecialchars($_POST['sss'] ?? ($employee['sss'] ?? '')); ?>"
                                    pattern="[0-9]{2}-[0-9]{7}-[0-9]" placeholder="XX-XXXXXXX-X" maxlength="13"
                                    class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]">
                             <p class="text-xs text-slate-500 mt-1">10 digits (format: XX-XXXXXXX-X)</p>
@@ -475,7 +499,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-2">PhilHealth Number</label>
                             <input type="text" name="philhealth" id="philhealth" 
-                                   value="<?php echo htmlspecialchars($_POST['philhealth'] ?? ''); ?>"
+                                   value="<?php echo htmlspecialchars($_POST['philhealth'] ?? ($employee['philhealth'] ?? '')); ?>"
                                    pattern="[0-9]{2}-[0-9]{9}-[0-9]" placeholder="XX-XXXXXXXXX-X" maxlength="14"
                                    class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]">
                             <p class="text-xs text-slate-500 mt-1">12 digits (format: XX-XXXXXXXXX-X)</p>
@@ -491,7 +515,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-2">TIN Number</label>
                             <input type="text" name="tin" id="tin" 
-                                   value="<?php echo htmlspecialchars($_POST['tin'] ?? ''); ?>"
+                                   value="<?php echo htmlspecialchars($_POST['tin'] ?? ($employee['tin'] ?? '')); ?>"
                                    pattern="[0-9]{3}-[0-9]{3}-[0-9]{3}-[0-9]{3}" placeholder="XXX-XXX-XXX-XXX" maxlength="15"
                                    class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]">
                             <p class="text-xs text-slate-500 mt-1">12 digits (format: XXX-XXX-XXX-XXX)</p>
@@ -504,7 +528,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         Cancel
                     </a>
                     <button type="submit" class="px-6 py-2 bg-[#d97706] text-white rounded-lg hover:bg-[#b45309] font-medium">
-                        Add Employee
+                        Update Employee
                     </button>
                 </div>
             </form>

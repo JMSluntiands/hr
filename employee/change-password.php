@@ -53,7 +53,12 @@ if (!$user) {
 
 // Update password
 $hashedNewPassword = md5($newPassword);
-$updateStmt = $conn->prepare("UPDATE user_login SET password = ? WHERE id = ?");
+$cols = [];
+$cr = $conn->query("SHOW COLUMNS FROM user_login");
+if ($cr) { while ($r = $cr->fetch_assoc()) $cols[] = $r['Field']; }
+$hasLast = in_array('last_password_change', $cols);
+$sql = $hasLast ? "UPDATE user_login SET password = ?, last_password_change = NOW() WHERE id = ?" : "UPDATE user_login SET password = ? WHERE id = ?";
+$updateStmt = $conn->prepare($sql);
 
 if (!$updateStmt) {
     echo json_encode([

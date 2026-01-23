@@ -17,7 +17,9 @@ if (isset($_SESSION['request_document_msg'])) {
 }
 
 $list = [];
+$uploadList = [];
 if ($conn) {
+    // Document requests (certificates like COE, SSS, etc.)
     $sql = "SELECT dr.*, e.full_name, e.employee_id 
             FROM document_requests dr 
             JOIN employees e ON dr.employee_id = e.id 
@@ -26,6 +28,19 @@ if ($conn) {
     if ($res && $res->num_rows > 0) {
         while ($row = $res->fetch_assoc()) {
             $list[] = $row;
+        }
+    }
+    
+    // Employee document uploads (HRIS 201 file - Birth Certificate, IDs, etc.)
+    $uploadSql = "SELECT edu.*, e.full_name, e.employee_id 
+                  FROM employee_document_uploads edu 
+                  JOIN employees e ON edu.employee_id = e.id 
+                  WHERE edu.status = 'Pending'
+                  ORDER BY edu.created_at DESC";
+    $uploadRes = $conn->query($uploadSql);
+    if ($uploadRes && $uploadRes->num_rows > 0) {
+        while ($row = $uploadRes->fetch_assoc()) {
+            $uploadList[] = $row;
         }
     }
 }
@@ -98,9 +113,13 @@ if ($conn) {
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                 <span>Activity Log</span>
             </a>
-            <a href="announcement" class="flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-white">
+            <a href="announcement" class="flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-white hover:bg-white/10">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" /></svg>
                 <span>Announcements</span>
+            </a>
+            <a href="accounts" class="flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-white hover:bg-white/10">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                <span>Accounts</span>
             </a>
         </nav>
         <div class="p-4 border-t border-white/20">
@@ -116,7 +135,7 @@ if ($conn) {
         <div class="flex items-center justify-between mb-6">
             <div>
                 <h1 class="text-2xl font-semibold text-slate-800">Request Document</h1>
-                <p class="text-sm text-slate-500 mt-1">Approve or decline document requests</p>
+                <p class="text-sm text-slate-500 mt-1">Approve or decline document requests and HRIS 201 file uploads</p>
             </div>
         </div>
 
@@ -126,7 +145,11 @@ if ($conn) {
         </div>
         <?php endif; ?>
 
-        <div class="bg-white rounded-xl shadow-sm border border-slate-100">
+        <!-- Document Requests (Certificates) -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-100 mb-6">
+            <div class="px-6 py-4 border-b border-slate-100">
+                <h2 class="text-sm font-semibold text-slate-700">Certificate Requests</h2>
+            </div>
             <div class="p-6">
                 <table id="docRequestsTable" class="min-w-full text-sm">
                     <thead>
@@ -169,8 +192,64 @@ if ($conn) {
                 </table>
             </div>
         </div>
+
+        <!-- HRIS 201 File Uploads (Employee Document Uploads) -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-100">
+            <div class="px-6 py-4 border-b border-slate-100">
+                <h2 class="text-sm font-semibold text-slate-700">HRIS 201 File Uploads</h2>
+            </div>
+            <div class="p-6">
+                <table id="docUploadsTable" class="min-w-full text-sm">
+                    <thead>
+                        <tr class="border-b border-slate-200">
+                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Employee</th>
+                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Document Type</th>
+                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Uploaded</th>
+                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Status</th>
+                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($uploadList as $u): ?>
+                        <tr class="border-b border-slate-100 hover:bg-slate-50">
+                            <td class="px-4 py-3">
+                                <div class="font-medium text-slate-700"><?php echo htmlspecialchars($u['full_name'] ?? ''); ?></div>
+                                <div class="text-xs text-slate-500"><?php echo htmlspecialchars($u['employee_id'] ?? ''); ?></div>
+                            </td>
+                            <td class="px-4 py-3 text-slate-700"><?php echo htmlspecialchars($u['document_type'] ?? ''); ?></td>
+                            <td class="px-4 py-3 text-slate-600"><?php echo !empty($u['created_at']) ? date('M d, Y H:i', strtotime($u['created_at'])) : '—'; ?></td>
+                            <td class="px-4 py-3">
+                                <span class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">Pending</span>
+                            </td>
+                            <td class="px-4 py-3">
+                                <div class="flex items-center gap-2">
+                                    <a href="../employee/document-view.php?id=<?php echo (int)$u['id']; ?>" target="_blank" class="p-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors" title="View">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.008 9.963 7.181.07.207.07.43 0 .637C20.573 16.49 16.64 19.5 12 19.5c-4.64 0-8.577-3.008-9.964-7.178z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        </svg>
+                                    </a>
+                                    <a href="request-document-file-action.php?action=approve&id=<?php echo (int)$u['id']; ?>" class="p-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition-colors" title="Approve">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                    </a>
+                                    <button type="button" class="decline-upload-btn p-2 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors" data-id="<?php echo (int)$u['id']; ?>" title="Decline">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </main>
 
+    <!-- Decline Document Request Modal -->
     <div id="declineDocModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-xl max-w-md w-full">
             <div class="p-6 border-b border-slate-200">
@@ -185,6 +264,27 @@ if ($conn) {
                 </div>
                 <div class="flex justify-end gap-3">
                     <button type="button" id="cancelDeclineDoc" class="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Decline</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Decline Upload Modal -->
+    <div id="declineUploadModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl max-w-md w-full">
+            <div class="p-6 border-b border-slate-200">
+                <h2 class="text-lg font-semibold text-slate-800">Decline Document Upload</h2>
+            </div>
+            <form action="request-document-file-action.php" method="post" class="p-6 space-y-4">
+                <input type="hidden" name="action" value="decline">
+                <input type="hidden" name="id" id="declineUploadId" value="">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Reason for declining <span class="text-red-500">*</span></label>
+                    <textarea name="rejection_reason" rows="3" required class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]"></textarea>
+                </div>
+                <div class="flex justify-end gap-3">
+                    <button type="button" id="cancelDeclineUpload" class="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50">Cancel</button>
                     <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Decline</button>
                 </div>
             </form>
@@ -208,15 +308,27 @@ if ($conn) {
             $('#docRequestsTable').DataTable({
                 pageLength: 10,
                 order: [[2, 'desc']],
-                language: { search: '', searchPlaceholder: 'Search...', emptyTable: 'No document requests found.' }
+                language: { search: '', searchPlaceholder: 'Search...', emptyTable: 'No certificate requests found.' }
+            });
+            $('#docUploadsTable').DataTable({
+                pageLength: 10,
+                order: [[2, 'desc']],
+                language: { search: '', searchPlaceholder: 'Search...', emptyTable: 'No pending document uploads found.' }
             });
             $(document).on('click', '.decline-doc-btn', function() {
                 $('#declineDocId').val($(this).data('id'));
                 $('#declineDocModal form textarea').val('');
                 $('#declineDocModal').removeClass('hidden');
             });
+            $(document).on('click', '.decline-upload-btn', function() {
+                $('#declineUploadId').val($(this).data('id'));
+                $('#declineUploadModal form textarea').val('');
+                $('#declineUploadModal').removeClass('hidden');
+            });
             $('#cancelDeclineDoc').on('click', function() { $('#declineDocModal').addClass('hidden'); });
+            $('#cancelDeclineUpload').on('click', function() { $('#declineUploadModal').addClass('hidden'); });
             $('#declineDocModal').on('click', function(e) { if (e.target === this) $('#declineDocModal').addClass('hidden'); });
+            $('#declineUploadModal').on('click', function(e) { if (e.target === this) $('#declineUploadModal').addClass('hidden'); });
 
             // Dropdown functionality
             const employeesBtn = document.getElementById('employees-dropdown-btn');
