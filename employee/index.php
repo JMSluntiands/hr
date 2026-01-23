@@ -13,17 +13,134 @@ $position   = $position ?: ($_SESSION['position'] ?? '');
 $department = $department ?: ($_SESSION['department'] ?? '');
 $hireDate   = $dateHired ?: ($_SESSION['hire_date'] ?? '');
 
-// Dummy values for now – you can replace with DB values
-$remainingLeave = 8;
-$usedLeave      = 12;
-$pendingCount   = 1;
+// Get Time Off Summary from database
+$remainingLeave = 0;
+$usedLeave = 0;
+$pendingCount = 0;
+$currentYear = (int)date('Y');
 
-// Recent requests sample data
-$recentRequests = [
-    ['date' => 'March 10, 2022', 'type' => 'Vacation Leave', 'status' => 'Approved'],
-    ['date' => 'April 5, 2022',  'type' => 'Sick Leave',     'status' => 'Declined'],
-    ['date' => 'April 18, 2022', 'type' => 'Leave Request',  'status' => 'Pending'],
-];
+if ($employeeDbId && $conn) {
+    // Get leave allocations for current year
+    $checkAlloc = $conn->query("SHOW TABLES LIKE 'leave_allocations'");
+    if ($checkAlloc && $checkAlloc->num_rows > 0) {
+        // Try with integer year first
+        $allocStmt = $conn->prepare("SELECT COALESCE(SUM(remaining_days), 0) as total_remaining, COALESCE(SUM(used_days), 0) as total_used FROM leave_allocations WHERE employee_id = ? AND year = ?");
+        if ($allocStmt) {
+            $allocStmt->bind_param('ii', $employeeDbId, $currentYear);
+            $allocStmt->execute();
+            $allocResult = $allocStmt->get_result();
+            if ($allocRow = $allocResult->fetch_assoc()) {
+                $remainingLeave = (int)($allocRow['total_remaining'] ?? 0);
+                $usedLeave = (int)($allocRow['total_used'] ?? 0);
+            }
+            $allocStmt->close();
+        }
+        
+        // If no data found, try with string year format
+        if ($remainingLeave == 0 && $usedLeave == 0) {
+            $yearStr = (string)$currentYear;
+            $allocStmt2 = $conn->prepare("SELECT COALESCE(SUM(remaining_days), 0) as total_remaining, COALESCE(SUM(used_days), 0) as total_used FROM leave_allocations WHERE employee_id = ? AND year = ?");
+            if ($allocStmt2) {
+                $allocStmt2->bind_param('is', $employeeDbId, $yearStr);
+                $allocStmt2->execute();
+                $allocResult2 = $allocStmt2->get_result();
+                if ($allocRow2 = $allocResult2->fetch_assoc()) {
+                    $remainingLeave = (int)($allocRow2['total_remaining'] ?? 0);
+                    $usedLeave = (int)($allocRow2['total_used'] ?? 0);
+                }
+                $allocStmt2->close();
+            }
+        }
+    }
+    
+    // Get pending leave requests count
+    $checkLeaveReq = $conn->query("SHOW TABLES LIKE 'leave_requests'");
+    if ($checkLeaveReq && $checkLeaveReq->num_rows > 0) {
+        $pendingStmt = $conn->prepare("SELECT COUNT(*) as count FROM leave_requests WHERE employee_id = ? AND status = 'Pending'");
+        if ($pendingStmt) {
+            $pendingStmt->bind_param('i', $employeeDbId);
+            $pendingStmt->execute();
+            $pendingResult = $pendingStmt->get_result();
+            if ($pendingRow = $pendingResult->fetch_assoc()) {
+                $pendingCount = (int)($pendingRow['count'] ?? 0);
+            }
+            $pendingStmt->close();
+        }
+    }
+    
+    // Get pending document requests count
+    $checkDocReq = $conn->query("SHOW TABLES LIKE 'document_requests'");
+    if ($checkDocReq && $checkDocReq->num_rows > 0) {
+        $docPendingStmt = $conn->prepare("SELECT COUNT(*) as count FROM document_requests WHERE employee_id = ? AND status = 'Pending'");
+        if ($docPendingStmt) {
+            $docPendingStmt->bind_param('i', $employeeDbId);
+            $docPendingStmt->execute();
+            $docPendingResult = $docPendingStmt->get_result();
+            if ($docPendingRow = $docPendingResult->fetch_assoc()) {
+                $pendingCount += (int)($docPendingRow['count'] ?? 0);
+            }
+            $docPendingStmt->close();
+        }
+    }
+}
+
+// Get Recent Requests from database (combine leave_requests and document_requests)
+$recentRequests = [];
+
+if ($employeeDbId && $conn) {
+    $allRequests = [];
+    
+    // Get recent leave requests
+    $checkLeaveReq = $conn->query("SHOW TABLES LIKE 'leave_requests'");
+    if ($checkLeaveReq && $checkLeaveReq->num_rows > 0) {
+        $leaveReqStmt = $conn->prepare("SELECT id, leave_type as type, status, created_at, 'Leave Request' as request_type FROM leave_requests WHERE employee_id = ? ORDER BY created_at DESC LIMIT 5");
+        if ($leaveReqStmt) {
+            $leaveReqStmt->bind_param('i', $employeeDbId);
+            $leaveReqStmt->execute();
+            $leaveReqResult = $leaveReqStmt->get_result();
+            while ($row = $leaveReqResult->fetch_assoc()) {
+                $allRequests[] = [
+                    'id' => $row['id'],
+                    'date' => date('M d, Y', strtotime($row['created_at'])),
+                    'type' => $row['type'],
+                    'status' => $row['status'],
+                    'request_type' => $row['request_type'],
+                    'created_at' => $row['created_at']
+                ];
+            }
+            $leaveReqStmt->close();
+        }
+    }
+    
+    // Get recent document requests
+    $checkDocReq = $conn->query("SHOW TABLES LIKE 'document_requests'");
+    if ($checkDocReq && $checkDocReq->num_rows > 0) {
+        $docReqStmt = $conn->prepare("SELECT id, document_type as type, status, created_at, 'Document Request' as request_type FROM document_requests WHERE employee_id = ? ORDER BY created_at DESC LIMIT 5");
+        if ($docReqStmt) {
+            $docReqStmt->bind_param('i', $employeeDbId);
+            $docReqStmt->execute();
+            $docReqResult = $docReqStmt->get_result();
+            while ($row = $docReqResult->fetch_assoc()) {
+                $allRequests[] = [
+                    'id' => $row['id'],
+                    'date' => date('M d, Y', strtotime($row['created_at'])),
+                    'type' => $row['type'],
+                    'status' => $row['status'],
+                    'request_type' => $row['request_type'],
+                    'created_at' => $row['created_at']
+                ];
+            }
+            $docReqStmt->close();
+        }
+    }
+    
+    // Sort all requests by created_at DESC and take top 5
+    usort($allRequests, function($a, $b) {
+        return strtotime($b['created_at']) - strtotime($a['created_at']);
+    });
+    
+    $recentRequests = array_slice($allRequests, 0, 5);
+}
 ?>
 
 <!DOCTYPE html>
@@ -50,49 +167,74 @@ $recentRequests = [
 </head>
 <body class="font-inter bg-[#f1f5f9] min-h-screen">
     <!-- Sidebar (fixed) -->
-    <aside class="fixed inset-y-0 left-0 w-64 bg-[#FA9800] text-black flex flex-col">
-        <div class="p-6 flex items-center gap-4 border-b border-[#FA9800]/40">
-            <div class="w-14 h-14 rounded-full overflow-hidden bg-white/10 flex items-center justify-center flex-shrink-0">
+    <aside class="fixed inset-y-0 left-0 w-64 bg-[#FA9800] text-white flex flex-col">
+        <div class="p-6 flex items-center gap-4 border-b border-white/20">
+            <div class="w-14 h-14 rounded-full overflow-hidden bg-white/20 flex items-center justify-center flex-shrink-0">
                 <?php if (!empty($employeePhoto) && file_exists(__DIR__ . '/../uploads/' . $employeePhoto)): ?>
                     <img src="../uploads/<?php echo htmlspecialchars($employeePhoto); ?>" alt="" class="w-full h-full object-cover">
                 <?php else: ?>
-                    <span class="text-2xl font-semibold"><?php echo strtoupper(substr($employeeName, 0, 1)); ?></span>
+                    <span class="text-2xl font-semibold text-white"><?php echo strtoupper(substr($employeeName, 0, 1)); ?></span>
                 <?php endif; ?>
             </div>
             <div class="min-w-0">
-                <div class="font-bold text-sm truncate"><?php echo htmlspecialchars($employeeName); ?></div>
-                <div class="text-xs font-bold">Employee</div>
+                <div class="font-medium text-sm text-white truncate"><?php echo htmlspecialchars($employeeName); ?></div>
+                <div class="text-xs text-white/80">Employee</div>
             </div>
         </div>
         <nav class="flex-1 p-4 space-y-2">
             <!-- Dashboard -->
             <a href="index.php"
                data-url="index.php"
-               class="js-side-link flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 text-sm">
+               class="js-side-link flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 text-sm font-medium text-white">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                </svg>
                 <span>Dashboard</span>
             </a>
             <!-- My Profile -->
             <a href="profile.php"
                data-url="profile.php"
-               class="js-side-link flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 text-sm">
+               class="js-side-link flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 text-sm font-medium text-white">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
                 <span>My Profile</span>
             </a>
             <!-- My Time Off -->
             <a href="timeoff.php"
                data-url="timeoff.php"
-               class="js-side-link flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 text-sm">
+               class="js-side-link flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 text-sm font-medium text-white">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
                 <span>My Time Off</span>
             </a>
             <!-- My Request -->
             <a href="request.php"
                data-url="request.php"
-               class="js-side-link flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 text-sm">
+               class="js-side-link flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 text-sm font-medium text-white">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
                 <span>My Request</span>
+            </a>
+            <!-- My Compensation -->
+            <a href="compensation.php"
+               data-url="compensation.php"
+               class="js-side-link flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 text-sm font-medium text-white">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>My Compensation</span>
             </a>
             <!-- Settings -->
             <a href="settings.php"
                data-url="settings.php"
-               class="js-side-link flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 text-sm">
+               class="js-side-link flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 text-sm font-medium text-white">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
                 <span>Settings</span>
             </a>
         </nav>
@@ -212,21 +354,30 @@ $recentRequests = [
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
-                        <?php foreach ($recentRequests as $request): ?>
-                            <tr class="hover:bg-slate-50/80">
-                                <td class="px-6 py-3 text-slate-700">
-                                    <?php echo htmlspecialchars($request['date']); ?>
+                        <?php if (empty($recentRequests)): ?>
+                            <tr>
+                                <td colspan="3" class="px-6 py-8 text-center text-slate-500 text-sm">
+                                    No recent requests found.
                                 </td>
-                                <td class="px-6 py-3 text-slate-700">
-                                    <?php echo htmlspecialchars($request['type']); ?>
-                                </td>
-                                <td class="px-6 py-3">
+                            </tr>
+                        <?php else: ?>
+                            <?php foreach ($recentRequests as $request): ?>
+                                <tr class="hover:bg-slate-50/80">
+                                    <td class="px-6 py-3 text-slate-700">
+                                        <?php echo htmlspecialchars($request['date']); ?>
+                                    </td>
+                                    <td class="px-6 py-3 text-slate-700">
+                                        <?php echo htmlspecialchars($request['type']); ?>
+                                    </td>
+                                    <td class="px-6 py-3">
                                     <?php
                                         $status = $request['status'];
                                         $badgeClasses = [
                                             'Approved' => 'bg-emerald-100 text-emerald-700',
+                                            'Rejected' => 'bg-red-100 text-red-700',
                                             'Declined' => 'bg-red-100 text-red-700',
-                                            'Pending'  => 'bg-amber-100 text-amber-700'
+                                            'Pending'  => 'bg-amber-100 text-amber-700',
+                                            'Cancelled' => 'bg-slate-100 text-slate-700'
                                         ];
                                         $class = $badgeClasses[$status] ?? 'bg-slate-100 text-slate-700';
                                     ?>
@@ -235,7 +386,8 @@ $recentRequests = [
                                     </span>
                                 </td>
                             </tr>
-                        <?php endforeach; ?>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
@@ -250,8 +402,8 @@ $recentRequests = [
           if (!url) return;
           e.preventDefault();
 
-          // My Profile: full page load so content and upload modal always work correctly
-          if (url === 'profile.php') {
+          // My Profile and Compensation: full page load so content and modals always work correctly
+          if (url === 'profile.php' || url === 'compensation.php') {
             window.location.href = url;
             return;
           }

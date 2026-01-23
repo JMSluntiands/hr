@@ -66,7 +66,7 @@ if ($conn) {
 </head>
 <body class="font-inter bg-[#f1f5f9] min-h-screen">
     <!-- Sidebar -->
-    <aside class="fixed inset-y-0 left-0 w-64 bg-[#d97706] text-white flex flex-col">
+    <aside class="fixed inset-y-0 left-0 w-64 bg-[#FA9800] text-white flex flex-col">
         <div class="p-6 flex items-center gap-4 border-b border-white/20">
             <div class="w-14 h-14 rounded-full overflow-hidden bg-white/20 flex items-center justify-center">
                 <span class="text-2xl font-semibold text-white">
@@ -139,7 +139,6 @@ if ($conn) {
                 <div id="request-dropdown" class="hidden space-y-1 mt-1">
                     <a href="request-leaves" class="flex items-center gap-3 pl-11 pr-3 py-2 text-sm text-white hover:bg-white/10 rounded-lg transition-colors">Request Leaves</a>
                     <a href="request-document" class="flex items-center gap-3 pl-11 pr-3 py-2 text-sm text-white hover:bg-white/10 rounded-lg transition-colors">Request Document</a>
-                    <a href="request-document-file" class="flex items-center gap-3 pl-11 pr-3 py-2 text-sm text-white hover:bg-white/10 rounded-lg transition-colors">Document File</a>
                 </div>
             </div>
             <a href="activity-log" class="flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-white hover:bg-white/10 cursor-pointer transition-colors">
@@ -153,6 +152,12 @@ if ($conn) {
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
                 </svg>
                 <span>Announcements</span>
+            </a>
+            <a href="compensation" class="flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-white hover:bg-white/10 cursor-pointer transition-colors">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>Compensation</span>
             </a>
             <a href="accounts" class="flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-white hover:bg-white/10">
                 <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
@@ -270,6 +275,11 @@ if ($conn) {
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                         </svg>
                                     </a>
+                                    <button type="button" class="view-documents-btn p-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition-colors" title="View Documents" data-id="<?php echo $emp['id']; ?>" data-name="<?php echo htmlspecialchars($emp['full_name'] ?? ''); ?>">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                    </button>
                                 </div>
                             </td>
                         </tr>
@@ -279,6 +289,28 @@ if ($conn) {
             </div>
         </div>
     </main>
+
+    <!-- Documents Modal -->
+    <div id="documentsModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4">
+        <div class="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+                <div>
+                    <h3 class="text-lg font-semibold text-slate-800">Employee Documents</h3>
+                    <p class="text-sm text-slate-500" id="documentsEmployeeName"></p>
+                </div>
+                <button type="button" id="closeDocumentsModal" class="p-2 rounded-lg hover:bg-slate-100 transition-colors">
+                    <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-6">
+                <div id="documentsContent" class="space-y-4">
+                    <div class="text-center text-slate-500 py-8">Loading documents...</div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script>
         $(document).ready(function() {
@@ -369,6 +401,86 @@ if ($conn) {
                     if (requestArrow) requestArrow.style.transform = 'rotate(0deg)';
                 }
             });
+        });
+
+        // Documents Modal
+        const documentsModal = document.getElementById('documentsModal');
+        const documentsContent = document.getElementById('documentsContent');
+        const documentsEmployeeName = document.getElementById('documentsEmployeeName');
+        const closeDocumentsModal = document.getElementById('closeDocumentsModal');
+
+        document.querySelectorAll('.view-documents-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const employeeId = this.dataset.id;
+                const employeeName = this.dataset.name;
+                documentsEmployeeName.textContent = employeeName;
+                documentsContent.innerHTML = '<div class="text-center text-slate-500 py-8">Loading documents...</div>';
+                documentsModal.classList.remove('hidden');
+                documentsModal.classList.add('flex');
+
+                // Fetch documents
+                fetch('staff-documents.php?id=' + employeeId)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success && data.documents && data.documents.length > 0) {
+                            let html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
+                            data.documents.forEach(function(doc) {
+                                const fileUrl = doc.file_path ? '../uploads/' + doc.file_path : '';
+                                const isImage = fileUrl && /\.(jpg|jpeg|png|gif|webp)$/i.test(fileUrl);
+                                const isPdf = fileUrl && /\.pdf$/i.test(fileUrl);
+                                
+                                html += '<div class="border border-slate-200 rounded-lg p-4 hover:bg-slate-50">';
+                                html += '<div class="flex items-start justify-between mb-2">';
+                                html += '<h4 class="font-medium text-slate-800">' + (doc.document_type || 'Document') + '</h4>';
+                                if (doc.status) {
+                                    const statusClass = doc.status === 'Approved' ? 'bg-emerald-100 text-emerald-700' : 
+                                                      doc.status === 'Pending' ? 'bg-amber-100 text-amber-700' : 
+                                                      'bg-red-100 text-red-700';
+                                    html += '<span class="px-2 py-0.5 rounded-full text-xs font-medium ' + statusClass + '">' + doc.status + '</span>';
+                                }
+                                html += '</div>';
+                                
+                                if (fileUrl) {
+                                    if (isImage) {
+                                        html += '<div class="mb-2"><img src="' + fileUrl + '" alt="' + (doc.document_type || '') + '" class="w-full h-32 object-cover rounded border border-slate-200"></div>';
+                                    } else if (isPdf) {
+                                        html += '<div class="mb-2 p-4 bg-red-50 rounded border border-red-200 text-center"><svg class="w-12 h-12 mx-auto text-red-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg><span class="text-xs text-red-700">PDF Document</span></div>';
+                                    } else {
+                                        html += '<div class="mb-2 p-4 bg-slate-50 rounded border border-slate-200 text-center"><svg class="w-12 h-12 mx-auto text-slate-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg><span class="text-xs text-slate-700">Document File</span></div>';
+                                    }
+                                    html += '<a href="' + fileUrl + '" target="_blank" class="inline-flex items-center gap-1 text-sm text-[#d97706] hover:text-[#b45309] font-medium">View/Download <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg></a>';
+                                } else {
+                                    html += '<p class="text-sm text-slate-500">No file uploaded</p>';
+                                }
+                                
+                                if (doc.created_at) {
+                                    html += '<p class="text-xs text-slate-400 mt-2">Uploaded: ' + new Date(doc.created_at).toLocaleDateString() + '</p>';
+                                }
+                                html += '</div>';
+                            });
+                            html += '</div>';
+                            documentsContent.innerHTML = html;
+                        } else {
+                            documentsContent.innerHTML = '<div class="text-center text-slate-500 py-8"><p>No documents found for this employee.</p></div>';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        documentsContent.innerHTML = '<div class="text-center text-red-500 py-8"><p>Error loading documents. Please try again.</p></div>';
+                    });
+            });
+        });
+
+        closeDocumentsModal.addEventListener('click', function() {
+            documentsModal.classList.add('hidden');
+            documentsModal.classList.remove('flex');
+        });
+
+        documentsModal.addEventListener('click', function(e) {
+            if (e.target === documentsModal) {
+                documentsModal.classList.add('hidden');
+                documentsModal.classList.remove('flex');
+            }
         });
     </script>
 </body>

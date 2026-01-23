@@ -23,6 +23,7 @@ if (!$employeeId) {
 
 // Fetch employee data
 $employee = null;
+$documents = [];
 if ($conn) {
     $stmt = $conn->prepare("SELECT * FROM employees WHERE id = ?");
     $stmt->bind_param("i", $employeeId);
@@ -34,6 +35,24 @@ if ($conn) {
     if (!$employee) {
         header('Location: staff.php');
         exit;
+    }
+    
+    // Fetch employee documents
+    $checkTable = $conn->query("SHOW TABLES LIKE 'employee_document_uploads'");
+    if ($checkTable && $checkTable->num_rows > 0) {
+        $docStmt = $conn->prepare("SELECT id, document_type, file_path, status, created_at, updated_at 
+                                   FROM employee_document_uploads 
+                                   WHERE employee_id = ? 
+                                   ORDER BY document_type, created_at DESC");
+        if ($docStmt) {
+            $docStmt->bind_param('i', $employeeId);
+            $docStmt->execute();
+            $docResult = $docStmt->get_result();
+            while ($row = $docResult->fetch_assoc()) {
+                $documents[] = $row;
+            }
+            $docStmt->close();
+        }
     }
 }
 ?>
@@ -61,7 +80,7 @@ if ($conn) {
 </head>
 <body class="font-inter bg-[#f1f5f9] min-h-screen">
     <!-- Sidebar -->
-    <aside class="fixed inset-y-0 left-0 w-64 bg-[#d97706] text-white flex flex-col">
+    <aside class="fixed inset-y-0 left-0 w-64 bg-[#FA9800] text-white flex flex-col">
         <div class="p-6 flex items-center gap-4 border-b border-white/20">
             <div class="w-14 h-14 rounded-full overflow-hidden bg-white/20 flex items-center justify-center">
                 <span class="text-2xl font-semibold text-white">
@@ -134,7 +153,6 @@ if ($conn) {
                 <div id="request-dropdown" class="hidden space-y-1 mt-1">
                     <a href="request-leaves" class="flex items-center gap-3 pl-11 pr-3 py-2 text-sm text-white hover:bg-white/10 rounded-lg transition-colors">Request Leaves</a>
                     <a href="request-document" class="flex items-center gap-3 pl-11 pr-3 py-2 text-sm text-white hover:bg-white/10 rounded-lg transition-colors">Request Document</a>
-                    <a href="request-document-file" class="flex items-center gap-3 pl-11 pr-3 py-2 text-sm text-white hover:bg-white/10 rounded-lg transition-colors">Document File</a>
                 </div>
             </div>
             <a href="activity-log" class="flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-white hover:bg-white/10 cursor-pointer transition-colors">
@@ -148,6 +166,12 @@ if ($conn) {
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
                 </svg>
                 <span>Announcements</span>
+            </a>
+            <a href="compensation" class="flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-white hover:bg-white/10 cursor-pointer transition-colors">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>Compensation</span>
             </a>
             <a href="accounts" class="flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-white hover:bg-white/10">
                 <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
@@ -261,7 +285,7 @@ if ($conn) {
             </div>
 
             <!-- Government Information -->
-            <div class="border-t border-slate-200 pt-6">
+            <div class="border-t border-slate-200 pt-6 mb-6">
                 <h3 class="text-lg font-semibold text-slate-800 mb-4">Government Information</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
@@ -281,6 +305,83 @@ if ($conn) {
                         <p class="font-medium text-slate-800"><?php echo htmlspecialchars($employee['tin'] ?? 'N/A'); ?></p>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Documents Section -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-100">
+            <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+                <div>
+                    <h3 class="text-lg font-semibold text-slate-800">Employee Documents</h3>
+                    <p class="text-sm text-slate-500 mt-1">Documents uploaded by employee</p>
+                </div>
+            </div>
+            <div class="p-6">
+                <?php if (empty($documents)): ?>
+                    <div class="text-center py-8 text-slate-500">
+                        <svg class="w-16 h-16 mx-auto mb-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <p class="text-sm">No documents uploaded yet.</p>
+                    </div>
+                <?php else: ?>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <?php foreach ($documents as $doc): 
+                            $fileUrl = !empty($doc['file_path']) ? '../uploads/' . htmlspecialchars($doc['file_path']) : '';
+                            $isImage = $fileUrl && preg_match('/\.(jpg|jpeg|png|gif|webp)$/i', $doc['file_path']);
+                            $isPdf = $fileUrl && preg_match('/\.pdf$/i', $doc['file_path']);
+                            $status = $doc['status'] ?? 'Pending';
+                            $statusClass = $status === 'Approved' ? 'bg-emerald-100 text-emerald-700' : 
+                                          ($status === 'Rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700');
+                        ?>
+                        <div class="border border-slate-200 rounded-lg p-4 hover:bg-slate-50 transition-colors">
+                            <div class="flex items-start justify-between mb-3">
+                                <h4 class="font-medium text-slate-800 text-sm"><?php echo htmlspecialchars($doc['document_type'] ?? 'Document'); ?></h4>
+                                <span class="px-2 py-0.5 rounded-full text-xs font-medium <?php echo $statusClass; ?>">
+                                    <?php echo htmlspecialchars($status); ?>
+                                </span>
+                            </div>
+                            
+                            <?php if ($fileUrl && file_exists(__DIR__ . '/../uploads/' . $doc['file_path'])): ?>
+                                <?php if ($isImage): ?>
+                                    <div class="mb-3 rounded border border-slate-200 overflow-hidden">
+                                        <img src="<?php echo $fileUrl; ?>" alt="<?php echo htmlspecialchars($doc['document_type'] ?? ''); ?>" class="w-full h-32 object-cover">
+                                    </div>
+                                <?php elseif ($isPdf): ?>
+                                    <div class="mb-3 p-4 bg-red-50 rounded border border-red-200 text-center">
+                                        <svg class="w-12 h-12 mx-auto text-red-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                        </svg>
+                                        <span class="text-xs text-red-700 font-medium">PDF Document</span>
+                                    </div>
+                                <?php else: ?>
+                                    <div class="mb-3 p-4 bg-slate-50 rounded border border-slate-200 text-center">
+                                        <svg class="w-12 h-12 mx-auto text-slate-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                        <span class="text-xs text-slate-700 font-medium">Document File</span>
+                                    </div>
+                                <?php endif; ?>
+                                
+                                <a href="<?php echo $fileUrl; ?>" target="_blank" class="inline-flex items-center gap-2 text-sm text-[#d97706] hover:text-[#b45309] font-medium">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                    </svg>
+                                    View/Download
+                                </a>
+                            <?php else: ?>
+                                <div class="mb-3 p-4 bg-slate-50 rounded border border-slate-200 text-center">
+                                    <p class="text-xs text-slate-500">File not found</p>
+                                </div>
+                            <?php endif; ?>
+                            
+                            <?php if (!empty($doc['created_at'])): ?>
+                                <p class="text-xs text-slate-400 mt-2">Uploaded: <?php echo date('M d, Y', strtotime($doc['created_at'])); ?></p>
+                            <?php endif; ?>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
     </main>

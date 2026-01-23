@@ -59,21 +59,49 @@ if ($action === 'approve') {
         
         // Move to document_files table
         $employeeId = $drData['employee_id'] ?? 0;
-        $filePath = ''; // Document file path - can be updated later if files are stored
+        $filePath = ''; // Document requests may not have files
+        
+        // Check if there's a related file in employee_document_uploads
+        $fileCheck = $conn->prepare("SELECT file_path FROM employee_document_uploads WHERE employee_id = ? AND document_type = ? AND status = 'Approved' ORDER BY created_at DESC LIMIT 1");
+        if ($fileCheck) {
+            $fileCheck->bind_param('is', $employeeId, $docType);
+            $fileCheck->execute();
+            $fileResult = $fileCheck->get_result();
+            if ($fileRow = $fileResult->fetch_assoc()) {
+                $filePath = $fileRow['file_path'] ?? '';
+            }
+            $fileCheck->close();
+        }
         
         // Check if document_files table exists and has required columns
         $checkTable = $conn->query("SHOW TABLES LIKE 'document_files'");
         if ($checkTable && $checkTable->num_rows > 0) {
-            // Insert into document_files
-            $insertStmt = $conn->prepare("INSERT INTO document_files (employee_id, document_type, file_path, approved_by, approved_by_name, approved_at, created_at) VALUES (?, ?, ?, ?, ?, NOW(), NOW())");
-            if ($insertStmt) {
-                $insertStmt->bind_param('issss', $employeeId, $docType, $filePath, $adminId, $adminName);
-                if (!$insertStmt->execute()) {
-                    // Log error but don't fail the transaction
-                    error_log('Failed to insert into document_files: ' . $insertStmt->error);
+            // Check if already exists to avoid duplicates
+            $checkExists = $conn->prepare("SELECT id FROM document_files WHERE employee_id = ? AND document_type = ? LIMIT 1");
+            $checkExists->bind_param('is', $employeeId, $docType);
+            $checkExists->execute();
+            $existsResult = $checkExists->get_result();
+            
+            if (!$existsResult || $existsResult->num_rows === 0) {
+                // Insert into document_files (file_path can be empty for document requests)
+                $insertStmt = $conn->prepare("INSERT INTO document_files (employee_id, document_type, file_path, approved_by, approved_by_name, approved_at, created_at) VALUES (?, ?, ?, ?, ?, NOW(), NOW())");
+                if ($insertStmt) {
+                    $insertStmt->bind_param('issss', $employeeId, $docType, $filePath, $adminId, $adminName);
+                    if (!$insertStmt->execute()) {
+                        // Log error but don't fail the transaction
+                        $errorMsg = 'Failed to insert into document_files: ' . $insertStmt->error;
+                        error_log($errorMsg);
+                        // Also log to session for debugging
+                        $_SESSION['debug_error'] = $errorMsg;
+                    } else {
+                        $_SESSION['debug_success'] = "Inserted into document_files: Employee $employeeId, Type: $docType";
+                    }
+                    $insertStmt->close();
+                } else {
+                    error_log('Failed to prepare insert statement: ' . $conn->error);
                 }
-                $insertStmt->close();
             }
+            $checkExists->close();
         }
         
         // Commit transaction
