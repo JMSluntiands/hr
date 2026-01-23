@@ -23,7 +23,6 @@ if ($conn) {
     $userStmt->close();
     
     if ($user) {
-        // Get employee by email
         $empStmt = $conn->prepare("SELECT * FROM employees WHERE email = ?");
         $empStmt->bind_param('s', $user['email']);
         $empStmt->execute();
@@ -37,11 +36,12 @@ if ($conn) {
     }
 }
 
-$employeeName = $employeeData['full_name'] ?? $_SESSION['name'] ?? 'Juan Dela Cruz';
-$position     = $employeeData['position'] ?? $_SESSION['position'] ?? 'Software Engineer';
-$department   = $employeeData['department'] ?? $_SESSION['department'] ?? 'IT Department';
-$employeeId   = $employeeData['employee_id'] ?? $_SESSION['employee_id'] ?? 'EMP-0001';
-$dateHired    = $employeeData['date_hired'] ?? $_SESSION['hire_date'] ?? 'Jan 15, 2020';
+$employeeName = $employeeData['full_name'] ?? $_SESSION['name'] ?? 'Employee';
+$employeePhoto = !empty($employeeData['profile_picture']) ? $employeeData['profile_picture'] : null;
+$position     = $employeeData['position'] ?? $_SESSION['position'] ?? '';
+$department   = $employeeData['department'] ?? $_SESSION['department'] ?? '';
+$employeeId   = $employeeData['employee_id'] ?? $_SESSION['employee_id'] ?? '';
+$dateHired    = !empty($employeeData['date_hired']) ? date('M d, Y', strtotime($employeeData['date_hired'])) : ($employeeData['date_hired'] ?? '');
 
 // Get document uploads
 $documents = [];
@@ -90,13 +90,15 @@ if ($employeeDbId && $conn) {
     <!-- Sidebar (fixed) -->
     <aside class="fixed inset-y-0 left-0 w-64 bg-[#d97706] text-white flex flex-col">
         <div class="p-6 flex items-center gap-4 border-b border-white/20">
-            <div class="w-14 h-14 rounded-full overflow-hidden bg-white/20 flex items-center justify-center">
-                <span class="text-2xl font-semibold text-white">
-                    <?php echo strtoupper(substr($employeeName, 0, 1)); ?>
-                </span>
+            <div class="w-14 h-14 rounded-full overflow-hidden bg-white/20 flex items-center justify-center flex-shrink-0">
+                <?php if (!empty($employeePhoto) && file_exists(__DIR__ . '/../uploads/' . $employeePhoto)): ?>
+                    <img src="../uploads/<?php echo htmlspecialchars($employeePhoto); ?>" alt="" class="w-full h-full object-cover">
+                <?php else: ?>
+                    <span class="text-2xl font-semibold text-white"><?php echo strtoupper(substr($employeeName, 0, 1)); ?></span>
+                <?php endif; ?>
             </div>
-            <div>
-                <div class="font-medium text-sm text-white"><?php echo htmlspecialchars($employeeName); ?></div>
+            <div class="min-w-0">
+                <div class="font-medium text-sm text-white truncate"><?php echo htmlspecialchars($employeeName); ?></div>
                 <div class="text-xs text-white/80">Employee</div>
             </div>
         </div>
@@ -170,6 +172,27 @@ if ($employeeDbId && $conn) {
                 <span><?php echo htmlspecialchars($position); ?></span>
             </div>
         </div>
+
+        <!-- Profile Picture -->
+        <section class="bg-white rounded-xl shadow-sm border border-slate-100 mb-6">
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                <h2 class="text-sm font-semibold text-slate-700">Profile Picture</h2>
+            </div>
+            <div class="p-6 flex flex-wrap items-center gap-6">
+                <div class="flex flex-col items-center gap-3">
+                    <div id="profilePhotoPreview" class="w-24 h-24 rounded-full overflow-hidden bg-slate-100 flex items-center justify-center border-2 border-slate-200 relative">
+                        <span id="profilePhotoInitial" class="text-3xl font-semibold text-slate-500 <?php echo !empty($employeePhoto) ? 'hidden' : ''; ?>"><?php echo strtoupper(substr($employeeName, 0, 1)); ?></span>
+                        <img id="profilePhotoImg" src="<?php echo !empty($employeePhoto) && file_exists(__DIR__ . '/../uploads/' . $employeePhoto) ? '../uploads/' . htmlspecialchars($employeePhoto) : ''; ?>" alt="" class="w-full h-full object-cover <?php echo empty($employeePhoto) ? 'hidden' : ''; ?>">
+                    </div>
+                    <form id="profilePhotoForm" enctype="multipart/form-data" class="flex flex-col items-center gap-2">
+                        <input type="file" name="profile_picture" id="profilePhotoInput" accept="image/jpeg,image/jpg,image/png" class="hidden">
+                        <button type="button" id="profilePhotoBtn" class="px-4 py-2 bg-[#d97706] text-white text-sm font-medium rounded-lg hover:bg-[#b45309] transition-colors">Choose Photo</button>
+                        <p class="text-xs text-slate-500">JPG or PNG, max 2MB</p>
+                    </form>
+                </div>
+                <div id="profilePhotoMessage" class="hidden"></div>
+            </div>
+        </section>
 
         <!-- Info Cards -->
         <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
@@ -392,10 +415,8 @@ if ($employeeDbId && $conn) {
                 </table>
             </div>
         </section>
-        </div>
-    </main>
 
-    <!-- Upload Document Modal -->
+    <!-- Upload Document Modal (inside main-inner so it loads when profile is fetched via AJAX) -->
     <div id="uploadModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-xl max-w-md w-full">
             <div class="p-6 border-b border-slate-200 flex justify-between items-center">
@@ -422,6 +443,9 @@ if ($employeeDbId && $conn) {
         </div>
     </div>
 
+        </div>
+    </main>
+
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
       $(function () {
@@ -429,6 +453,12 @@ if ($employeeDbId && $conn) {
           const url = $(this).data('url');
           if (!url) return;
           e.preventDefault();
+
+          // My Profile: full page load so content and upload modal always work correctly
+          if (url === 'profile.php') {
+            window.location.href = url;
+            return;
+          }
 
           // Remove any active state from all links
           $('.js-side-link').removeClass('bg-[#f1f5f9] text-[#FA9800] font-medium rounded-l-none rounded-r-full');
@@ -465,6 +495,55 @@ if ($employeeDbId && $conn) {
             const statusOk = status === 'all' || status === rowStatus;
             const typeOk = type === 'all' || type === rowType;
             $(this).toggle(statusOk && typeOk);
+          });
+        });
+
+        // Profile Photo Upload
+        $(document).on('click', '#profilePhotoBtn', function(e) {
+          e.preventDefault();
+          $('#profilePhotoInput').click();
+        });
+        $(document).on('change', '#profilePhotoInput', function() {
+          var $input = $(this);
+          var files = $input[0].files;
+          if (!files || !files.length) return;
+          var $form = $('#profilePhotoForm');
+          var $msg = $('#profilePhotoMessage');
+          var $preview = $('#profilePhotoPreview');
+          var $img = $('#profilePhotoImg');
+          var $initial = $('#profilePhotoInitial');
+          var fd = new FormData();
+          fd.append('profile_picture', files[0]);
+          $msg.addClass('hidden').html('');
+          $('#profilePhotoBtn').prop('disabled', true).text('Uploading...');
+          $.ajax({
+            url: 'profile-picture-upload.php',
+            type: 'POST',
+            data: fd,
+            processData: false,
+            contentType: false,
+            dataType: 'json',
+            success: function(res) {
+              $('#profilePhotoBtn').prop('disabled', false).text('Choose Photo');
+              $input.val('');
+              if (res.status === 'success') {
+                $msg.removeClass('hidden').addClass('text-sm text-emerald-600').html(res.message);
+                if (res.path) {
+                  $img.attr('src', '../uploads/' + res.path).removeClass('hidden');
+                  $initial.addClass('hidden');
+                }
+                setTimeout(function() { location.reload(); }, 800);
+              } else {
+                $msg.removeClass('hidden').addClass('text-sm text-red-600').html(res.message || 'Upload failed');
+              }
+            },
+            error: function(xhr) {
+              $('#profilePhotoBtn').prop('disabled', false).text('Choose Photo');
+              $input.val('');
+              var m = 'Upload failed. Please try again.';
+              try { var r = JSON.parse(xhr.responseText); if (r.message) m = r.message; } catch(e) {}
+              $msg.removeClass('hidden').addClass('text-sm text-red-600').html(m);
+            }
           });
         });
 

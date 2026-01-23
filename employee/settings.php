@@ -7,20 +7,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 include '../database/db.php';
-
-// Get employee data
-$userId = (int)$_SESSION['user_id'];
-$employeeName = $_SESSION['name'] ?? 'Employee';
-
-// Get user email
-$userStmt = $conn->prepare("SELECT email FROM user_login WHERE id = ?");
-$userStmt->bind_param('i', $userId);
-$userStmt->execute();
-$userResult = $userStmt->get_result();
-$user = $userResult->fetch_assoc();
-$userStmt->close();
-
-$userEmail = $user['email'] ?? '';
+include 'include/employee_data.php';
 ?>
 
 <!DOCTYPE html>
@@ -50,13 +37,15 @@ $userEmail = $user['email'] ?? '';
     <!-- Sidebar (fixed) -->
     <aside class="fixed inset-y-0 left-0 w-64 bg-[#d97706] text-white flex flex-col">
         <div class="p-6 flex items-center gap-4 border-b border-white/20">
-            <div class="w-14 h-14 rounded-full overflow-hidden bg-white/20 flex items-center justify-center">
-                <span class="text-2xl font-semibold text-white">
-                    <?php echo strtoupper(substr($employeeName, 0, 1)); ?>
-                </span>
+            <div class="w-14 h-14 rounded-full overflow-hidden bg-white/20 flex items-center justify-center flex-shrink-0">
+                <?php if (!empty($employeePhoto) && file_exists(__DIR__ . '/../uploads/' . $employeePhoto)): ?>
+                    <img src="../uploads/<?php echo htmlspecialchars($employeePhoto); ?>" alt="" class="w-full h-full object-cover">
+                <?php else: ?>
+                    <span class="text-2xl font-semibold text-white"><?php echo strtoupper(substr($employeeName, 0, 1)); ?></span>
+                <?php endif; ?>
             </div>
-            <div>
-                <div class="font-medium text-sm text-white"><?php echo htmlspecialchars($employeeName); ?></div>
+            <div class="min-w-0">
+                <div class="font-medium text-sm text-white truncate"><?php echo htmlspecialchars($employeeName); ?></div>
                 <div class="text-xs text-white/80">Employee</div>
             </div>
         </div>
@@ -198,6 +187,11 @@ $userEmail = $user['email'] ?? '';
                 const url = $(this).data('url');
                 if (!url) return;
                 e.preventDefault();
+
+                if (url === 'profile.php') {
+                    window.location.href = url;
+                    return;
+                }
 
                 $('.js-side-link').removeClass('bg-white/20');
                 $(this).addClass('bg-white/20');

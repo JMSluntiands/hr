@@ -1,16 +1,17 @@
 <?php
 session_start();
 
-// Require login
 if (!isset($_SESSION['user_id'])) {
     header('Location: ../index.php');
     exit;
 }
 
-$employeeName = $_SESSION['name'] ?? 'Juan Dela Cruz';
-$position     = $_SESSION['position'] ?? 'Software Engineer';
-$department   = $_SESSION['department'] ?? 'IT Department';
-$hireDate     = $_SESSION['hire_date'] ?? 'Jan 15, 2020';
+include '../database/db.php';
+include 'include/employee_data.php';
+
+$position   = $position ?: ($_SESSION['position'] ?? '');
+$department = $department ?: ($_SESSION['department'] ?? '');
+$hireDate   = $dateHired ?: ($_SESSION['hire_date'] ?? '');
 
 // Dummy values for now – you can replace with DB values
 $remainingLeave = 8;
@@ -51,13 +52,15 @@ $recentRequests = [
     <!-- Sidebar (fixed) -->
     <aside class="fixed inset-y-0 left-0 w-64 bg-[#FA9800] text-black flex flex-col">
         <div class="p-6 flex items-center gap-4 border-b border-[#FA9800]/40">
-            <div class="w-14 h-14 rounded-full overflow-hidden bg-white/10 flex items-center justify-center">
-                <span class="text-2xl font-semibold">
-                    <?php echo strtoupper(substr($employeeName, 0, 1)); ?>
-                </span>
+            <div class="w-14 h-14 rounded-full overflow-hidden bg-white/10 flex items-center justify-center flex-shrink-0">
+                <?php if (!empty($employeePhoto) && file_exists(__DIR__ . '/../uploads/' . $employeePhoto)): ?>
+                    <img src="../uploads/<?php echo htmlspecialchars($employeePhoto); ?>" alt="" class="w-full h-full object-cover">
+                <?php else: ?>
+                    <span class="text-2xl font-semibold"><?php echo strtoupper(substr($employeeName, 0, 1)); ?></span>
+                <?php endif; ?>
             </div>
-            <div>
-                <div class="font-bold text-sm"><?php echo htmlspecialchars($employeeName); ?></div>
+            <div class="min-w-0">
+                <div class="font-bold text-sm truncate"><?php echo htmlspecialchars($employeeName); ?></div>
                 <div class="text-xs font-bold">Employee</div>
             </div>
         </div>
@@ -247,6 +250,12 @@ $recentRequests = [
           if (!url) return;
           e.preventDefault();
 
+          // My Profile: full page load so content and upload modal always work correctly
+          if (url === 'profile.php') {
+            window.location.href = url;
+            return;
+          }
+
           // Remove any active state from all links
           $('.js-side-link').removeClass('bg-[#f1f5f9] text-[#FA9800] font-medium rounded-l-none rounded-r-full');
           $('.js-side-link').addClass('rounded-lg');
@@ -288,6 +297,50 @@ $recentRequests = [
         // Dismiss default password notice
         $('#dismissNotice').on('click', function() {
           $('#defaultPasswordNotice').fadeOut(300);
+        });
+
+        // Profile Photo Upload (when profile is loaded via AJAX)
+        $(document).on('click', '#profilePhotoBtn', function(e) {
+          e.preventDefault();
+          $('#profilePhotoInput').click();
+        });
+        $(document).on('change', '#profilePhotoInput', function() {
+          var $input = $(this);
+          var files = $input[0].files;
+          if (!files || !files.length) return;
+          var fd = new FormData();
+          fd.append('profile_picture', files[0]);
+          $('#profilePhotoMessage').addClass('hidden').html('');
+          $('#profilePhotoBtn').prop('disabled', true).text('Uploading...');
+          $.ajax({
+            url: 'profile-picture-upload.php',
+            type: 'POST',
+            data: fd,
+            processData: false,
+            contentType: false,
+            dataType: 'json',
+            success: function(res) {
+              $('#profilePhotoBtn').prop('disabled', false).text('Choose Photo');
+              $input.val('');
+              if (res.status === 'success') {
+                $('#profilePhotoMessage').removeClass('hidden').addClass('text-sm text-emerald-600').html(res.message);
+                if (res.path) {
+                  $('#profilePhotoImg').attr('src', '../uploads/' + res.path).removeClass('hidden');
+                  $('#profilePhotoInitial').addClass('hidden');
+                }
+                setTimeout(function() { location.reload(); }, 800);
+              } else {
+                $('#profilePhotoMessage').removeClass('hidden').addClass('text-sm text-red-600').html(res.message || 'Upload failed');
+              }
+            },
+            error: function(xhr) {
+              $('#profilePhotoBtn').prop('disabled', false).text('Choose Photo');
+              $input.val('');
+              var m = 'Upload failed. Please try again.';
+              try { var r = JSON.parse(xhr.responseText); if (r.message) m = r.message; } catch(e) {}
+              $('#profilePhotoMessage').removeClass('hidden').addClass('text-sm text-red-600').html(m);
+            }
+          });
         });
       });
     </script>

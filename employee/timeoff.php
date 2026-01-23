@@ -6,9 +6,8 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-$employeeName = $_SESSION['name'] ?? 'Juan Dela Cruz';
-$position     = $_SESSION['position'] ?? 'Software Engineer';
-$department   = $_SESSION['department'] ?? 'IT Department';
+include '../database/db.php';
+include 'include/employee_data.php';
 ?>
 
 <!DOCTYPE html>
@@ -37,13 +36,15 @@ $department   = $_SESSION['department'] ?? 'IT Department';
     <!-- Sidebar (fixed) -->
     <aside class="fixed inset-y-0 left-0 w-64 bg-[#d97706] text-white flex flex-col">
         <div class="p-6 flex items-center gap-4 border-b border-white/20">
-            <div class="w-14 h-14 rounded-full overflow-hidden bg-white/20 flex items-center justify-center">
-                <span class="text-2xl font-semibold text-white">
-                    <?php echo strtoupper(substr($employeeName, 0, 1)); ?>
-                </span>
+            <div class="w-14 h-14 rounded-full overflow-hidden bg-white/20 flex items-center justify-center flex-shrink-0">
+                <?php if (!empty($employeePhoto) && file_exists(__DIR__ . '/../uploads/' . $employeePhoto)): ?>
+                    <img src="../uploads/<?php echo htmlspecialchars($employeePhoto); ?>" alt="" class="w-full h-full object-cover">
+                <?php else: ?>
+                    <span class="text-2xl font-semibold text-white"><?php echo strtoupper(substr($employeeName, 0, 1)); ?></span>
+                <?php endif; ?>
             </div>
-            <div>
-                <div class="font-medium text-sm text-white"><?php echo htmlspecialchars($employeeName); ?></div>
+            <div class="min-w-0">
+                <div class="font-medium text-sm text-white truncate"><?php echo htmlspecialchars($employeeName); ?></div>
                 <div class="text-xs text-white/80">Employee</div>
             </div>
         </div>
@@ -317,7 +318,11 @@ $department   = $_SESSION['department'] ?? 'IT Department';
           if (!url) return;
           e.preventDefault();
 
-          // Load only the right content (same behavior as dashboard)
+          if (url === 'profile.php') {
+            window.location.href = url;
+            return;
+          }
+
           $('#main-inner').addClass('opacity-60 pointer-events-none');
           $('#main-inner').load(url + ' #main-inner > *', function () {
             $('#main-inner').removeClass('opacity-60 pointer-events-none');
@@ -348,6 +353,30 @@ $department   = $_SESSION['department'] ?? 'IT Department';
             const statusOk = status === 'all' || status === rowStatus;
             const typeOk = type === 'all' || type === rowType;
             $(this).toggle(statusOk && typeOk);
+          });
+        });
+
+        $(document).on('click', '#profilePhotoBtn', function(e) { e.preventDefault(); $('#profilePhotoInput').click(); });
+        $(document).on('change', '#profilePhotoInput', function() {
+          var $input = $(this); var files = $input[0].files;
+          if (!files || !files.length) return;
+          var fd = new FormData(); fd.append('profile_picture', files[0]);
+          $('#profilePhotoMessage').addClass('hidden').html('');
+          $('#profilePhotoBtn').prop('disabled', true).text('Uploading...');
+          $.ajax({ url: 'profile-picture-upload.php', type: 'POST', data: fd, processData: false, contentType: false, dataType: 'json',
+            success: function(res) {
+              $('#profilePhotoBtn').prop('disabled', false).text('Choose Photo'); $input.val('');
+              if (res.status === 'success') {
+                $('#profilePhotoMessage').removeClass('hidden').addClass('text-sm text-emerald-600').html(res.message);
+                if (res.path) { $('#profilePhotoImg').attr('src', '../uploads/' + res.path).removeClass('hidden'); $('#profilePhotoInitial').addClass('hidden'); }
+                setTimeout(function() { location.reload(); }, 800);
+              } else { $('#profilePhotoMessage').removeClass('hidden').addClass('text-sm text-red-600').html(res.message || 'Upload failed'); }
+            },
+            error: function(xhr) {
+              $('#profilePhotoBtn').prop('disabled', false).text('Choose Photo'); $input.val('');
+              var m = 'Upload failed.'; try { var r = JSON.parse(xhr.responseText); if (r.message) m = r.message; } catch(e) {}
+              $('#profilePhotoMessage').removeClass('hidden').addClass('text-sm text-red-600').html(m);
+            }
           });
         });
       });

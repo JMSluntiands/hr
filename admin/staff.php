@@ -18,7 +18,7 @@ $employees = [];
 $departments = [];
 if ($conn) {
     // Fetch all employees
-    $query = "SELECT id, employee_id, full_name, email, phone, position, department, date_hired, status 
+    $query = "SELECT id, employee_id, full_name, email, phone, position, department, date_hired, status, profile_picture 
               FROM employees 
               ORDER BY created_at DESC";
     $result = $conn->query($query);
@@ -227,10 +227,23 @@ if ($conn) {
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($employees as $emp): ?>
+                        <?php foreach ($employees as $emp): 
+                            $photo = !empty($emp['profile_picture']) && file_exists(__DIR__ . '/../uploads/' . $emp['profile_picture']) ? $emp['profile_picture'] : null;
+                        ?>
                         <tr class="border-b border-slate-100 hover:bg-slate-50">
                             <td class="px-4 py-3 text-slate-700"><?php echo htmlspecialchars($emp['employee_id'] ?? ''); ?></td>
-                            <td class="px-4 py-3 text-slate-700 font-medium"><?php echo htmlspecialchars($emp['full_name'] ?? ''); ?></td>
+                            <td class="px-4 py-3">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-9 h-9 rounded-full overflow-hidden bg-slate-200 flex items-center justify-center flex-shrink-0">
+                                        <?php if ($photo): ?>
+                                            <img src="../uploads/<?php echo htmlspecialchars($photo); ?>" alt="" class="w-full h-full object-cover">
+                                        <?php else: ?>
+                                            <span class="text-sm font-semibold text-slate-500"><?php echo strtoupper(substr($emp['full_name'] ?? '?', 0, 1)); ?></span>
+                                        <?php endif; ?>
+                                    </div>
+                                    <span class="font-medium text-slate-700"><?php echo htmlspecialchars($emp['full_name'] ?? ''); ?></span>
+                                </div>
+                            </td>
                             <td class="px-4 py-3 text-slate-600"><?php echo htmlspecialchars($emp['email'] ?? ''); ?></td>
                             <td class="px-4 py-3 text-slate-700"><?php echo htmlspecialchars($emp['position'] ?? ''); ?></td>
                             <td class="px-4 py-3 text-slate-700"><?php echo htmlspecialchars($emp['department'] ?? ''); ?></td>
