@@ -464,7 +464,7 @@ if ($employeeDbId && $conn) {
           e.preventDefault();
 
           // My Profile, Compensation, and Time Off: full page load so content and modals always work correctly
-          if (url === 'profile.php' || url === 'compensation.php' || url === 'timeoff.php') {
+          if (url === 'profile.php' || url === 'compensation.php' || url === 'timeoff.php' || url === 'settings.php') {
             window.location.href = url;
             return;
           }

@@ -550,7 +550,7 @@ if ($conn && $employeeDbId) {
           if (!url) return;
           e.preventDefault();
 
-          if (url === 'profile.php' || url === 'compensation.php' || url === 'timeoff.php') {
+          if (url === 'profile.php' || url === 'compensation.php' || url === 'timeoff.php' || url === 'settings.php') {
             window.location.href = url;
             return;
           }

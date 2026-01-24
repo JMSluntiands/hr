@@ -129,10 +129,15 @@ include 'include/employee_data.php';
                     <form id="changePasswordForm" class="space-y-4 max-w-md">
                         <div>
                             <label for="currentPassword" class="block text-sm font-medium text-slate-700 mb-2">Current Password</label>
-                            <div class="relative">
+                            <div class="relative" style="position: relative;">
                                 <input type="password" id="currentPassword" name="current_password" required
-                                    class="w-full px-4 py-2 pr-10 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]">
-                                <button type="button" class="toggle-password absolute inset-y-0 right-0 flex items-center pr-3 text-slate-500 hover:text-slate-700" data-target="currentPassword">
+                                    class="w-full px-4 py-2 pr-12 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]"
+                                    style="padding-right: 3rem; position: relative; z-index: 1;">
+                                <button type="button" 
+                                        id="toggleCurrentPassword"
+                                        class="toggle-password absolute right-0 top-0 bottom-0 flex items-center justify-center w-10 h-full text-slate-500 hover:text-slate-700 cursor-pointer" 
+                                        data-target="currentPassword" 
+                                        style="pointer-events: auto !important; z-index: 50 !important; position: absolute !important; background: transparent; border: none; outline: none; cursor: pointer;">
                                     <svg id="eyeOpenCurrent" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.008 9.963 7.181.07.207.07.43 0 .637C20.573 16.49 16.64 19.5 12 19.5c-4.64 0-8.577-3.008-9.964-7.178z" />
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -145,10 +150,15 @@ include 'include/employee_data.php';
                         </div>
                         <div>
                             <label for="newPassword" class="block text-sm font-medium text-slate-700 mb-2">New Password</label>
-                            <div class="relative">
+                            <div class="relative" style="position: relative;">
                                 <input type="password" id="newPassword" name="new_password" required minlength="6"
-                                    class="w-full px-4 py-2 pr-10 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]">
-                                <button type="button" class="toggle-password absolute inset-y-0 right-0 flex items-center pr-3 text-slate-500 hover:text-slate-700" data-target="newPassword">
+                                    class="w-full px-4 py-2 pr-12 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]"
+                                    style="padding-right: 3rem; position: relative; z-index: 1;">
+                                <button type="button" 
+                                        id="toggleNewPassword"
+                                        class="toggle-password absolute right-0 top-0 bottom-0 flex items-center justify-center w-10 h-full text-slate-500 hover:text-slate-700 cursor-pointer" 
+                                        data-target="newPassword" 
+                                        style="pointer-events: auto !important; z-index: 50 !important; position: absolute !important; background: transparent; border: none; outline: none; cursor: pointer;">
                                     <svg id="eyeOpenNew" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.008 9.963 7.181.07.207.07.43 0 .637C20.573 16.49 16.64 19.5 12 19.5c-4.64 0-8.577-3.008-9.964-7.178z" />
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -162,10 +172,15 @@ include 'include/employee_data.php';
                         </div>
                         <div>
                             <label for="confirmPassword" class="block text-sm font-medium text-slate-700 mb-2">Confirm New Password</label>
-                            <div class="relative">
+                            <div class="relative" style="position: relative;">
                                 <input type="password" id="confirmPassword" name="confirm_password" required
-                                    class="w-full px-4 py-2 pr-10 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]">
-                                <button type="button" class="toggle-password absolute inset-y-0 right-0 flex items-center pr-3 text-slate-500 hover:text-slate-700" data-target="confirmPassword">
+                                    class="w-full px-4 py-2 pr-12 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]"
+                                    style="padding-right: 3rem; position: relative; z-index: 1;">
+                                <button type="button" 
+                                        id="toggleConfirmPassword"
+                                        class="toggle-password absolute right-0 top-0 bottom-0 flex items-center justify-center w-10 h-full text-slate-500 hover:text-slate-700 cursor-pointer" 
+                                        data-target="confirmPassword" 
+                                        style="pointer-events: auto !important; z-index: 50 !important; position: absolute !important; background: transparent; border: none; outline: none; cursor: pointer;">
                                     <svg id="eyeOpenConfirm" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.008 9.963 7.181.07.207.07.43 0 .637C20.573 16.49 16.64 19.5 12 19.5c-4.64 0-8.577-3.008-9.964-7.178z" />
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -197,7 +212,7 @@ include 'include/employee_data.php';
                 if (!url) return;
                 e.preventDefault();
 
-                if (url === 'profile.php' || url === 'compensation.php' || url === 'timeoff.php') {
+                if (url === 'profile.php' || url === 'compensation.php' || url === 'timeoff.php' || url === 'settings.php') {
                     window.location.href = url;
                     return;
                 }
@@ -211,13 +226,19 @@ include 'include/employee_data.php';
                 });
             });
 
-            // Password Toggle Functionality
-            $('.toggle-password').on('click', function() {
-                const targetId = $(this).data('target');
+            // Password Toggle Functionality - Multiple approaches for reliability
+            function togglePasswordVisibility(button) {
+                const targetId = $(button).data('target');
                 const $input = $('#' + targetId);
-                const $button = $(this);
+                const $button = $(button);
                 
-                if ($input.attr('type') === 'password') {
+                if (!$input.length) {
+                    return;
+                }
+                
+                const currentType = $input.attr('type');
+                
+                if (currentType === 'password') {
                     $input.attr('type', 'text');
                     $button.find('svg').first().addClass('hidden');
                     $button.find('svg').last().removeClass('hidden');
@@ -226,35 +247,120 @@ include 'include/employee_data.php';
                     $button.find('svg').first().removeClass('hidden');
                     $button.find('svg').last().addClass('hidden');
                 }
+            }
+            
+            // Direct click handler
+            $(document).on('click', '.toggle-password', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                togglePasswordVisibility(this);
+                return false;
+            });
+            
+            // Also handle by ID for extra reliability
+            $(document).on('click', '#toggleCurrentPassword, #toggleNewPassword, #toggleConfirmPassword', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                togglePasswordVisibility(this);
+                return false;
+            });
+            
+            // Mousedown as backup
+            $(document).on('mousedown', '.toggle-password', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                togglePasswordVisibility(this);
+                return false;
+            });
+
+            // Real-time validation for confirm password
+            $('#confirmPassword').on('input', function() {
+                const newPassword = $('#newPassword').val();
+                const confirmPassword = $(this).val();
+                
+                if (confirmPassword && newPassword !== confirmPassword) {
+                    $(this).addClass('border-red-500').removeClass('border-slate-200');
+                    if ($('#confirmPasswordError').length === 0) {
+                        $(this).after('<p id="confirmPasswordError" class="text-xs text-red-600 mt-1">Passwords do not match</p>');
+                    }
+                } else {
+                    $(this).removeClass('border-red-500').addClass('border-slate-200');
+                    $('#confirmPasswordError').remove();
+                }
+            });
+            
+            $('#newPassword').on('input', function() {
+                const newPassword = $(this).val();
+                const confirmPassword = $('#confirmPassword').val();
+                
+                if (confirmPassword && newPassword !== confirmPassword) {
+                    $('#confirmPassword').addClass('border-red-500').removeClass('border-slate-200');
+                    if ($('#confirmPasswordError').length === 0) {
+                        $('#confirmPassword').after('<p id="confirmPasswordError" class="text-xs text-red-600 mt-1">Passwords do not match</p>');
+                    }
+                } else {
+                    $('#confirmPassword').removeClass('border-red-500').addClass('border-slate-200');
+                    $('#confirmPasswordError').remove();
+                }
             });
 
             // Change Password Form
             $('#changePasswordForm').on('submit', function(e) {
                 e.preventDefault();
                 
-                const currentPassword = $('#currentPassword').val();
-                const newPassword = $('#newPassword').val();
-                const confirmPassword = $('#confirmPassword').val();
+                // Clear previous error messages
+                $('#confirmPasswordError').remove();
+                $('#currentPassword, #newPassword, #confirmPassword').removeClass('border-red-500').addClass('border-slate-200');
                 
-                // Validation
-                if (!currentPassword || !newPassword || !confirmPassword) {
+                const currentPassword = $('#currentPassword').val().trim();
+                const newPassword = $('#newPassword').val().trim();
+                const confirmPassword = $('#confirmPassword').val().trim();
+                
+                let hasError = false;
+                
+                // Validation - check all fields
+                if (!currentPassword) {
+                    $('#currentPassword').addClass('border-red-500').removeClass('border-slate-200');
+                    hasError = true;
+                }
+                
+                if (!newPassword) {
+                    $('#newPassword').addClass('border-red-500').removeClass('border-slate-200');
+                    hasError = true;
+                }
+                
+                if (!confirmPassword) {
+                    $('#confirmPassword').addClass('border-red-500').removeClass('border-slate-200');
+                    hasError = true;
+                }
+                
+                if (hasError) {
                     showMessage('Please fill in all fields', 'error');
-                    return;
+                    return false;
                 }
                 
+                // Validate password length
                 if (newPassword.length < 6) {
+                    $('#newPassword').addClass('border-red-500').removeClass('border-slate-200');
                     showMessage('Password must be at least 6 characters long', 'error');
-                    return;
+                    return false;
                 }
                 
+                // Validate passwords match
                 if (newPassword !== confirmPassword) {
-                    showMessage('New passwords do not match', 'error');
-                    return;
+                    $('#newPassword, #confirmPassword').addClass('border-red-500').removeClass('border-slate-200');
+                    $('#confirmPassword').after('<p id="confirmPasswordError" class="text-xs text-red-600 mt-1">Passwords do not match</p>');
+                    showMessage('New password and confirm password do not match', 'error');
+                    return false;
                 }
                 
+                // Validate new password is different
                 if (currentPassword === newPassword) {
+                    $('#newPassword').addClass('border-red-500').removeClass('border-slate-200');
                     showMessage('New password must be different from current password', 'error');
-                    return;
+                    return false;
                 }
                 
                 const formData = {

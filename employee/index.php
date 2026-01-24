@@ -19,25 +19,14 @@ $usedLeave = 0;
 $pendingCount = 0;
 $slTotal = 0;
 $vlTotal = 0;
+$blTotal = 0;
+$elTotal = 0;
 $currentYear = (int)date('Y');
 
 if ($employeeDbId && $conn) {
-    // Get leave allocations for current year
+    // Get leave allocations for current year (for totals only)
     $checkAlloc = $conn->query("SHOW TABLES LIKE 'leave_allocations'");
     if ($checkAlloc && $checkAlloc->num_rows > 0) {
-        // Try with integer year first
-        $allocStmt = $conn->prepare("SELECT COALESCE(SUM(remaining_days), 0) as total_remaining, COALESCE(SUM(used_days), 0) as total_used FROM leave_allocations WHERE employee_id = ? AND year = ?");
-        if ($allocStmt) {
-            $allocStmt->bind_param('ii', $employeeDbId, $currentYear);
-            $allocStmt->execute();
-            $allocResult = $allocStmt->get_result();
-            if ($allocRow = $allocResult->fetch_assoc()) {
-                $remainingLeave = (int)($allocRow['total_remaining'] ?? 0);
-                $usedLeave = (int)($allocRow['total_used'] ?? 0);
-            }
-            $allocStmt->close();
-        }
-        
         // Get SL and VL totals separately
         $typeAllocStmt = $conn->prepare("SELECT leave_type, total_days FROM leave_allocations WHERE employee_id = ? AND year = ?");
         if ($typeAllocStmt) {
@@ -59,21 +48,8 @@ if ($employeeDbId && $conn) {
         }
         
         // If no data found, try with string year format
-        if ($remainingLeave == 0 && $usedLeave == 0 && $slTotal == 0 && $vlTotal == 0) {
+        if ($slTotal == 0 && $vlTotal == 0) {
             $yearStr = (string)$currentYear;
-            $allocStmt2 = $conn->prepare("SELECT COALESCE(SUM(remaining_days), 0) as total_remaining, COALESCE(SUM(used_days), 0) as total_used FROM leave_allocations WHERE employee_id = ? AND year = ?");
-            if ($allocStmt2) {
-                $allocStmt2->bind_param('is', $employeeDbId, $yearStr);
-                $allocStmt2->execute();
-                $allocResult2 = $allocStmt2->get_result();
-                if ($allocRow2 = $allocResult2->fetch_assoc()) {
-                    $remainingLeave = (int)($allocRow2['total_remaining'] ?? 0);
-                    $usedLeave = (int)($allocRow2['total_used'] ?? 0);
-                }
-                $allocStmt2->close();
-            }
-            
-            // Get SL and VL totals with string year
             $typeAllocStmt2 = $conn->prepare("SELECT leave_type, total_days FROM leave_allocations WHERE employee_id = ? AND year = ?");
             if ($typeAllocStmt2) {
                 $typeAllocStmt2->bind_param('is', $employeeDbId, $yearStr);
@@ -92,6 +68,48 @@ if ($employeeDbId && $conn) {
                 }
                 $typeAllocStmt2->close();
             }
+        }
+    }
+    
+    // Calculate used days from approved leave requests (current year only)
+    $checkLeaveReq = $conn->query("SHOW TABLES LIKE 'leave_requests'");
+    if ($checkLeaveReq && $checkLeaveReq->num_rows > 0) {
+        $usedQuery = "SELECT leave_type,
+                     SUM(CASE 
+                         WHEN start_date = end_date THEN 1
+                         ELSE COALESCE(days, DATEDIFF(end_date, start_date) + 1)
+                     END) as used_days
+                     FROM leave_requests 
+                     WHERE employee_id = ? 
+                     AND status = 'Approved'
+                     AND YEAR(start_date) = ?
+                     GROUP BY leave_type";
+        $usedStmt = $conn->prepare($usedQuery);
+        if ($usedStmt) {
+            $usedStmt->bind_param('ii', $employeeDbId, $currentYear);
+            $usedStmt->execute();
+            $usedResult = $usedStmt->get_result();
+            $slUsed = 0;
+            $vlUsed = 0;
+            while ($usedRow = $usedResult->fetch_assoc()) {
+                $leaveType = $usedRow['leave_type'];
+                $days = (int)($usedRow['used_days'] ?? 0);
+                if ($leaveType === 'Sick Leave') {
+                    $slUsed += $days;
+                } elseif ($leaveType === 'Vacation Leave') {
+                    $vlUsed += $days;
+                } elseif ($leaveType === 'Bereavement Leave' || $leaveType === 'Emergency Leave') {
+                    // BL and EL use VL credits
+                    $vlUsed += $days;
+                }
+            }
+            $usedStmt->close();
+            
+            // Calculate remaining and total used
+            $slRemaining = max(0, $slTotal - $slUsed);
+            $vlRemaining = max(0, $vlTotal - $vlUsed);
+            $remainingLeave = $slRemaining + $vlRemaining;
+            $usedLeave = $slUsed + $vlUsed;
         }
     }
     
@@ -508,7 +526,7 @@ if ($employeeDbId && $conn) {
           e.preventDefault();
 
           // My Profile, Compensation, Time Off, and Dashboard: full page load so content and modals always work correctly
-          if (url === 'profile.php' || url === 'compensation.php' || url === 'timeoff.php' || url === 'index.php') {
+          if (url === 'profile.php' || url === 'compensation.php' || url === 'timeoff.php' || url === 'settings.php' || url === 'index.php') {
             window.location.href = url;
             return;
           }
