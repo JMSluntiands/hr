@@ -1,3 +1,5 @@
 database/db.php
 .htaccess
 document/
+vendor
+database/vendor
