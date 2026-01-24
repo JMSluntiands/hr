@@ -16,19 +16,43 @@ include '../database/db.php';
 // Fetch leave summary per employee
 $leaveSummary = [];
 if ($conn) {
+    // Check if leave_requests table exists
+    $checkTable = $conn->query("SHOW TABLES LIKE 'leave_requests'");
+    $hasLeaveRequests = $checkTable && $checkTable->num_rows > 0;
+    
+    $currentYear = date('Y');
+    
     $query = "SELECT 
                 e.id,
                 e.employee_id,
                 e.full_name,
                 e.department,
                 COALESCE(SUM(CASE WHEN la.leave_type = 'Sick Leave' THEN la.total_days ELSE 0 END), 0) as sl_total,
-                COALESCE(SUM(CASE WHEN la.leave_type = 'Sick Leave' THEN la.used_days ELSE 0 END), 0) as sl_used,
-                COALESCE(SUM(CASE WHEN la.leave_type = 'Sick Leave' THEN la.remaining_days ELSE 0 END), 0) as sl_remaining,
+                COALESCE((
+                    SELECT SUM(CASE 
+                        WHEN lr.start_date = lr.end_date THEN 1
+                        ELSE COALESCE(lr.days, DATEDIFF(lr.end_date, lr.start_date) + 1)
+                    END)
+                    FROM leave_requests lr
+                    WHERE lr.employee_id = e.id 
+                    AND lr.leave_type = 'Sick Leave'
+                    AND lr.status = 'Approved'
+                    AND YEAR(lr.start_date) = " . (int)$currentYear . "
+                ), 0) as sl_used,
                 COALESCE(SUM(CASE WHEN la.leave_type = 'Vacation Leave' THEN la.total_days ELSE 0 END), 0) as vl_total,
-                COALESCE(SUM(CASE WHEN la.leave_type = 'Vacation Leave' THEN la.used_days ELSE 0 END), 0) as vl_used,
-                COALESCE(SUM(CASE WHEN la.leave_type = 'Vacation Leave' THEN la.remaining_days ELSE 0 END), 0) as vl_remaining
+                COALESCE((
+                    SELECT SUM(CASE 
+                        WHEN lr.start_date = lr.end_date THEN 1
+                        ELSE COALESCE(lr.days, DATEDIFF(lr.end_date, lr.start_date) + 1)
+                    END)
+                    FROM leave_requests lr
+                    WHERE lr.employee_id = e.id 
+                    AND lr.leave_type = 'Vacation Leave'
+                    AND lr.status = 'Approved'
+                    AND YEAR(lr.start_date) = " . (int)$currentYear . "
+                ), 0) as vl_used
               FROM employees e
-              LEFT JOIN leave_allocations la ON e.id = la.employee_id AND la.year = YEAR(CURDATE())
+              LEFT JOIN leave_allocations la ON e.id = la.employee_id AND la.year = " . (int)$currentYear . "
               WHERE e.status = 'Active'
               GROUP BY e.id, e.employee_id, e.full_name, e.department
               ORDER BY e.full_name ASC";
@@ -37,6 +61,9 @@ if ($conn) {
     
     if ($result && $result->num_rows > 0) {
         while ($row = $result->fetch_assoc()) {
+            // Calculate remaining days
+            $row['sl_remaining'] = max(0, $row['sl_total'] - $row['sl_used']);
+            $row['vl_remaining'] = max(0, $row['vl_total'] - $row['vl_used']);
             $leaveSummary[] = $row;
         }
     }

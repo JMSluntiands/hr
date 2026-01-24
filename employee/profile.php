@@ -463,8 +463,8 @@ if ($employeeDbId && $conn) {
           if (!url) return;
           e.preventDefault();
 
-          // My Profile: full page load so content and upload modal always work correctly
-          if (url === 'profile.php') {
+          // My Profile, Compensation, and Time Off: full page load so content and modals always work correctly
+          if (url === 'profile.php' || url === 'compensation.php' || url === 'timeoff.php') {
             window.location.href = url;
             return;
           }

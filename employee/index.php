@@ -17,6 +17,8 @@ $hireDate   = $dateHired ?: ($_SESSION['hire_date'] ?? '');
 $remainingLeave = 0;
 $usedLeave = 0;
 $pendingCount = 0;
+$slTotal = 0;
+$vlTotal = 0;
 $currentYear = (int)date('Y');
 
 if ($employeeDbId && $conn) {
@@ -36,8 +38,28 @@ if ($employeeDbId && $conn) {
             $allocStmt->close();
         }
         
+        // Get SL and VL totals separately
+        $typeAllocStmt = $conn->prepare("SELECT leave_type, total_days FROM leave_allocations WHERE employee_id = ? AND year = ?");
+        if ($typeAllocStmt) {
+            $typeAllocStmt->bind_param('ii', $employeeDbId, $currentYear);
+            $typeAllocStmt->execute();
+            $typeAllocResult = $typeAllocStmt->get_result();
+            while ($typeRow = $typeAllocResult->fetch_assoc()) {
+                if ($typeRow['leave_type'] === 'Sick Leave') {
+                    $slTotal = (int)($typeRow['total_days'] ?? 0);
+                } elseif ($typeRow['leave_type'] === 'Vacation Leave') {
+                    $vlTotal = (int)($typeRow['total_days'] ?? 0);
+                } elseif ($typeRow['leave_type'] === 'Bereavement Leave') {
+                    $blTotal = (int)($typeRow['total_days'] ?? 0);
+                } elseif ($typeRow['leave_type'] === 'Emergency Leave') {
+                    $elTotal = (int)($typeRow['total_days'] ?? 0);
+                }
+            }
+            $typeAllocStmt->close();
+        }
+        
         // If no data found, try with string year format
-        if ($remainingLeave == 0 && $usedLeave == 0) {
+        if ($remainingLeave == 0 && $usedLeave == 0 && $slTotal == 0 && $vlTotal == 0) {
             $yearStr = (string)$currentYear;
             $allocStmt2 = $conn->prepare("SELECT COALESCE(SUM(remaining_days), 0) as total_remaining, COALESCE(SUM(used_days), 0) as total_used FROM leave_allocations WHERE employee_id = ? AND year = ?");
             if ($allocStmt2) {
@@ -49,6 +71,26 @@ if ($employeeDbId && $conn) {
                     $usedLeave = (int)($allocRow2['total_used'] ?? 0);
                 }
                 $allocStmt2->close();
+            }
+            
+            // Get SL and VL totals with string year
+            $typeAllocStmt2 = $conn->prepare("SELECT leave_type, total_days FROM leave_allocations WHERE employee_id = ? AND year = ?");
+            if ($typeAllocStmt2) {
+                $typeAllocStmt2->bind_param('is', $employeeDbId, $yearStr);
+                $typeAllocStmt2->execute();
+                $typeAllocResult2 = $typeAllocStmt2->get_result();
+                while ($typeRow2 = $typeAllocResult2->fetch_assoc()) {
+                    if ($typeRow2['leave_type'] === 'Sick Leave') {
+                        $slTotal = (int)($typeRow2['total_days'] ?? 0);
+                    } elseif ($typeRow2['leave_type'] === 'Vacation Leave') {
+                        $vlTotal = (int)($typeRow2['total_days'] ?? 0);
+                    } elseif ($typeRow2['leave_type'] === 'Bereavement Leave') {
+                        $blTotal = (int)($typeRow2['total_days'] ?? 0);
+                    } elseif ($typeRow2['leave_type'] === 'Emergency Leave') {
+                        $elTotal = (int)($typeRow2['total_days'] ?? 0);
+                    }
+                }
+                $typeAllocStmt2->close();
             }
         }
     }
@@ -329,10 +371,10 @@ if ($employeeDbId && $conn) {
             <section class="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex flex-col justify-between">
                 <h2 class="text-sm font-semibold text-slate-700 mb-4">Quick Actions</h2>
                 <div class="space-y-3 text-sm">
-                    <button class="w-full py-2.5 rounded-lg bg-[#FA9800] text-white text-sm font-medium hover:bg-[#d18a15]">
+                    <button id="newLeaveRequestBtn" class="w-full py-2.5 rounded-lg bg-[#FA9800] text-white text-sm font-medium hover:bg-[#d18a15] transition-colors">
                         New Leave Request
                     </button>
-                    <button class="w-full py-2.5 rounded-lg bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200">
+                    <button id="viewMyRequestsBtn" class="w-full py-2.5 rounded-lg bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-colors">
                         View My Requests
                     </button>
                 </div>
@@ -394,6 +436,69 @@ if ($employeeDbId && $conn) {
         </section>
         </div>
     </main>
+
+    <!-- New Leave Request Modal -->
+    <div id="newLeaveRequestModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-slate-200 flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-slate-800">New Leave Request</h3>
+                <button id="closeLeaveModal" class="text-slate-400 hover:text-slate-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <form id="leaveRequestForm" class="p-6">
+                <div id="unpaidLeaveNote" class="hidden mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                    <div class="flex items-start gap-2">
+                        <svg class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <div>
+                            <p class="text-sm font-medium text-amber-800">Unpaid Leave Notice</p>
+                            <p class="text-xs text-amber-700 mt-1">You have no remaining leave credits. The upcoming leave filing will be considered as <strong>UNPAID LEAVE</strong>.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <label for="leave_type" class="block text-sm font-medium text-slate-700 mb-2">Leave Type <span class="text-red-500">*</span></label>
+                        <select id="leave_type" name="leave_type" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#FA9800] focus:border-transparent">
+                            <option value="">Select Leave Type</option>
+                            <option value="Vacation Leave">Vacation Leave</option>
+                            <option value="Sick Leave">Sick Leave</option>
+                            <option value="Emergency Leave">Emergency Leave</option>
+                            <option value="Maternity Leave">Maternity Leave</option>
+                            <option value="Paternity Leave">Paternity Leave</option>
+                            <option value="Bereavement Leave">Bereavement Leave</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="start_date" class="block text-sm font-medium text-slate-700 mb-2">Start Date <span class="text-red-500">*</span></label>
+                        <input type="date" id="start_date" name="start_date" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#FA9800] focus:border-transparent">
+                    </div>
+                    <div>
+                        <label for="end_date" class="block text-sm font-medium text-slate-700 mb-2">End Date <span class="text-red-500">*</span></label>
+                        <input type="date" id="end_date" name="end_date" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#FA9800] focus:border-transparent">
+                    </div>
+                    <div>
+                        <label for="reason" class="block text-sm font-medium text-slate-700 mb-2">Reason <span class="text-red-500">*</span></label>
+                        <textarea id="reason" name="reason" rows="3" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#FA9800] focus:border-transparent" placeholder="Please provide a reason for your leave request"></textarea>
+                    </div>
+                </div>
+                <div class="mt-6 flex gap-3">
+                    <button type="submit" id="submitLeaveBtn" class="flex-1 px-4 py-2 bg-[#FA9800] text-white font-medium rounded-lg hover:bg-[#d18a15] transition-colors">
+                        Submit Request
+                    </button>
+                    <button type="button" id="cancelLeaveBtn" class="px-4 py-2 bg-slate-100 text-slate-700 font-medium rounded-lg hover:bg-slate-200 transition-colors">
+                        Cancel
+                    </button>
+                </div>
+                <div id="leaveRequestMessage" class="mt-4 hidden"></div>
+            </form>
+        </div>
+    </div>
+
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
       $(function () {
@@ -402,8 +507,8 @@ if ($employeeDbId && $conn) {
           if (!url) return;
           e.preventDefault();
 
-          // My Profile and Compensation: full page load so content and modals always work correctly
-          if (url === 'profile.php' || url === 'compensation.php') {
+          // My Profile, Compensation, Time Off, and Dashboard: full page load so content and modals always work correctly
+          if (url === 'profile.php' || url === 'compensation.php' || url === 'timeoff.php' || url === 'index.php') {
             window.location.href = url;
             return;
           }
@@ -416,6 +521,11 @@ if ($employeeDbId && $conn) {
           $('#main-inner').addClass('opacity-60 pointer-events-none');
           $('#main-inner').load(url + ' #main-inner > *', function () {
             $('#main-inner').removeClass('opacity-60 pointer-events-none');
+            // Re-initialize date pickers if dashboard is loaded
+            if (url === 'index.php') {
+              const today = new Date().toISOString().split('T')[0];
+              $('#start_date, #end_date').attr('min', today);
+            }
           });
         });
 
@@ -446,9 +556,111 @@ if ($employeeDbId && $conn) {
           });
         });
 
-        // Dismiss default password notice
-        $('#dismissNotice').on('click', function() {
+        // Dismiss default password notice (use event delegation)
+        $(document).on('click', '#dismissNotice', function() {
           $('#defaultPasswordNotice').fadeOut(300);
+        });
+
+        // Quick Actions - View My Requests (use event delegation)
+        $(document).on('click', '#viewMyRequestsBtn', function() {
+          window.location.href = 'request.php';
+        });
+
+        // Quick Actions - New Leave Request (use event delegation)
+        $(document).on('click', '#newLeaveRequestBtn', function() {
+          $('#newLeaveRequestModal').removeClass('hidden').addClass('flex');
+          // Set minimum date to today
+          const today = new Date().toISOString().split('T')[0];
+          $('#start_date, #end_date').attr('min', today);
+          
+          // Hide notice initially
+          $('#unpaidLeaveNote').addClass('hidden');
+        });
+        
+        // Leave type totals for validation
+        // BL and EL use VL credits
+        const leaveTypeTotals = {
+          'Sick Leave': <?php echo $slTotal ?? 0; ?>,
+          'Vacation Leave': <?php echo $vlTotal ?? 0; ?>,
+          'Bereavement Leave': <?php echo $vlTotal ?? 0; ?>, // Uses VL credits
+          'Emergency Leave': <?php echo $vlTotal ?? 0; ?> // Uses VL credits
+        };
+        
+        // Show/hide unpaid leave notice when leave type is selected
+        $(document).on('change', '#leave_type', function() {
+          const selectedType = $(this).val();
+          const applicableTypes = ['Sick Leave', 'Vacation Leave', 'Bereavement Leave', 'Emergency Leave'];
+          
+          if (applicableTypes.includes(selectedType)) {
+            const total = leaveTypeTotals[selectedType] || 0;
+            if (total === 0) {
+              $('#unpaidLeaveNote').removeClass('hidden');
+            } else {
+              $('#unpaidLeaveNote').addClass('hidden');
+            }
+          } else {
+            $('#unpaidLeaveNote').addClass('hidden');
+          }
+        });
+
+        // Close modal (use event delegation)
+        $(document).on('click', '#closeLeaveModal, #cancelLeaveBtn', function() {
+          $('#newLeaveRequestModal').removeClass('flex').addClass('hidden');
+          $('#leaveRequestForm')[0].reset();
+        });
+
+        // Close modal when clicking outside (use event delegation)
+        $(document).on('click', '#newLeaveRequestModal', function(e) {
+          if ($(e.target).attr('id') === 'newLeaveRequestModal') {
+            $('#newLeaveRequestModal').removeClass('flex').addClass('hidden');
+            $('#leaveRequestForm')[0].reset();
+          }
+        });
+
+        // Handle leave request form submission (use event delegation)
+        $(document).on('submit', '#leaveRequestForm', function(e) {
+          e.preventDefault();
+          
+          const formData = $(this).serialize();
+          
+          $('#leaveRequestMessage').addClass('hidden').html('');
+          $('#submitLeaveBtn').prop('disabled', true).text('Submitting...');
+          
+          $.ajax({
+            url: 'submit-leave-request.php',
+            type: 'POST',
+            data: formData,
+            dataType: 'json',
+            success: function(res) {
+              $('#submitLeaveBtn').prop('disabled', false).text('Submit Request');
+              if (res.status === 'success') {
+                $('#leaveRequestMessage').removeClass('hidden').addClass('p-3 bg-emerald-50 text-emerald-700 rounded-lg text-sm').html(res.message);
+                $('#leaveRequestForm')[0].reset();
+                setTimeout(function() {
+                  $('#newLeaveRequestModal').removeClass('flex').addClass('hidden');
+                  location.reload();
+                }, 1500);
+              } else {
+                $('#leaveRequestMessage').removeClass('hidden').addClass('p-3 bg-red-50 text-red-700 rounded-lg text-sm').html(res.message || 'Failed to submit leave request');
+              }
+            },
+            error: function(xhr, status, error) {
+              $('#submitLeaveBtn').prop('disabled', false).text('Submit Request');
+              var m = 'Failed to submit leave request. Please try again.';
+              try {
+                var r = JSON.parse(xhr.responseText);
+                if (r.message) m = r.message;
+              } catch(e) {
+                // If response is not JSON, show the raw response or error details
+                if (xhr.responseText) {
+                  m = 'Error: ' + xhr.responseText.substring(0, 200);
+                } else {
+                  m = 'Error: ' + error + ' (Status: ' + status + ')';
+                }
+              }
+              $('#leaveRequestMessage').removeClass('hidden').addClass('p-3 bg-red-50 text-red-700 rounded-lg text-sm').html(m);
+            }
+          });
         });
 
         // Profile Photo Upload (when profile is loaded via AJAX)

@@ -197,7 +197,7 @@ include 'include/employee_data.php';
                 if (!url) return;
                 e.preventDefault();
 
-                if (url === 'profile.php') {
+                if (url === 'profile.php' || url === 'compensation.php' || url === 'timeoff.php') {
                     window.location.href = url;
                     return;
                 }

@@ -93,6 +93,7 @@ if ($employeeDbId && $conn) {
 
 // Get compensation details
 $compensation = null;
+$currentSalary = null; // Will be used for gross income calculation
 if ($employeeDbId && $conn) {
     $compStmt = $conn->prepare("SELECT * FROM employee_compensation WHERE employee_id = ? LIMIT 1");
     if ($compStmt) {
@@ -101,6 +102,26 @@ if ($employeeDbId && $conn) {
         $compResult = $compStmt->get_result();
         $compensation = $compResult->fetch_assoc();
         $compStmt->close();
+    }
+    
+    // Get latest salary adjustment to determine current salary
+    $checkAdjTable = $conn->query("SHOW TABLES LIKE 'employee_salary_adjustments'");
+    if ($checkAdjTable && $checkAdjTable->num_rows > 0) {
+        $adjStmt = $conn->prepare("SELECT new_salary FROM employee_salary_adjustments WHERE employee_id = ? ORDER BY date_approved DESC, created_at DESC LIMIT 1");
+        if ($adjStmt) {
+            $adjStmt->bind_param('i', $employeeDbId);
+            $adjStmt->execute();
+            $adjResult = $adjStmt->get_result();
+            if ($adjRow = $adjResult->fetch_assoc()) {
+                $currentSalary = $adjRow['new_salary'];
+            }
+            $adjStmt->close();
+        }
+    }
+    
+    // If no adjustment found, use compensation monthly salary
+    if ($currentSalary === null && $compensation) {
+        $currentSalary = $compensation['basic_salary_monthly'];
     }
 }
 
@@ -320,6 +341,38 @@ if ($employeeDbId && $conn) {
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Gross Income (based on new salary) -->
+                        <?php if ($currentSalary): 
+                            $totalAllowances = ($compensation['allowance_internet'] ?? 0) + 
+                                             ($compensation['allowance_meal'] ?? 0) + 
+                                             ($compensation['allowance_position'] ?? 0) + 
+                                             ($compensation['allowance_transportation'] ?? 0);
+                            $monthlyGross = $currentSalary + $totalAllowances;
+                            $dailyGross = $monthlyGross / 22; // Assuming 22 working days per month
+                            $annualGross = $monthlyGross * 12;
+                        ?>
+                        <div class="mt-6 pt-6 border-t border-slate-100">
+                            <h3 class="text-md font-semibold text-slate-700 mb-4">Gross Income</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div class="bg-slate-50 p-4 rounded-lg">
+                                    <label class="block text-sm font-medium text-slate-600 mb-1">Monthly Gross Income</label>
+                                    <p class="text-slate-800 text-xl font-bold">₱<?php echo number_format($monthlyGross, 2); ?></p>
+                                    <p class="text-xs text-slate-500 mt-1">Salary + Allowances</p>
+                                </div>
+                                <div class="bg-slate-50 p-4 rounded-lg">
+                                    <label class="block text-sm font-medium text-slate-600 mb-1">Daily Gross Income</label>
+                                    <p class="text-slate-800 text-xl font-bold">₱<?php echo number_format($dailyGross, 2); ?></p>
+                                    <p class="text-xs text-slate-500 mt-1">Based on 22 working days</p>
+                                </div>
+                                <div class="bg-slate-50 p-4 rounded-lg">
+                                    <label class="block text-sm font-medium text-slate-600 mb-1">Annual Gross Income</label>
+                                    <p class="text-slate-800 text-xl font-bold">₱<?php echo number_format($annualGross, 2); ?></p>
+                                    <p class="text-xs text-slate-500 mt-1">Monthly × 12 months</p>
+                                </div>
+                            </div>
+                        </div>
+                        <?php endif; ?>
                     <?php else: ?>
                         <p class="text-slate-500 text-sm">Compensation information not available.</p>
                     <?php endif; ?>
@@ -476,7 +529,7 @@ if ($employeeDbId && $conn) {
                 if (!url) return;
                 e.preventDefault();
 
-                if (url === 'profile.php' || url === 'compensation.php') {
+                if (url === 'profile.php' || url === 'compensation.php' || url === 'timeoff.php') {
                     window.location.href = url;
                     return;
                 }

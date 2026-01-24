@@ -18,13 +18,21 @@ if (isset($_SESSION['request_leaves_msg'])) {
 
 $list = [];
 if ($conn) {
-    $sql = "SELECT lr.*, e.full_name, e.employee_id 
+    $sql = "SELECT lr.*, e.full_name, e.employee_id,
+            CASE 
+                WHEN lr.start_date = lr.end_date THEN 1
+                ELSE COALESCE(lr.days, DATEDIFF(lr.end_date, lr.start_date) + 1)
+            END as calculated_days
             FROM leave_requests lr 
             JOIN employees e ON lr.employee_id = e.id 
             ORDER BY lr.created_at DESC";
     $res = $conn->query($sql);
     if ($res && $res->num_rows > 0) {
         while ($row = $res->fetch_assoc()) {
+            // Ensure days is at least 1 if start and end are the same
+            if ($row['start_date'] == $row['end_date']) {
+                $row['calculated_days'] = 1;
+            }
             $list[] = $row;
         }
     }
@@ -171,7 +179,11 @@ if ($conn) {
                             data-type="<?php echo htmlspecialchars($r['leave_type'] ?? ''); ?>"
                             data-start="<?php echo htmlspecialchars($r['start_date'] ?? ''); ?>"
                             data-end="<?php echo htmlspecialchars($r['end_date'] ?? ''); ?>"
-                            data-days="<?php echo (int)($r['total_days'] ?? 0); ?>"
+                            data-days="<?php 
+                                $days = (int)($r['calculated_days'] ?? $r['days'] ?? 0);
+                                if ($r['start_date'] == $r['end_date'] && $days == 0) $days = 1;
+                                echo $days;
+                            ?>"
                             data-reason="<?php echo htmlspecialchars($r['reason'] ?? ''); ?>"
                             data-status="<?php echo htmlspecialchars($status); ?>"
                             data-approved="<?php echo htmlspecialchars($approvedBy); ?>"
@@ -189,11 +201,24 @@ if ($conn) {
                             </td>
                             <td class="px-4 py-3 text-slate-600"><?php echo $approvedBy; ?></td>
                             <td class="px-4 py-3">
-                                <div class="flex items-center gap-2">
-                                    <button type="button" class="view-leave-btn text-slate-600 hover:text-[#d97706]" title="View">View</button>
+                                <div class="flex items-center gap-3">
+                                    <button type="button" class="view-leave-btn p-2 text-slate-600 hover:text-[#FA9800] hover:bg-[#FA9800]/10 rounded-lg transition-colors" title="View">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                    </button>
                                     <?php if ($status === 'Pending'): ?>
-                                    <a href="request-leave-action.php?action=approve&id=<?php echo (int)$r['id']; ?>" class="text-emerald-600 hover:text-emerald-700" title="Approve">Approve</a>
-                                    <button type="button" class="decline-leave-btn text-red-600 hover:text-red-700" title="Decline" data-id="<?php echo (int)$r['id']; ?>">Decline</button>
+                                    <a href="request-leave-action.php?action=approve&id=<?php echo (int)$r['id']; ?>" class="p-2 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors" title="Approve">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                    </a>
+                                    <button type="button" class="decline-leave-btn p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors" title="Decline" data-id="<?php echo (int)$r['id']; ?>">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
                                     <?php endif; ?>
                                 </div>
                             </td>
@@ -260,16 +285,65 @@ if ($conn) {
                 var iso = { start: tr.data('start'), end: tr.data('end') };
                 var start = iso.start ? new Date(iso.start).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
                 var end = iso.end ? new Date(iso.end).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
-                var html = '<p><span class="font-medium text-slate-600">Employee:</span> ' + (tr.data('employee') || '—') + '</p>' +
-                    '<p><span class="font-medium text-slate-600">Leave Type:</span> ' + (tr.data('type') || '—') + '</p>' +
-                    '<p><span class="font-medium text-slate-600">Start:</span> ' + start + '</p>' +
-                    '<p><span class="font-medium text-slate-600">End:</span> ' + end + '</p>' +
-                    '<p><span class="font-medium text-slate-600">Total Days:</span> ' + (tr.data('days') || '0') + '</p>' +
-                    '<p><span class="font-medium text-slate-600">Reason:</span> ' + (tr.data('reason') || '—') + '</p>' +
-                    '<p><span class="font-medium text-slate-600">Status:</span> ' + (tr.data('status') || '—') + '</p>' +
-                    '<p><span class="font-medium text-slate-600">Approved By:</span> ' + (tr.data('approved') || '—') + '</p>';
+                
+                // Calculate days properly - if start and end are same, it's 1 day
+                var days = parseInt(tr.data('days') || 0);
+                if (iso.start && iso.end && iso.start === iso.end) {
+                    days = 1;
+                }
+                
+                var status = tr.data('status') || 'Pending';
+                var statusClass = status === 'Approved' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 
+                                 (status === 'Rejected' ? 'bg-red-100 text-red-700 border-red-200' : 
+                                 'bg-amber-100 text-amber-700 border-amber-200');
+                
+                var html = '<div class="space-y-4">' +
+                    '<div class="grid grid-cols-2 gap-4">' +
+                    '<div class="bg-slate-50 rounded-lg p-4 border border-slate-200">' +
+                    '<div class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Employee</div>' +
+                    '<div class="text-sm font-semibold text-slate-800">' + (tr.data('employee') || '—') + '</div>' +
+                    '</div>' +
+                    '<div class="bg-slate-50 rounded-lg p-4 border border-slate-200">' +
+                    '<div class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Leave Type</div>' +
+                    '<div class="text-sm font-semibold text-slate-800">' + (tr.data('type') || '—') + '</div>' +
+                    '</div>' +
+                    '</div>' +
+                    '<div class="grid grid-cols-2 gap-4">' +
+                    '<div class="bg-blue-50 rounded-lg p-4 border border-blue-200">' +
+                    '<div class="text-xs font-medium text-blue-600 uppercase tracking-wide mb-1">Start Date</div>' +
+                    '<div class="text-sm font-semibold text-blue-800">' + start + '</div>' +
+                    '</div>' +
+                    '<div class="bg-blue-50 rounded-lg p-4 border border-blue-200">' +
+                    '<div class="text-xs font-medium text-blue-600 uppercase tracking-wide mb-1">End Date</div>' +
+                    '<div class="text-sm font-semibold text-blue-800">' + end + '</div>' +
+                    '</div>' +
+                    '</div>' +
+                    '<div class="bg-purple-50 rounded-lg p-4 border border-purple-200">' +
+                    '<div class="text-xs font-medium text-purple-600 uppercase tracking-wide mb-1">Total Days</div>' +
+                    '<div class="text-2xl font-bold text-purple-800">' + days + ' <span class="text-sm font-normal">day' + (days !== 1 ? 's' : '') + '</span></div>' +
+                    '</div>' +
+                    '<div class="bg-slate-50 rounded-lg p-4 border border-slate-200">' +
+                    '<div class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">Reason</div>' +
+                    '<div class="text-sm text-slate-700 leading-relaxed">' + (tr.data('reason') || '—') + '</div>' +
+                    '</div>' +
+                    '<div class="grid grid-cols-2 gap-4">' +
+                    '<div class="bg-slate-50 rounded-lg p-4 border border-slate-200">' +
+                    '<div class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Status</div>' +
+                    '<span class="inline-flex px-3 py-1 rounded-full text-xs font-medium ' + statusClass + '">' + status + '</span>' +
+                    '</div>' +
+                    '<div class="bg-slate-50 rounded-lg p-4 border border-slate-200">' +
+                    '<div class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Approved By</div>' +
+                    '<div class="text-sm font-semibold text-slate-800">' + (tr.data('approved') || '—') + '</div>' +
+                    '</div>' +
+                    '</div>';
                 var rej = (tr.data('rejection') || '').trim();
-                if (rej) html += '<p><span class="font-medium text-slate-600">Rejection Reason:</span> ' + rej + '</p>';
+                if (rej) {
+                    html += '<div class="bg-red-50 rounded-lg p-4 border border-red-200">' +
+                        '<div class="text-xs font-medium text-red-600 uppercase tracking-wide mb-2">Rejection Reason</div>' +
+                        '<div class="text-sm text-red-700 leading-relaxed">' + rej + '</div>' +
+                        '</div>';
+                }
+                html += '</div>';
                 $('#viewModalBody').html(html);
                 $('#viewModal').removeClass('hidden');
             });

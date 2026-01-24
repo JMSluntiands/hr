@@ -24,6 +24,9 @@ if (!$employeeId) {
 // Fetch employee data
 $employee = null;
 $documents = [];
+$compensation = null;
+$latestAdjustment = null;
+$bankDetails = null;
 if ($conn) {
     $stmt = $conn->prepare("SELECT * FROM employees WHERE id = ?");
     $stmt->bind_param("i", $employeeId);
@@ -52,6 +55,45 @@ if ($conn) {
                 $documents[] = $row;
             }
             $docStmt->close();
+        }
+    }
+    
+    // Fetch compensation details
+    $checkCompTable = $conn->query("SHOW TABLES LIKE 'employee_compensation'");
+    if ($checkCompTable && $checkCompTable->num_rows > 0) {
+        $compStmt = $conn->prepare("SELECT * FROM employee_compensation WHERE employee_id = ? LIMIT 1");
+        if ($compStmt) {
+            $compStmt->bind_param('i', $employeeId);
+            $compStmt->execute();
+            $compResult = $compStmt->get_result();
+            $compensation = $compResult->fetch_assoc();
+            $compStmt->close();
+        }
+    }
+    
+    // Fetch latest salary adjustment
+    $checkAdjTable = $conn->query("SHOW TABLES LIKE 'employee_salary_adjustments'");
+    if ($checkAdjTable && $checkAdjTable->num_rows > 0) {
+        $adjStmt = $conn->prepare("SELECT * FROM employee_salary_adjustments WHERE employee_id = ? ORDER BY date_approved DESC, created_at DESC LIMIT 1");
+        if ($adjStmt) {
+            $adjStmt->bind_param('i', $employeeId);
+            $adjStmt->execute();
+            $adjResult = $adjStmt->get_result();
+            $latestAdjustment = $adjResult->fetch_assoc();
+            $adjStmt->close();
+        }
+    }
+    
+    // Fetch bank details
+    $checkBankTable = $conn->query("SHOW TABLES LIKE 'employee_bank_details'");
+    if ($checkBankTable && $checkBankTable->num_rows > 0) {
+        $bankStmt = $conn->prepare("SELECT * FROM employee_bank_details WHERE employee_id = ? LIMIT 1");
+        if ($bankStmt) {
+            $bankStmt->bind_param('i', $employeeId);
+            $bankStmt->execute();
+            $bankResult = $bankStmt->get_result();
+            $bankDetails = $bankResult->fetch_assoc();
+            $bankStmt->close();
         }
     }
 }
@@ -305,6 +347,168 @@ if ($conn) {
                         <p class="font-medium text-slate-800"><?php echo htmlspecialchars($employee['tin'] ?? 'N/A'); ?></p>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Compensation Details Card -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-100 mb-6">
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-slate-800">Compensation Details</h3>
+                <a href="compensation?employee_id=<?php echo $employeeId; ?>" class="px-4 py-2 bg-[#FA9800] text-white text-sm font-medium rounded-lg hover:bg-[#d97706] transition-colors flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>Add Salary Adjustment</span>
+                </a>
+            </div>
+            <div class="p-6">
+                <?php 
+                // Get current salary (from latest adjustment or compensation)
+                $currentSalary = null;
+                if ($latestAdjustment) {
+                    $currentSalary = $latestAdjustment['new_salary'];
+                } elseif ($compensation) {
+                    $currentSalary = $compensation['basic_salary_monthly'];
+                }
+                ?>
+                <?php if ($compensation || $latestAdjustment): ?>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <?php if ($compensation): ?>
+                            <div>
+                                <p class="text-sm text-slate-500 mb-1">Basic Salary (Monthly)</p>
+                                <p class="font-medium text-slate-800 text-lg">₱<?php echo number_format($compensation['basic_salary_monthly'] ?? 0, 2); ?></p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-slate-500 mb-1">Basic Salary (Daily)</p>
+                                <p class="font-medium text-slate-800 text-lg">₱<?php echo number_format($compensation['basic_salary_daily'] ?? 0, 2); ?></p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-slate-500 mb-1">Basic Salary (Annually)</p>
+                                <p class="font-medium text-slate-800 text-lg">₱<?php echo number_format($compensation['basic_salary_annually'] ?? 0, 2); ?></p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-slate-500 mb-1">Employment Type</p>
+                                <p class="font-medium text-slate-800"><?php echo htmlspecialchars($compensation['employment_type'] ?? 'N/A'); ?></p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-slate-500 mb-1">Effective Date</p>
+                                <p class="font-medium text-slate-800"><?php echo !empty($compensation['effective_date']) ? date('M d, Y', strtotime($compensation['effective_date'])) : 'N/A'; ?></p>
+                            </div>
+                        <?php endif; ?>
+                        
+                        <!-- Gross Income based on New Salary -->
+                        <?php if ($currentSalary): 
+                            $totalAllowances = ($compensation['allowance_internet'] ?? 0) + 
+                                             ($compensation['allowance_meal'] ?? 0) + 
+                                             ($compensation['allowance_position'] ?? 0) + 
+                                             ($compensation['allowance_transportation'] ?? 0);
+                            $monthlyGross = $currentSalary + $totalAllowances;
+                            $dailyGross = $monthlyGross / 22; // Assuming 22 working days per month
+                            $annualGross = $monthlyGross * 12;
+                        ?>
+                        <div class="md:col-span-2 border-slate-200">
+                            <h4 class="text-md font-semibold text-slate-700 mb-4">Gross Income (Based on New Salary)</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div class="bg-slate-50 p-4 rounded-lg">
+                                    <p class="text-sm font-medium text-slate-600 mb-1">Monthly Gross Income</p>
+                                    <p class="text-slate-800 text-xl font-bold">₱<?php echo number_format($monthlyGross, 2); ?></p>
+                                    <p class="text-xs text-slate-500 mt-1">New Salary + Allowances</p>
+                                </div>
+                                <div class="bg-slate-50 p-4 rounded-lg">
+                                    <p class="text-sm font-medium text-slate-600 mb-1">Daily Gross Income</p>
+                                    <p class="text-slate-800 text-xl font-bold">₱<?php echo number_format($dailyGross, 2); ?></p>
+                                    <p class="text-xs text-slate-500 mt-1">Based on 22 working days</p>
+                                </div>
+                                <div class="bg-slate-50 p-4 rounded-lg">
+                                    <p class="text-sm font-medium text-slate-600 mb-1">Annual Gross Income</p>
+                                    <p class="text-slate-800 text-xl font-bold">₱<?php echo number_format($annualGross, 2); ?></p>
+                                    <p class="text-xs text-slate-500 mt-1">Monthly × 12 months</p>
+                                </div>
+                            </div>
+                        </div>
+                        <?php endif; ?>
+                        <?php if ($compensation): ?>
+                            <div class="md:col-span-2 mt-4 pt-4 border-t border-slate-200">
+                                <h4 class="text-md font-semibold text-slate-700 mb-3">Allowances</h4>
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    <div>
+                                        <p class="text-xs text-slate-500 mb-1">Internet</p>
+                                        <p class="font-medium text-slate-800">₱<?php echo number_format($compensation['allowance_internet'] ?? 0, 2); ?></p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-slate-500 mb-1">Meal</p>
+                                        <p class="font-medium text-slate-800">₱<?php echo number_format($compensation['allowance_meal'] ?? 0, 2); ?></p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-slate-500 mb-1">Position/Representation</p>
+                                        <p class="font-medium text-slate-800">₱<?php echo number_format($compensation['allowance_position'] ?? 0, 2); ?></p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-slate-500 mb-1">Transportation</p>
+                                        <p class="font-medium text-slate-800">₱<?php echo number_format($compensation['allowance_transportation'] ?? 0, 2); ?></p>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                <?php else: ?>
+                    <p class="text-slate-500 text-sm">No compensation information available.</p>
+                <?php endif; ?>
+                
+                <!-- Quick Actions -->
+                <div class="mt-6 pt-6 border-t border-slate-200">
+                    <h4 class="text-md font-semibold text-slate-700 mb-4">Quick Actions</h4>
+                    <div class="flex flex-wrap gap-3">
+                        <a href="compensation?employee_id=<?php echo $employeeId; ?>" class="px-4 py-2 bg-[#FA9800] text-white text-sm font-medium rounded-lg hover:bg-[#d97706] transition-colors flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                            </svg>
+                            <span>Add Salary Adjustment</span>
+                        </a>
+                        <a href="compensation" class="px-4 py-2 bg-slate-100 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-200 transition-colors flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                            </svg>
+                            <span>View All Adjustments</span>
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Bank Details Section -->
+                <?php if ($bankDetails): ?>
+                    <div class="mt-6 pt-6 border-t border-slate-200">
+                        <h4 class="text-md font-semibold text-slate-700 mb-4">Bank Details</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <p class="text-sm text-slate-500 mb-1">Bank Name</p>
+                                <p class="font-medium text-slate-800"><?php echo htmlspecialchars($bankDetails['bank_name']); ?></p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-slate-500 mb-1">Account Number</p>
+                                <p class="font-medium text-slate-800"><?php echo htmlspecialchars($bankDetails['account_number']); ?></p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-slate-500 mb-1">Account Name</p>
+                                <p class="font-medium text-slate-800"><?php echo htmlspecialchars($bankDetails['account_name']); ?></p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-slate-500 mb-1">Account Type</p>
+                                <p class="font-medium text-slate-800"><?php echo htmlspecialchars($bankDetails['account_type']); ?></p>
+                            </div>
+                            <?php if (!empty($bankDetails['branch'])): ?>
+                            <div>
+                                <p class="text-sm text-slate-500 mb-1">Branch</p>
+                                <p class="font-medium text-slate-800"><?php echo htmlspecialchars($bankDetails['branch']); ?></p>
+                            </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                <?php else: ?>
+                    <div class="mt-6 pt-6 border-t border-slate-200">
+                        <h4 class="text-md font-semibold text-slate-700 mb-4">Bank Details</h4>
+                        <p class="text-slate-500 text-sm">No bank details added by employee yet.</p>
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
 
