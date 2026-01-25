@@ -30,10 +30,13 @@ if ($conn) {
     $docRequestCount = 0;
     $docUploadCount = 0;
     
-    // Count pending leave requests
-    $leaveResult = $conn->query("SELECT COUNT(*) as total FROM leave_requests WHERE status = 'Pending'");
-    if ($leaveResult && $row = $leaveResult->fetch_assoc()) {
-        $leaveCount = (int)$row['total'];
+    // Count pending leave requests (check if table exists)
+    $checkLeaveReq = $conn->query("SHOW TABLES LIKE 'leave_requests'");
+    if ($checkLeaveReq && $checkLeaveReq->num_rows > 0) {
+        $leaveResult = $conn->query("SELECT COUNT(*) as total FROM leave_requests WHERE status = 'Pending'");
+        if ($leaveResult && $row = $leaveResult->fetch_assoc()) {
+            $leaveCount = (int)$row['total'];
+        }
     }
     
     // Count pending document requests (check if table exists)
@@ -124,7 +127,7 @@ function timeAgo($datetime) {
                     }
                 }
             }
-        }
+        };
     </script>
 </head>
 <body class="font-inter bg-[#f1f5f9] min-h-screen">
