@@ -72,6 +72,8 @@ if ($employeeDbId && $conn) {
     }
     
     // Calculate used days from approved leave requests (current year only)
+    $slUsed = 0;
+    $vlUsed = 0;
     $checkLeaveReq = $conn->query("SHOW TABLES LIKE 'leave_requests'");
     if ($checkLeaveReq && $checkLeaveReq->num_rows > 0) {
         $usedQuery = "SELECT leave_type,
@@ -89,8 +91,6 @@ if ($employeeDbId && $conn) {
             $usedStmt->bind_param('ii', $employeeDbId, $currentYear);
             $usedStmt->execute();
             $usedResult = $usedStmt->get_result();
-            $slUsed = 0;
-            $vlUsed = 0;
             while ($usedRow = $usedResult->fetch_assoc()) {
                 $leaveType = $usedRow['leave_type'];
                 $days = (int)($usedRow['used_days'] ?? 0);
@@ -104,17 +104,16 @@ if ($employeeDbId && $conn) {
                 }
             }
             $usedStmt->close();
-            
-            // Calculate remaining and total used
-            $slRemaining = max(0, $slTotal - $slUsed);
-            $vlRemaining = max(0, $vlTotal - $vlUsed);
-            $remainingLeave = $slRemaining + $vlRemaining;
-            $usedLeave = $slUsed + $vlUsed;
         }
     }
     
-    // Get pending leave requests count
-    $checkLeaveReq = $conn->query("SHOW TABLES LIKE 'leave_requests'");
+    // Calculate remaining and total used
+    $slRemaining = max(0, $slTotal - $slUsed);
+    $vlRemaining = max(0, $vlTotal - $vlUsed);
+    $remainingLeave = $slRemaining + $vlRemaining;
+    $usedLeave = $slUsed + $vlUsed;
+    
+    // Get pending leave requests count (reuse the table check from above)
     if ($checkLeaveReq && $checkLeaveReq->num_rows > 0) {
         $pendingStmt = $conn->prepare("SELECT COUNT(*) as count FROM leave_requests WHERE employee_id = ? AND status = 'Pending'");
         if ($pendingStmt) {
