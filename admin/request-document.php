@@ -20,27 +20,33 @@ $list = [];
 $uploadList = [];
 if ($conn) {
     // Document requests (certificates like COE, SSS, etc.)
-    $sql = "SELECT dr.*, e.full_name, e.employee_id 
-            FROM document_requests dr 
-            JOIN employees e ON dr.employee_id = e.id 
-            ORDER BY dr.created_at DESC";
-    $res = $conn->query($sql);
-    if ($res && $res->num_rows > 0) {
-        while ($row = $res->fetch_assoc()) {
-            $list[] = $row;
+    $checkDocReq = $conn->query("SHOW TABLES LIKE 'document_requests'");
+    if ($checkDocReq && $checkDocReq->num_rows > 0) {
+        $sql = "SELECT dr.*, e.full_name, e.employee_id 
+                FROM document_requests dr 
+                JOIN employees e ON dr.employee_id = e.id 
+                ORDER BY dr.created_at DESC";
+        $res = $conn->query($sql);
+        if ($res && $res->num_rows > 0) {
+            while ($row = $res->fetch_assoc()) {
+                $list[] = $row;
+            }
         }
     }
     
     // Employee document uploads (HRIS 201 file - Birth Certificate, IDs, etc.)
-    $uploadSql = "SELECT edu.*, e.full_name, e.employee_id 
-                  FROM employee_document_uploads edu 
-                  JOIN employees e ON edu.employee_id = e.id 
-                  WHERE edu.status = 'Pending'
-                  ORDER BY edu.created_at DESC";
-    $uploadRes = $conn->query($uploadSql);
-    if ($uploadRes && $uploadRes->num_rows > 0) {
-        while ($row = $uploadRes->fetch_assoc()) {
-            $uploadList[] = $row;
+    $checkDocUpload = $conn->query("SHOW TABLES LIKE 'employee_document_uploads'");
+    if ($checkDocUpload && $checkDocUpload->num_rows > 0) {
+        $uploadSql = "SELECT edu.*, e.full_name, e.employee_id 
+                      FROM employee_document_uploads edu 
+                      JOIN employees e ON edu.employee_id = e.id 
+                      WHERE edu.status = 'Pending'
+                      ORDER BY edu.created_at DESC";
+        $uploadRes = $conn->query($uploadSql);
+        if ($uploadRes && $uploadRes->num_rows > 0) {
+            while ($row = $uploadRes->fetch_assoc()) {
+                $uploadList[] = $row;
+            }
         }
     }
 }

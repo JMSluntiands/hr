@@ -57,7 +57,12 @@ if ($conn) {
               GROUP BY e.id, e.employee_id, e.full_name, e.department
               ORDER BY e.full_name ASC";
     
-    $result = $conn->query($query);
+    // Only execute query if leave_requests table exists
+    if ($hasLeaveRequests) {
+        $result = $conn->query($query);
+    } else {
+        $result = false;
+    }
     
     if ($result && $result->num_rows > 0) {
         while ($row = $result->fetch_assoc()) {

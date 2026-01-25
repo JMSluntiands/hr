@@ -18,30 +18,38 @@ if (isset($_SESSION['request_leaves_msg'])) {
 
 $list = [];
 if ($conn) {
-    $sql = "SELECT lr.*, e.full_name, e.employee_id,
-            CASE 
-                WHEN lr.start_date = lr.end_date THEN 1
-                ELSE COALESCE(lr.days, DATEDIFF(lr.end_date, lr.start_date) + 1)
-            END as calculated_days
-            FROM leave_requests lr 
-            JOIN employees e ON lr.employee_id = e.id 
-            ORDER BY lr.created_at DESC";
-    $res = $conn->query($sql);
-    if ($res && $res->num_rows > 0) {
-        while ($row = $res->fetch_assoc()) {
-            // Ensure days is at least 1 if start and end are the same
-            if ($row['start_date'] == $row['end_date']) {
-                $row['calculated_days'] = 1;
+    // Check if leave_requests table exists
+    $checkTable = $conn->query("SHOW TABLES LIKE 'leave_requests'");
+    if ($checkTable && $checkTable->num_rows > 0) {
+        $sql = "SELECT lr.*, e.full_name, e.employee_id,
+                CASE 
+                    WHEN lr.start_date = lr.end_date THEN 1
+                    ELSE COALESCE(lr.days, DATEDIFF(lr.end_date, lr.start_date) + 1)
+                END as calculated_days
+                FROM leave_requests lr 
+                JOIN employees e ON lr.employee_id = e.id 
+                ORDER BY lr.created_at DESC";
+        $res = $conn->query($sql);
+        if ($res && $res->num_rows > 0) {
+            while ($row = $res->fetch_assoc()) {
+                // Ensure days is at least 1 if start and end are the same
+                if ($row['start_date'] == $row['end_date']) {
+                    $row['calculated_days'] = 1;
+                }
+                $list[] = $row;
             }
-            $list[] = $row;
         }
     }
 }
 
 $hasApprovedByName = false;
 if ($conn) {
-    $chk = @$conn->query("SHOW COLUMNS FROM leave_requests LIKE 'approved_by_name'");
-    $hasApprovedByName = $chk && $chk->num_rows > 0;
+    // Check if leave_requests table exists first
+    $checkTable = $conn->query("SHOW TABLES LIKE 'leave_requests'");
+    if ($checkTable && $checkTable->num_rows > 0) {
+        $chk = @$conn->query("SHOW COLUMNS FROM leave_requests LIKE 'approved_by_name'");
+        $hasApprovedByName = $chk && $chk->num_rows > 0;
+    }
 }
 ?>
 <!DOCTYPE html>

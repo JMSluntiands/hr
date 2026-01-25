@@ -53,14 +53,20 @@ $documentTypes = [
 ];
 
 if ($employeeDbId && $conn) {
-    $docStmt = $conn->prepare("SELECT * FROM employee_document_uploads WHERE employee_id = ? ORDER BY document_type, created_at DESC");
-    $docStmt->bind_param('i', $employeeDbId);
-    $docStmt->execute();
-    $docResult = $docStmt->get_result();
-    while ($row = $docResult->fetch_assoc()) {
-        $documents[$row['document_type']] = $row;
+    // Check if employee_document_uploads table exists
+    $checkTable = $conn->query("SHOW TABLES LIKE 'employee_document_uploads'");
+    if ($checkTable && $checkTable->num_rows > 0) {
+        $docStmt = $conn->prepare("SELECT * FROM employee_document_uploads WHERE employee_id = ? ORDER BY document_type, created_at DESC");
+        if ($docStmt) {
+            $docStmt->bind_param('i', $employeeDbId);
+            $docStmt->execute();
+            $docResult = $docStmt->get_result();
+            while ($row = $docResult->fetch_assoc()) {
+                $documents[$row['document_type']] = $row;
+            }
+            $docStmt->close();
+        }
     }
-    $docStmt->close();
 }
 ?>
 

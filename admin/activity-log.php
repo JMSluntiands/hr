@@ -12,11 +12,15 @@ include '../database/db.php';
 
 $logs = [];
 if ($conn) {
-    $sql = "SELECT * FROM activity_logs ORDER BY created_at DESC LIMIT 500";
-    $res = $conn->query($sql);
-    if ($res && $res->num_rows > 0) {
-        while ($row = $res->fetch_assoc()) {
-            $logs[] = $row;
+    // Check if activity_logs table exists
+    $checkTable = $conn->query("SHOW TABLES LIKE 'activity_logs'");
+    if ($checkTable && $checkTable->num_rows > 0) {
+        $sql = "SELECT * FROM activity_logs ORDER BY created_at DESC LIMIT 500";
+        $res = $conn->query($sql);
+        if ($res && $res->num_rows > 0) {
+            while ($row = $res->fetch_assoc()) {
+                $logs[] = $row;
+            }
         }
     }
 }
