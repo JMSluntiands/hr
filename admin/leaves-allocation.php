@@ -37,16 +37,20 @@ if ($conn) {
 // Fetch leave allocations
 $allocations = [];
 if ($conn) {
-    $allocQuery = "SELECT la.*, e.full_name, e.employee_id 
-                   FROM leave_allocations la
-                   JOIN employees e ON la.employee_id = e.id
-                   WHERE la.year = YEAR(CURDATE())
-                   ORDER BY e.full_name ASC, la.leave_type ASC";
-    $allocResult = $conn->query($allocQuery);
-    
-    if ($allocResult && $allocResult->num_rows > 0) {
-        while ($row = $allocResult->fetch_assoc()) {
-            $allocations[] = $row;
+    // Check if leave_allocations table exists
+    $checkTable = $conn->query("SHOW TABLES LIKE 'leave_allocations'");
+    if ($checkTable && $checkTable->num_rows > 0) {
+        $allocQuery = "SELECT la.*, e.full_name, e.employee_id 
+                       FROM leave_allocations la
+                       JOIN employees e ON la.employee_id = e.id
+                       WHERE la.year = YEAR(CURDATE())
+                       ORDER BY e.full_name ASC, la.leave_type ASC";
+        $allocResult = $conn->query($allocQuery);
+        
+        if ($allocResult && $allocResult->num_rows > 0) {
+            while ($row = $allocResult->fetch_assoc()) {
+                $allocations[] = $row;
+            }
         }
     }
 }
@@ -339,55 +343,8 @@ if ($conn) {
             alert('Edit functionality coming soon for allocation ID: ' + id);
         }
 
-        // Dropdown functionality
-        document.addEventListener('DOMContentLoaded', function() {
-            const employeesBtn = document.getElementById('employees-dropdown-btn');
-            const employeesDropdown = document.getElementById('employees-dropdown');
-            const employeesArrow = document.getElementById('employees-arrow');
-            const leavesBtn = document.getElementById('leaves-dropdown-btn');
-            const leavesDropdown = document.getElementById('leaves-dropdown');
-            const leavesArrow = document.getElementById('leaves-arrow');
-            const requestBtn = document.getElementById('request-dropdown-btn');
-            const requestDropdown = document.getElementById('request-dropdown');
-            const requestArrow = document.getElementById('request-arrow');
-
-            function closeOthers(exclude) {
-                if (exclude !== 'employees' && employeesDropdown) { employeesDropdown.classList.add('hidden'); if (employeesArrow) employeesArrow.style.transform = 'rotate(0deg)'; }
-                if (exclude !== 'leaves' && leavesDropdown) { leavesDropdown.classList.add('hidden'); if (leavesArrow) leavesArrow.style.transform = 'rotate(0deg)'; }
-                if (exclude !== 'request' && requestDropdown) { requestDropdown.classList.add('hidden'); if (requestArrow) requestArrow.style.transform = 'rotate(0deg)'; }
-            }
-            function toggleDropdown(dropdown, arrow) {
-                if (!dropdown) return;
-                const isHidden = dropdown.classList.contains('hidden');
-                dropdown.classList.toggle('hidden');
-                if (arrow) arrow.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
-            }
-
-            if (employeesBtn) {
-                employeesBtn.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); closeOthers('employees'); toggleDropdown(employeesDropdown, employeesArrow); });
-            }
-            if (leavesBtn) {
-                leavesBtn.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); closeOthers('leaves'); toggleDropdown(leavesDropdown, leavesArrow); });
-            }
-            if (requestBtn) {
-                requestBtn.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); closeOthers('request'); toggleDropdown(requestDropdown, requestArrow); });
-            }
-
-            document.addEventListener('click', function(e) {
-                if (employeesBtn && employeesDropdown && !employeesBtn.contains(e.target) && !employeesDropdown.contains(e.target)) {
-                    employeesDropdown.classList.add('hidden');
-                    if (employeesArrow) employeesArrow.style.transform = 'rotate(0deg)';
-                }
-                if (leavesBtn && leavesDropdown && !leavesBtn.contains(e.target) && !leavesDropdown.contains(e.target)) {
-                    leavesDropdown.classList.add('hidden');
-                    if (leavesArrow) leavesArrow.style.transform = 'rotate(0deg)';
-                }
-                if (requestBtn && requestDropdown && !requestBtn.contains(e.target) && !requestDropdown.contains(e.target)) {
-                    requestDropdown.classList.add('hidden');
-                    if (requestArrow) requestArrow.style.transform = 'rotate(0deg)';
-                }
-            });
-        });
+        // Sidebar dropdown functionality is handled by include/sidebar-dropdown.js
     </script>
+    <script src="include/sidebar-dropdown.js"></script>
 </body>
 </html>

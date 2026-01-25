@@ -278,40 +278,8 @@ if ($conn) {
             });
         });
 
-        // Dropdown functionality
-        document.addEventListener('DOMContentLoaded', function() {
-            const employeesBtn = document.getElementById('employees-dropdown-btn');
-            const employeesDropdown = document.getElementById('employees-dropdown');
-            const employeesArrow = document.getElementById('employees-arrow');
-            const leavesBtn = document.getElementById('leaves-dropdown-btn');
-            const leavesDropdown = document.getElementById('leaves-dropdown');
-            const leavesArrow = document.getElementById('leaves-arrow');
-            const requestBtn = document.getElementById('request-dropdown-btn');
-            const requestDropdown = document.getElementById('request-dropdown');
-            const requestArrow = document.getElementById('request-arrow');
-
-            function closeOthers(exclude) {
-                if (exclude !== 'emp' && employeesDropdown) { employeesDropdown.classList.add('hidden'); if (employeesArrow) employeesArrow.style.transform = 'rotate(0deg)'; }
-                if (exclude !== 'lv' && leavesDropdown) { leavesDropdown.classList.add('hidden'); if (leavesArrow) leavesArrow.style.transform = 'rotate(0deg)'; }
-                if (exclude !== 'req' && requestDropdown) { requestDropdown.classList.add('hidden'); if (requestArrow) requestArrow.style.transform = 'rotate(0deg)'; }
-            }
-            function toggle(dd, ar) {
-                if (!dd) return;
-                const h = dd.classList.contains('hidden');
-                dd.classList.toggle('hidden');
-                if (ar) ar.style.transform = h ? 'rotate(180deg)' : 'rotate(0deg)';
-            }
-
-            if (employeesBtn) employeesBtn.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); closeOthers('emp'); toggle(employeesDropdown, employeesArrow); });
-            if (leavesBtn) leavesBtn.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); closeOthers('lv'); toggle(leavesDropdown, leavesArrow); });
-            if (requestBtn) requestBtn.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); closeOthers('req'); toggle(requestDropdown, requestArrow); });
-
-            document.addEventListener('click', function(e) {
-                if (employeesBtn && employeesDropdown && !employeesBtn.contains(e.target) && !employeesDropdown.contains(e.target)) { employeesDropdown.classList.add('hidden'); if (employeesArrow) employeesArrow.style.transform = 'rotate(0deg)'; }
-                if (leavesBtn && leavesDropdown && !leavesBtn.contains(e.target) && !leavesDropdown.contains(e.target)) { leavesDropdown.classList.add('hidden'); if (leavesArrow) leavesArrow.style.transform = 'rotate(0deg)'; }
-                if (requestBtn && requestDropdown && !requestBtn.contains(e.target) && !requestDropdown.contains(e.target)) { requestDropdown.classList.add('hidden'); if (requestArrow) requestArrow.style.transform = 'rotate(0deg)'; }
-            });
-        });
+        // Sidebar dropdown functionality is handled by include/sidebar-dropdown.js
     </script>
+    <script src="include/sidebar-dropdown.js"></script>
 </body>
 </html>

@@ -267,31 +267,8 @@ if (isset($_SESSION['accounts_msg'])) {
             if (e.target === modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
         });
 
-        document.addEventListener('DOMContentLoaded', function() {
-            var emp = document.getElementById('employees-dropdown-btn'), empD = document.getElementById('employees-dropdown'), empA = document.getElementById('employees-arrow');
-            var lev = document.getElementById('leaves-dropdown-btn'), levD = document.getElementById('leaves-dropdown'), levA = document.getElementById('leaves-arrow');
-            var req = document.getElementById('request-dropdown-btn'), reqD = document.getElementById('request-dropdown'), reqA = document.getElementById('request-arrow');
-            function close(ex) {
-                if (ex !== 'emp' && empD) { empD.classList.add('hidden'); if (empA) empA.style.transform = 'rotate(0deg)'; }
-                if (ex !== 'lev' && levD) { levD.classList.add('hidden'); if (levA) levA.style.transform = 'rotate(0deg)'; }
-                if (ex !== 'req' && reqD) { reqD.classList.add('hidden'); if (reqA) reqA.style.transform = 'rotate(0deg)'; }
-            }
-            function toggle(d, a, ex) {
-                if (!d) return;
-                close(ex);
-                var h = d.classList.contains('hidden');
-                d.classList.toggle('hidden');
-                if (a) a.style.transform = h ? 'rotate(180deg)' : 'rotate(0deg)';
-            }
-            if (emp) emp.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); toggle(empD, empA, 'emp'); });
-            if (lev) lev.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); toggle(levD, levA, 'lev'); });
-            if (req) req.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); toggle(reqD, reqA, 'req'); });
-            document.addEventListener('click', function(e) {
-                if (emp && empD && !emp.contains(e.target) && !empD.contains(e.target)) { empD.classList.add('hidden'); if (empA) empA.style.transform = 'rotate(0deg)'; }
-                if (lev && levD && !lev.contains(e.target) && !levD.contains(e.target)) { levD.classList.add('hidden'); if (levA) levA.style.transform = 'rotate(0deg)'; }
-                if (req && reqD && !req.contains(e.target) && !reqD.contains(e.target)) { reqD.classList.add('hidden'); if (reqA) reqA.style.transform = 'rotate(0deg)'; }
-            });
-        });
+        // Sidebar dropdown functionality is handled by include/sidebar-dropdown.js
     </script>
+    <script src="include/sidebar-dropdown.js"></script>
 </body>
 </html>

@@ -178,7 +178,6 @@ if ($conn) {
 
         // Sidebar dropdown functionality is handled by include/sidebar-dropdown.js
     </script>
-    <script src="include/sidebar-dropdown.js">    </script>
     <script src="include/sidebar-dropdown.js"></script>
 </body>
 </html>
