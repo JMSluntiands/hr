@@ -321,19 +321,7 @@ if ($conn) {
                 }
             });
 
-            // Dropdown functionality
-            $('.dropdown-container button').on('click', function() {
-                const dropdown = $(this).siblings('div');
-                const arrow = $(this).find('svg[id$="-arrow"]');
-                
-                // Close all other dropdowns
-                $('.dropdown-container div[id$="-dropdown"]').not(dropdown).addClass('hidden');
-                $('.dropdown-container svg[id$="-arrow"]').not(arrow).removeClass('rotate-180');
-                
-                // Toggle current dropdown
-                dropdown.toggleClass('hidden');
-                arrow.toggleClass('rotate-180');
-            });
+            // Sidebar dropdown functionality is handled by include/sidebar-dropdown.js
 
             // Load employees for dropdown
             $.ajax({
@@ -449,5 +437,6 @@ if ($conn) {
             });
         });
     </script>
+    <script src="include/sidebar-dropdown.js"></script>
 </body>
 </html>

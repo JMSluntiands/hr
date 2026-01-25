@@ -367,94 +367,9 @@ if ($conn) {
             $('#cancelDecline').on('click', function() { $('#declineModal').addClass('hidden'); });
             $('#declineModal').on('click', function(e) { if (e.target === this) $('#declineModal').addClass('hidden'); });
 
-            // Dropdown functionality
-            const employeesBtn = document.getElementById('employees-dropdown-btn');
-            const employeesDropdown = document.getElementById('employees-dropdown');
-            const employeesArrow = document.getElementById('employees-arrow');
-            const leavesBtn = document.getElementById('leaves-dropdown-btn');
-            const leavesDropdown = document.getElementById('leaves-dropdown');
-            const leavesArrow = document.getElementById('leaves-arrow');
-            const requestBtn = document.getElementById('request-dropdown-btn');
-            const requestDropdown = document.getElementById('request-dropdown');
-            const requestArrow = document.getElementById('request-arrow');
-
-            function closeOtherDropdowns(exclude) {
-                if (exclude !== 'employees' && employeesDropdown) { employeesDropdown.classList.add('hidden'); if (employeesArrow) employeesArrow.style.transform = 'rotate(0deg)'; }
-                if (exclude !== 'leaves' && leavesDropdown) { leavesDropdown.classList.add('hidden'); if (leavesArrow) leavesArrow.style.transform = 'rotate(0deg)'; }
-                if (exclude !== 'request' && requestDropdown) { requestDropdown.classList.add('hidden'); if (requestArrow) requestArrow.style.transform = 'rotate(0deg)'; }
-            }
-
-            function toggleRequestDropdown() {
-                if (!requestDropdown || !requestBtn) return;
-                closeOtherDropdowns('request');
-                const isHidden = requestDropdown.classList.contains('hidden');
-                requestDropdown.classList.toggle('hidden');
-                if (isHidden) {
-                    if (requestArrow) requestArrow.style.transform = 'rotate(180deg)';
-                } else {
-                    if (requestArrow) requestArrow.style.transform = 'rotate(0deg)';
-                }
-            }
-
-            function toggleEmployeesDropdown() {
-                if (!employeesDropdown || !employeesBtn) return;
-                closeOtherDropdowns('employees');
-                const isHidden = employeesDropdown.classList.contains('hidden');
-                employeesDropdown.classList.toggle('hidden');
-                if (isHidden) {
-                    if (employeesArrow) employeesArrow.style.transform = 'rotate(180deg)';
-                } else {
-                    if (employeesArrow) employeesArrow.style.transform = 'rotate(0deg)';
-                }
-            }
-
-            function toggleLeavesDropdown() {
-                if (!leavesDropdown || !leavesBtn) return;
-                closeOtherDropdowns('leaves');
-                const isHidden = leavesDropdown.classList.contains('hidden');
-                leavesDropdown.classList.toggle('hidden');
-                if (isHidden) {
-                    if (leavesArrow) leavesArrow.style.transform = 'rotate(180deg)';
-                } else {
-                    if (leavesArrow) leavesArrow.style.transform = 'rotate(0deg)';
-                }
-            }
-
-            if (employeesBtn) {
-                $(employeesBtn).on('click', function(e) { e.preventDefault(); e.stopPropagation(); toggleEmployeesDropdown(); });
-            }
-            if (leavesBtn) {
-                $(leavesBtn).on('click', function(e) { e.preventDefault(); e.stopPropagation(); toggleLeavesDropdown(); });
-            }
-            if (requestBtn) {
-                $(requestBtn).on('click', function(e) { 
-                    e.preventDefault(); 
-                    e.stopPropagation(); 
-                    toggleRequestDropdown(); 
-                });
-                // Also handle clicks on the button using vanilla JS as fallback
-                requestBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    toggleRequestDropdown();
-                }, true);
-            }
-
-            document.addEventListener('click', function(e) {
-                if (employeesBtn && employeesDropdown && !employeesBtn.contains(e.target) && !employeesDropdown.contains(e.target)) {
-                    employeesDropdown.classList.add('hidden');
-                    if (employeesArrow) employeesArrow.style.transform = 'rotate(0deg)';
-                }
-                if (leavesBtn && leavesDropdown && !leavesBtn.contains(e.target) && !leavesDropdown.contains(e.target)) {
-                    leavesDropdown.classList.add('hidden');
-                    if (leavesArrow) leavesArrow.style.transform = 'rotate(0deg)';
-                }
-                if (requestBtn && requestDropdown && !requestBtn.contains(e.target) && !requestDropdown.contains(e.target)) {
-                    requestDropdown.classList.add('hidden');
-                    if (requestArrow) requestArrow.style.transform = 'rotate(0deg)';
-                }
-            });
+            // Sidebar dropdown functionality is handled by include/sidebar-dropdown.js
         });
     </script>
+    <script src="include/sidebar-dropdown.js"></script>
 </body>
 </html>

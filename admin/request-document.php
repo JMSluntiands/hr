@@ -430,5 +430,6 @@ if ($conn) {
             });
         });
     </script>
+    <script src="include/sidebar-dropdown.js"></script>
 </body>
 </html>

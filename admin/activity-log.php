@@ -176,36 +176,9 @@ if ($conn) {
             });
         });
 
-        document.addEventListener('DOMContentLoaded', function() {
-            var empBtn = document.getElementById('employees-dropdown-btn');
-            var empDD = document.getElementById('employees-dropdown');
-            var empAr = document.getElementById('employees-arrow');
-            var lvBtn = document.getElementById('leaves-dropdown-btn');
-            var lvDD = document.getElementById('leaves-dropdown');
-            var lvAr = document.getElementById('leaves-arrow');
-            var reqBtn = document.getElementById('request-dropdown-btn');
-            var reqDD = document.getElementById('request-dropdown');
-            var reqAr = document.getElementById('request-arrow');
-            function closeAll(exclude) {
-                if (exclude !== 'emp' && empDD) { empDD.classList.add('hidden'); if (empAr) empAr.style.transform = 'rotate(0deg)'; }
-                if (exclude !== 'lv' && lvDD) { lvDD.classList.add('hidden'); if (lvAr) lvAr.style.transform = 'rotate(0deg)'; }
-                if (exclude !== 'req' && reqDD) { reqDD.classList.add('hidden'); if (reqAr) reqAr.style.transform = 'rotate(0deg)'; }
-            }
-            function toggle(dd, ar) {
-                if (!dd) return;
-                var h = dd.classList.contains('hidden');
-                dd.classList.toggle('hidden');
-                if (ar) ar.style.transform = h ? 'rotate(180deg)' : 'rotate(0deg)';
-            }
-            if (empBtn) empBtn.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); closeAll('emp'); toggle(empDD, empAr); });
-            if (lvBtn) lvBtn.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); closeAll('lv'); toggle(lvDD, lvAr); });
-            if (reqBtn) reqBtn.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); closeAll('req'); toggle(reqDD, reqAr); });
-            document.addEventListener('click', function(e) {
-                if (empBtn && empDD && !empBtn.contains(e.target) && !empDD.contains(e.target)) { empDD.classList.add('hidden'); if (empAr) empAr.style.transform = 'rotate(0deg)'; }
-                if (lvBtn && lvDD && !lvBtn.contains(e.target) && !lvDD.contains(e.target)) { lvDD.classList.add('hidden'); if (lvAr) lvAr.style.transform = 'rotate(0deg)'; }
-                if (reqBtn && reqDD && !reqBtn.contains(e.target) && !reqDD.contains(e.target)) { reqDD.classList.add('hidden'); if (reqAr) reqAr.style.transform = 'rotate(0deg)'; }
-            });
-        });
+        // Sidebar dropdown functionality is handled by include/sidebar-dropdown.js
     </script>
+    <script src="include/sidebar-dropdown.js">    </script>
+    <script src="include/sidebar-dropdown.js"></script>
 </body>
 </html>
