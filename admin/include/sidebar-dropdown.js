@@ -6,16 +6,9 @@
     
     // Use event delegation on document level so it works even after navigation
     document.addEventListener('click', function(e) {
-        // Check if clicked element is a dropdown button or inside one
-        let dropdownBtn = e.target.closest('[id$="-dropdown-btn"]');
-        
-        // Also check if clicked on SVG or span inside the button
-        if (!dropdownBtn) {
-            const parent = e.target.closest('.dropdown-container');
-            if (parent) {
-                dropdownBtn = parent.querySelector('[id$="-dropdown-btn"]');
-            }
-        }
+        // Only treat as "dropdown button click" when the click is ON the button itself
+        // (not when clicking a link inside the dropdown - those should navigate)
+        const dropdownBtn = e.target.closest('[id$="-dropdown-btn"]');
         
         if (dropdownBtn) {
             e.preventDefault();

@@ -30,8 +30,8 @@ $(".js-login-btn").on("click", function () {
 
       if (response.status === "success") {
         let role = response.role || "";
-        let target = "admin/index";
-        if (role.toLowerCase() === "employee") target = "employee/index";
+        let target = "admin/index.php";
+        if (role.toLowerCase() === "employee") target = "employee/index.php";
         setTimeout(function () { window.location.href = target; }, 800);
       } else if (response.status === "locked") {
         $("#loginLockedNotice, #loginLockedNoticeMobile").removeClass("hidden");

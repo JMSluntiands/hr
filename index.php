@@ -8,14 +8,14 @@
         if (isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
           // Simplified roles: admin at employee lang
           $roleRedirects = [
-              "admin"    => "admin/index",
-              "Admin"    => "admin/index",
-              "employee" => "employee/index",
-              "Employee" => "employee/index"
+              "admin"    => "admin/index.php",
+              "Admin"    => "admin/index.php",
+              "employee" => "employee/index.php",
+              "Employee" => "employee/index.php"
           ];
 
           $role = $_SESSION['role'];
-          $target = $roleRedirects[$role] ?? "admin/index"; // default admin kung may hindi kilalang role
+          $target = $roleRedirects[$role] ?? "admin/index.php"; // default admin kung may hindi kilalang role
           header("Location: " . $target);
           exit;
         }
