@@ -41,7 +41,7 @@
             <p class="text-muted mb-0"><?php echo $_SESSION['role'] ?></p>
           </div>
         </div>
-        <a class="dropdown-item" href="../controller/logout">Logout</a>
+        <a class="dropdown-item" href="../logout.php">Logout</a>
       </div>
     </li>
   </ul>

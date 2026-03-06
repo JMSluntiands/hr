@@ -27,7 +27,22 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
-
+    <style>
+      .login-spinner {
+        display: inline-block;
+        width: 1.25rem;
+        height: 1.25rem;
+        border: 2px solid rgba(255,255,255,0.3);
+        border-top-color: #fff;
+        border-radius: 50%;
+        animation: login-spin 0.7s linear infinite;
+        vertical-align: middle;
+        margin-right: 0.5rem;
+      }
+      @keyframes login-spin {
+        to { transform: rotate(360deg); }
+      }
+    </style>
     <script>
       tailwind.config = {
         theme: {
@@ -98,33 +113,35 @@
     <!-- Central Login Card -->
     <div class="absolute inset-0 flex items-center justify-center z-10 p-5">
       <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 relative">
-        <h1 class="text-2xl font-bold text-slate-800 mb-6 text-center">Login</h1>
-        
-        <div class="mb-5">
-          <label for="email" class="block text-sm font-medium text-slate-700 mb-2">Email</label>
-          <input id="email" type="email" placeholder="company@example.com"
-            class="w-full p-3 border-2 border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-slate-900" autocomplete="OFF">
-        </div>
-        
-        <div class="mb-6 relative">
-          <label for="password" class="block text-sm font-medium text-slate-700 mb-2">Password</label>
-          <input id="password" type="password" placeholder="123456789"
-            class="w-full p-3 border-2 border-[#E9A319]/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#E9A319]/40 focus:border-[#E9A319] text-slate-900 pr-10">
-          <button type="button" id="togglePassword" class="absolute inset-y-0 right-3 flex items-center mt-9">
-            <svg id="eyeOpen" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="#64748b" class="w-5 h-5">
-              <path stroke-linecap="round" stroke-linejoin="round"
-                d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.008 9.963 7.181.07.207.07.43 0 .637C20.573 16.49 16.64 19.5 12 19.5c-4.64 0-8.577-3.008-9.964-7.178z" />
-              <path stroke-linecap="round" stroke-linejoin="round"
-                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-            <svg id="eyeClosed" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="#64748b" class="w-5 h-5 hidden">
-              <path stroke-linecap="round" stroke-linejoin="round"
-                d="M3.98 8.223A10.477 10.477 0 001.75 12c1.4 4.173 5.336 7.181 9.964 7.181 1.625 0 3.17-.363 4.57-1.014m3.545-2.707A10.45 10.45 0 0022.25 12c-1.4-4.173-5.336-7.181-9.964-7.181-1.318 0-2.58.24-3.75.678m-3.83 1.917L3 3m0 0l18 18" />
-            </svg>
-          </button>
-        </div>
-        
-        <button type="button" class="js-login-btn w-full bg-[#E9A319] hover:bg-[#d18a15] text-white font-semibold py-3 rounded-lg transition-colors" id="loginButton">Login</button>
+        <form class="js-login-form" id="loginFormDesktop" novalidate>
+          <h1 class="text-2xl font-bold text-slate-800 mb-6 text-center">Login</h1>
+          
+          <div class="mb-5">
+            <label for="email" class="block text-sm font-medium text-slate-700 mb-2">Email</label>
+            <input name="email" id="email" type="email" placeholder="company@example.com"
+              class="w-full p-3 border-2 border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-slate-900" autocomplete="OFF">
+          </div>
+          
+          <div class="mb-6 relative">
+            <label for="password" class="block text-sm font-medium text-slate-700 mb-2">Password</label>
+            <input name="password" id="password" type="password" placeholder="123456789"
+              class="w-full p-3 border-2 border-[#E9A319]/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#E9A319]/40 focus:border-[#E9A319] text-slate-900 pr-10">
+            <button type="button" id="togglePassword" class="absolute inset-y-0 right-3 flex items-center mt-9">
+              <svg id="eyeOpen" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="#64748b" class="w-5 h-5">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.008 9.963 7.181.07.207.07.43 0 .637C20.573 16.49 16.64 19.5 12 19.5c-4.64 0-8.577-3.008-9.964-7.178z" />
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <svg id="eyeClosed" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="#64748b" class="w-5 h-5 hidden">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M3.98 8.223A10.477 10.477 0 001.75 12c1.4 4.173 5.336 7.181 9.964 7.181 1.625 0 3.17-.363 4.57-1.014m3.545-2.707A10.45 10.45 0 0022.25 12c-1.4-4.173-5.336-7.181-9.964-7.181-1.318 0-2.58.24-3.75.678m-3.83 1.917L3 3m0 0l18 18" />
+              </svg>
+            </button>
+          </div>
+          
+          <button type="button" class="js-login-btn w-full bg-[#E9A319] hover:bg-[#d18a15] text-white font-semibold py-3 rounded-lg transition-colors" id="loginButton">Login</button>
+        </form>
 
         <div id="loginLockedNotice" class="hidden mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
           <p class="text-sm text-amber-800 mb-2">Account locked. Request an unlock from admin?</p>
@@ -138,33 +155,35 @@
     <!-- Mobile Version -->
     <div class="md:hidden w-full bg-white flex flex-col justify-center items-center min-h-screen p-5">
       <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8">
-        <h1 class="text-2xl font-bold text-slate-800 mb-6 text-center">Login</h1>
-        
-        <div class="mb-5">
-          <label for="email" class="block text-sm font-medium text-slate-700 mb-2">Email</label>
-          <input id="email" type="email" placeholder="company@example.com"
-            class="w-full p-3 border-2 border-[#E9A319]/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#E9A319]/40 focus:border-[#E9A319] text-slate-900" autocomplete="OFF">
-        </div>
-        
-        <div class="mb-6 relative">
-          <label for="password" class="block text-sm font-medium text-slate-700 mb-2">Password</label>
-          <input id="password" type="password" placeholder="123456789"
-            class="w-full p-3 border-2 border-[#E9A319]/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#E9A319]/40 focus:border-[#E9A319] text-slate-900 pr-10">
-          <button type="button" id="togglePassword" class="absolute inset-y-0 right-3 flex items-center mt-9">
-            <svg id="eyeOpen" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="#64748b" class="w-5 h-5">
-              <path stroke-linecap="round" stroke-linejoin="round"
-                d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.008 9.963 7.181.07.207.07.43 0 .637C20.573 16.49 16.64 19.5 12 19.5c-4.64 0-8.577-3.008-9.964-7.178z" />
-              <path stroke-linecap="round" stroke-linejoin="round"
-                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-            <svg id="eyeClosed" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="#64748b" class="w-5 h-5 hidden">
-              <path stroke-linecap="round" stroke-linejoin="round"
-                d="M3.98 8.223A10.477 10.477 0 001.75 12c1.4 4.173 5.336 7.181 9.964 7.181 1.625 0 3.17-.363 4.57-1.014m3.545-2.707A10.45 10.45 0 0022.25 12c-1.4-4.173-5.336-7.181-9.964-7.181-1.318 0-2.58.24-3.75.678m-3.83 1.917L3 3m0 0l18 18" />
-            </svg>
-          </button>
-        </div>
-        
-        <button type="button" class="js-login-btn w-full bg-[#E9A319] hover:bg-[#d18a15] text-white font-semibold py-3 rounded-lg transition-colors" id="loginButtonMobile">Login</button>
+        <form class="js-login-form" id="loginFormMobile" novalidate>
+          <h1 class="text-2xl font-bold text-slate-800 mb-6 text-center">Login</h1>
+          
+          <div class="mb-5">
+            <label for="emailMobile" class="block text-sm font-medium text-slate-700 mb-2">Email</label>
+            <input name="email" id="emailMobile" type="email" placeholder="company@example.com"
+              class="w-full p-3 border-2 border-[#E9A319]/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#E9A319]/40 focus:border-[#E9A319] text-slate-900" autocomplete="OFF">
+          </div>
+          
+          <div class="mb-6 relative">
+            <label for="passwordMobile" class="block text-sm font-medium text-slate-700 mb-2">Password</label>
+            <input name="password" id="passwordMobile" type="password" placeholder="123456789"
+              class="w-full p-3 border-2 border-[#E9A319]/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#E9A319]/40 focus:border-[#E9A319] text-slate-900 pr-10">
+            <button type="button" id="togglePassword" class="absolute inset-y-0 right-3 flex items-center mt-9">
+              <svg id="eyeOpen" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="#64748b" class="w-5 h-5">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.008 9.963 7.181.07.207.07.43 0 .637C20.573 16.49 16.64 19.5 12 19.5c-4.64 0-8.577-3.008-9.964-7.178z" />
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <svg id="eyeClosed" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="#64748b" class="w-5 h-5 hidden">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M3.98 8.223A10.477 10.477 0 001.75 12c1.4 4.173 5.336 7.181 9.964 7.181 1.625 0 3.17-.363 4.57-1.014m3.545-2.707A10.45 10.45 0 0022.25 12c-1.4-4.173-5.336-7.181-9.964-7.181-1.318 0-2.58.24-3.75.678m-3.83 1.917L3 3m0 0l18 18" />
+              </svg>
+            </button>
+          </div>
+          
+          <button type="button" class="js-login-btn w-full bg-[#E9A319] hover:bg-[#d18a15] text-white font-semibold py-3 rounded-lg transition-colors" id="loginButtonMobile">Login</button>
+        </form>
 
         <div id="loginLockedNoticeMobile" class="hidden mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
           <p class="text-sm text-amber-800 mb-2">Account locked. Request an unlock from admin?</p>

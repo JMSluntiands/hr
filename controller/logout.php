@@ -2,5 +2,6 @@
 session_start();
 session_unset();
 session_destroy();
-header("Location: ../index?logged_out=1");
+// Iisang direction lang, balik lahat sa index.php
+header("Location: ../index.php?logged_out=1");
 exit();

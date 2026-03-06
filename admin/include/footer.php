@@ -70,8 +70,9 @@
         success: function (res) {
           if (res.status === "success") {
             toastr.warning(res.message, "Session Expired");
+            // Iisang direction: auto-logout din balik sa index.php
             setTimeout(() => {
-              window.location.href = "../index";
+              window.location.href = "../index.php";
             }, 1500);
           }
         },
