@@ -21,12 +21,23 @@ if ($userId <= 0) {
     return;
 }
 
-$userStmt = $conn->prepare("SELECT email FROM user_login WHERE id = ?");
+$hasLastLoginCol = false;
+$cr = $conn->query("SHOW COLUMNS FROM user_login LIKE 'last_login'");
+if ($cr && $cr->num_rows > 0) {
+    $hasLastLoginCol = true;
+}
+$userSql = $hasLastLoginCol ? "SELECT email, last_login FROM user_login WHERE id = ?" : "SELECT email FROM user_login WHERE id = ?";
+$userStmt = $conn->prepare($userSql);
 $userStmt->bind_param('i', $userId);
 $userStmt->execute();
 $userResult = $userStmt->get_result();
 $user = $userResult->fetch_assoc();
 $userStmt->close();
+
+$employeeLastLogin = null;
+if ($hasLastLoginCol && !empty($user['last_login'])) {
+    $employeeLastLogin = date('M j, Y g:i A', strtotime($user['last_login']));
+}
 
 if ($user) {
     $empStmt = $conn->prepare("SELECT id, employee_id, full_name, email, position, department, date_hired, profile_picture FROM employees WHERE email = ?");

@@ -83,6 +83,12 @@ if ($user) {
     $_SESSION['user_id'] = $user['id'];
     $_SESSION['role'] = $user['role'] ?? 'employee';
 
+    // Update last login timestamp (if column exists)
+    $cc = $conn->query("SHOW COLUMNS FROM user_login LIKE 'last_login'");
+    if ($cc && $cc->num_rows > 0) {
+        $conn->query("UPDATE user_login SET last_login = NOW() WHERE id = " . (int)$user['id']);
+    }
+
     $defaultPasswords = ['password123', '123456789', 'password', 'admin123', '123456'];
     $isDefaultPassword = in_array(strtolower($password), array_map('strtolower', $defaultPasswords));
     if (!$isDefaultPassword && (preg_match('/^[0-9]{6,}$/', $password) || strlen($password) <= 6)) {

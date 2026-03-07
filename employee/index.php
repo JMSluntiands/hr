@@ -336,6 +336,9 @@ if ($employeeDbId && $conn) {
             <h1 class="text-2xl font-semibold text-slate-800">
                 Welcome back, <?php echo htmlspecialchars(explode(' ', $employeeName)[0]); ?>!
             </h1>
+            <div class="text-sm text-slate-600">
+                Last login: <span class="font-medium text-slate-800"><?php echo $employeeLastLogin ? htmlspecialchars($employeeLastLogin) : '—'; ?></span>
+            </div>
         </div>
 
         <!-- Summary Cards -->
