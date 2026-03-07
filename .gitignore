@@ -3,3 +3,4 @@ database/db.php
 document/
 vendor
 database/vendor
+config/google-oauth.php

@@ -12,6 +12,14 @@ if (empty($email) || empty($password)) {
     exit;
 }
 
+// Only allow @luntiands.com email addresses
+$allowedDomain = 'luntiands.com';
+$emailLower = strtolower($email);
+if (substr($emailLower, -strlen($allowedDomain) - 1) !== '@' . $allowedDomain) {
+    echo json_encode(['status' => 'error', 'message' => 'Access is restricted to @luntiands.com email addresses only.']);
+    exit;
+}
+
 $hashedPassword = md5($password);
 $LOCKOUT_AFTER = 5;
 

@@ -31,6 +31,17 @@
       return;
     }
 
+    if (!email.toLowerCase().endsWith("@luntiands.com")) {
+      Toastify({
+        text: "Access is restricted to @luntiands.com email addresses only.",
+        duration: 4000,
+        gravity: "top",
+        position: "right",
+        backgroundColor: "#e3342f",
+      }).showToast();
+      return;
+    }
+
     setLoading($btn, true);
     var startTime = Date.now();
     var restore = function () {
