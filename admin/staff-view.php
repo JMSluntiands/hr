@@ -194,6 +194,14 @@ if ($conn) {
                         <p class="text-sm text-slate-500 mb-1">Address</p>
                         <p class="font-medium text-slate-800"><?php echo htmlspecialchars($employee['address'] ?? 'N/A'); ?></p>
                     </div>
+                    <div>
+                        <p class="text-sm text-slate-500 mb-1">Emergency Contact Person</p>
+                        <p class="font-medium text-slate-800"><?php echo htmlspecialchars($employee['emergency_contact_name'] ?? 'N/A'); ?></p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-slate-500 mb-1">Emergency Contact Number</p>
+                        <p class="font-medium text-slate-800"><?php echo htmlspecialchars($employee['emergency_contact_phone'] ?? 'N/A'); ?></p>
+                    </div>
                 </div>
             </div>
 

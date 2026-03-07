@@ -72,7 +72,7 @@ if ($conn) {
         <div class="flex items-center justify-between mb-6">
             <div>
                 <h1 class="text-2xl font-semibold text-slate-800">Request Document</h1>
-                <p class="text-sm text-slate-500 mt-1">Approve or decline document requests and HRIS 201 file uploads</p>
+                <p class="text-sm text-slate-500 mt-1">Validate employee document uploads (approve or reject). Employees upload from their profile.</p>
             </div>
         </div>
 
@@ -130,10 +130,11 @@ if ($conn) {
             </div>
         </div>
 
-        <!-- HRIS 201 File Uploads (Employee Document Uploads) -->
+        <!-- Validate Employee Document Uploads (HRIS 201) -->
         <div class="bg-white rounded-xl shadow-sm border border-slate-100">
             <div class="px-6 py-4 border-b border-slate-100">
-                <h2 class="text-sm font-semibold text-slate-700">HRIS 201 File Uploads</h2>
+                <h2 class="text-sm font-semibold text-slate-700">Validate Document Uploads</h2>
+                <p class="text-xs text-slate-500 mt-1">Employees upload from My Profile. Approve or reject each upload here.</p>
             </div>
             <div class="p-6">
                 <table id="docUploadsTable" class="min-w-full text-sm">

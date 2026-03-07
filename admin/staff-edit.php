@@ -17,8 +17,11 @@ include 'include/activity-logger.php';
 $success = '';
 $error = '';
 
-// Get employee ID from URL
+// Get employee ID from URL or from POST (when form is submitted)
 $employeeId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id']) && (int)$_POST['id'] > 0) {
+    $employeeId = (int)$_POST['id'];
+}
 
 if (!$employeeId) {
     header('Location: staff.php');
@@ -56,6 +59,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $dateHired = $_POST['date_hired'] ?? '';
     $status = $_POST['status'] ?? 'Active';
     $address = trim($_POST['address'] ?? '');
+    $emergencyContactName = trim($_POST['emergency_contact_name'] ?? '');
+    $emergencyContactPhone = trim($_POST['emergency_contact_phone'] ?? '');
+    if (!empty($emergencyContactPhone) && !preg_match('/^09/', $emergencyContactPhone)) {
+        $emergencyContactPhone = '09' . $emergencyContactPhone;
+    }
     $birthdate = $_POST['birthdate'] ?? '';
     $gender = $_POST['gender'] ?? '';
     $sss = trim($_POST['sss'] ?? '');
@@ -146,8 +154,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // Check if email already exists in user_login
-    if (empty($errors)) {
+    // Check if email already exists in user_login (when adding new, or when editing and email was changed)
+    $isEdit = !empty($_POST['id']) && (int)$_POST['id'] > 0;
+    $currentEmployeeEmail = $employee['email'] ?? '';
+    if (empty($errors) && (!$isEdit || $email !== $currentEmployeeEmail)) {
         $stmt = $conn->prepare("SELECT id FROM user_login WHERE email = ? LIMIT 1");
         if ($stmt) {
             $stmt->bind_param("s", $email);
@@ -160,70 +170,85 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
     
-    // If no errors, insert into database
+    // If no errors, update or insert
     if (empty($errors)) {
-        // Generate employee ID (EMP-YYYYMMDD-XXX)
-        $employeeId = 'EMP-' . date('Ymd') . '-' . str_pad(rand(1, 999), 3, '0', STR_PAD_LEFT);
-        
-        // Check if employee ID already exists (very unlikely but check anyway)
-        $stmt = $conn->prepare("SELECT id FROM employees WHERE employee_id = ?");
-        $stmt->bind_param("s", $employeeId);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        if ($result->num_rows > 0) {
-            $employeeId = 'EMP-' . date('Ymd') . '-' . str_pad(rand(1, 999), 3, '0', STR_PAD_LEFT);
-        }
-        $stmt->close();
-        
-        // Start transaction for data consistency
-        $conn->begin_transaction();
-        
-        try {
-            // Insert into employees table
-            $stmt = $conn->prepare("INSERT INTO employees (employee_id, full_name, email, phone, position, department, date_hired, status, address, birthdate, gender, sss, philhealth, pagibig, tin, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
-            
-            if (!$stmt) {
-                throw new Exception('Database prepare error: ' . $conn->error);
+        if ($isEdit && $employee) {
+            // UPDATE existing employee
+            $conn->begin_transaction();
+            try {
+                $stmt = $conn->prepare("UPDATE employees SET full_name=?, email=?, phone=?, position=?, department=?, date_hired=?, status=?, address=?, emergency_contact_name=?, emergency_contact_phone=?, birthdate=?, gender=?, sss=?, philhealth=?, pagibig=?, tin=? WHERE id=?");
+                if (!$stmt) {
+                    throw new Exception('Database prepare error: ' . $conn->error);
+                }
+                $stmt->bind_param("ssssssssssssssssi", $fullName, $email, $phone, $position, $department, $dateHired, $status, $address, $emergencyContactName, $emergencyContactPhone, $birthdate, $gender, $sss, $philhealth, $pagibig, $tin, $employeeId);
+                if (!$stmt->execute()) {
+                    throw new Exception('Error updating employee: ' . $stmt->error);
+                }
+                $stmt->close();
+                // Update user_login email if it changed (so login still works)
+                if ($email !== $currentEmployeeEmail) {
+                    $loginStmt = $conn->prepare("UPDATE user_login SET email = ? WHERE email = ?");
+                    if ($loginStmt) {
+                        $loginStmt->bind_param("ss", $email, $currentEmployeeEmail);
+                        $loginStmt->execute();
+                        $loginStmt->close();
+                    }
+                }
+                $conn->commit();
+                logActivity($conn, 'Edit Employee', 'Employee', $employeeId, "Updated employee: $fullName");
+                $success = 'Employee updated successfully.';
+                $employee = array_merge($employee, [
+                    'full_name' => $fullName, 'email' => $email, 'phone' => $phone, 'position' => $position,
+                    'department' => $department, 'date_hired' => $dateHired, 'status' => $status, 'address' => $address,
+                    'emergency_contact_name' => $emergencyContactName, 'emergency_contact_phone' => $emergencyContactPhone,
+                    'birthdate' => $birthdate, 'gender' => $gender, 'sss' => $sss, 'philhealth' => $philhealth, 'pagibig' => $pagibig, 'tin' => $tin
+                ]);
+            } catch (Exception $e) {
+                $conn->rollback();
+                $error = $e->getMessage();
             }
-            
-            $stmt->bind_param("sssssssssssssss", $employeeId, $fullName, $email, $phone, $position, $department, $dateHired, $status, $address, $birthdate, $gender, $sss, $philhealth, $pagibig, $tin);
-            
-            if (!$stmt->execute()) {
-                throw new Exception('Error adding employee: ' . $stmt->error);
+        } else {
+            // INSERT new employee (only if this page is used for add, e.g. from a different entry point)
+            $newEmployeeIdStr = 'EMP-' . date('Ymd') . '-' . str_pad(rand(1, 999), 3, '0', STR_PAD_LEFT);
+            $stmt = $conn->prepare("SELECT id FROM employees WHERE employee_id = ?");
+            $stmt->bind_param("s", $newEmployeeIdStr);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            if ($result->num_rows > 0) {
+                $newEmployeeIdStr = 'EMP-' . date('Ymd') . '-' . str_pad(rand(1, 999), 3, '0', STR_PAD_LEFT);
             }
-            $newEmployeeId = $conn->insert_id;
             $stmt->close();
-            
-            // Also create a login account for the employee
-            $defaultPassword = md5('PASSWORD'); // Default password
-            $employeeRole = 'employee';
-            
-            $loginStmt = $conn->prepare("INSERT INTO user_login (email, password, role) VALUES (?, ?, ?)");
-            if (!$loginStmt) {
-                throw new Exception('Error preparing user_login insert: ' . $conn->error);
+            $conn->begin_transaction();
+            try {
+                $stmt = $conn->prepare("INSERT INTO employees (employee_id, full_name, email, phone, position, department, date_hired, status, address, emergency_contact_name, emergency_contact_phone, birthdate, gender, sss, philhealth, pagibig, tin, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
+                if (!$stmt) {
+                    throw new Exception('Database prepare error: ' . $conn->error);
+                }
+                $stmt->bind_param("sssssssssssssssss", $newEmployeeIdStr, $fullName, $email, $phone, $position, $department, $dateHired, $status, $address, $emergencyContactName, $emergencyContactPhone, $birthdate, $gender, $sss, $philhealth, $pagibig, $tin);
+                if (!$stmt->execute()) {
+                    throw new Exception('Error adding employee: ' . $stmt->error);
+                }
+                $newEmployeeId = $conn->insert_id;
+                $stmt->close();
+                $defaultPassword = md5('PASSWORD');
+                $employeeRole = 'employee';
+                $loginStmt = $conn->prepare("INSERT INTO user_login (email, password, role) VALUES (?, ?, ?)");
+                if (!$loginStmt) {
+                    throw new Exception('Error preparing user_login insert: ' . $conn->error);
+                }
+                $loginStmt->bind_param("sss", $email, $defaultPassword, $employeeRole);
+                if (!$loginStmt->execute()) {
+                    throw new Exception('Error creating user login: ' . $loginStmt->error);
+                }
+                $loginStmt->close();
+                $conn->commit();
+                logActivity($conn, 'Add Employee', 'Employee', $newEmployeeId, "Added employee: $fullName (ID: $newEmployeeIdStr)");
+                $success = 'Employee added successfully! Employee ID: ' . $newEmployeeIdStr . '. Login account created with default password: PASSWORD';
+                $_POST = [];
+            } catch (Exception $e) {
+                $conn->rollback();
+                $error = $e->getMessage();
             }
-            
-            $loginStmt->bind_param("sss", $email, $defaultPassword, $employeeRole);
-            
-            if (!$loginStmt->execute()) {
-                throw new Exception('Error creating user login: ' . $loginStmt->error);
-            }
-            $loginStmt->close();
-            
-            // Commit transaction if everything succeeds
-            $conn->commit();
-            
-            // Log activity
-            logActivity($conn, 'Add Employee', 'Employee', $newEmployeeId, "Added employee: $fullName (ID: $employeeId)");
-            
-            $success = 'Employee added successfully! Employee ID: ' . $employeeId . '. Login account created with default password: PASSWORD';
-            // Clear form data after successful submission
-            $_POST = [];
-            
-        } catch (Exception $e) {
-            // Rollback transaction on error
-            $conn->rollback();
-            $error = $e->getMessage();
         }
     } else {
         $error = implode('<br>', $errors);
@@ -260,8 +285,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <!-- Header -->
         <div class="flex items-center justify-between mb-6">
             <div>
-                <h1 class="text-2xl font-semibold text-slate-800">Add New Employee</h1>
-                <p class="text-sm text-slate-500 mt-1">Create a new employee account in the system</p>
+                <h1 class="text-2xl font-semibold text-slate-800"><?php echo !empty($employee) ? 'Edit Employee' : 'Add New Employee'; ?></h1>
+                <p class="text-sm text-slate-500 mt-1"><?php echo !empty($employee) ? 'Update employee information' : 'Create a new employee account in the system'; ?></p>
             </div>
             <a href="staff" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 font-medium text-sm">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -287,6 +312,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <!-- Form -->
         <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
             <form method="POST" action="" class="space-y-6" id="employeeForm" novalidate>
+                <?php if (!empty($employee['id'])): ?>
+                <input type="hidden" name="id" value="<?php echo (int)$employee['id']; ?>">
+                <?php endif; ?>
                 <!-- Personal Information Section -->
                 <div class="border-b border-slate-200 pb-4 mb-6">
                     <h2 class="text-lg font-semibold text-slate-800 mb-4">Personal Information</h2>
@@ -302,7 +330,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-2">Email Address <span class="text-red-500">*</span></label>
                             <input type="email" name="email" id="email" required 
-                                   value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>"
+                                   value="<?php echo htmlspecialchars($_POST['email'] ?? ($employee['email'] ?? '')); ?>"
                                    class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]">
                             <span class="error-message text-red-500 text-xs mt-1 hidden"></span>
                         </div>
@@ -336,7 +364,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="md:col-span-2">
                             <label class="block text-sm font-medium text-slate-700 mb-2">Address</label>
                             <textarea name="address" id="address" rows="2"
-                                      class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]"><?php echo htmlspecialchars($_POST['address'] ?? ''); ?></textarea>
+                                      class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]"><?php echo htmlspecialchars($_POST['address'] ?? ($employee['address'] ?? '')); ?></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Emergency Contact Person</label>
+                            <input type="text" name="emergency_contact_name" id="emergency_contact_name"
+                                   value="<?php echo htmlspecialchars($_POST['emergency_contact_name'] ?? ($employee['emergency_contact_name'] ?? '')); ?>"
+                                   class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]" placeholder="Full name">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Emergency Contact Number</label>
+                            <div class="relative">
+                                <span class="absolute left-4 top-2 text-slate-500 text-sm">09</span>
+                                <input type="tel" name="emergency_contact_phone" id="emergency_contact_phone"
+                                       value="<?php echo htmlspecialchars(preg_replace('/^09/', '', $_POST['emergency_contact_phone'] ?? ($employee['emergency_contact_phone'] ?? ''))); ?>"
+                                       pattern="[0-9]{9}" placeholder="123456789" maxlength="9"
+                                       class="w-full pl-12 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]"
+                                       oninput="this.value = this.value.replace(/[^0-9]/g, ''); if(this.value.length > 9) this.value = this.value.slice(0, 9);">
+                            </div>
+                            <p class="text-xs text-slate-500 mt-1">Format: 09 + 9 digits (optional)</p>
                         </div>
                     </div>
                 </div>
@@ -356,11 +402,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <label class="block text-sm font-medium text-slate-700 mb-2">Department <span class="text-red-500">*</span></label>
                             <select name="department" id="department" required class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]">
                                 <option value="">Select Department</option>
-                                <option value="IT Department" <?php echo (isset($_POST['department']) && $_POST['department'] === 'IT Department') ? 'selected' : ''; ?>>IT Department</option>
-                                <option value="Human Resources" <?php echo (isset($_POST['department']) && $_POST['department'] === 'Human Resources') ? 'selected' : ''; ?>>Human Resources</option>
-                                <option value="Finance" <?php echo (isset($_POST['department']) && $_POST['department'] === 'Finance') ? 'selected' : ''; ?>>Finance</option>
-                                <option value="Marketing" <?php echo (isset($_POST['department']) && $_POST['department'] === 'Marketing') ? 'selected' : ''; ?>>Marketing</option>
-                                <option value="Sales" <?php echo (isset($_POST['department']) && $_POST['department'] === 'Sales') ? 'selected' : ''; ?>>Sales</option>
+                                <?php
+                                $selDept = isset($_POST['department']) ? $_POST['department'] : ($employee['department'] ?? '');
+                                $depts = ['IT Department', 'Human Resources', 'Finance', 'Marketing', 'Sales'];
+                                foreach ($depts as $d) {
+                                    echo '<option value="' . htmlspecialchars($d) . '"' . ($selDept === $d ? ' selected' : '') . '>' . htmlspecialchars($d) . '</option>';
+                                }
+                                ?>
                             </select>
                             <span class="error-message text-red-500 text-xs mt-1 hidden"></span>
                         </div>
@@ -374,8 +422,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-2">Status <span class="text-red-500">*</span></label>
                             <select name="status" id="status" required class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]">
-                                <option value="Active" <?php echo (!isset($_POST['status']) || $_POST['status'] === 'Active') ? 'selected' : ''; ?>>Active</option>
-                                <option value="Inactive" <?php echo (isset($_POST['status']) && $_POST['status'] === 'Inactive') ? 'selected' : ''; ?>>Inactive</option>
+                                <?php $selStatus = isset($_POST['status']) ? $_POST['status'] : ($employee['status'] ?? 'Active'); ?>
+                                <option value="Active" <?php echo ($selStatus === 'Active') ? 'selected' : ''; ?>>Active</option>
+                                <option value="Inactive" <?php echo ($selStatus === 'Inactive') ? 'selected' : ''; ?>>Inactive</option>
                             </select>
                         </div>
                     </div>
@@ -404,7 +453,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-2">Pag-IBIG (HDMF) Number</label>
                             <input type="text" name="pagibig" id="pagibig" 
-                                   value="<?php echo htmlspecialchars($_POST['pagibig'] ?? ''); ?>"
+                                   value="<?php echo htmlspecialchars($_POST['pagibig'] ?? ($employee['pagibig'] ?? '')); ?>"
                                    pattern="[0-9]{4}-[0-9]{4}-[0-9]{4}" placeholder="XXXX-XXXX-XXXX" maxlength="14"
                                    class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]">
                             <p class="text-xs text-slate-500 mt-1">12 digits (format: XXXX-XXXX-XXXX)</p>

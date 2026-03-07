@@ -32,6 +32,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $dateHired = $_POST['date_hired'] ?? '';
     $status = $_POST['status'] ?? 'Active';
     $address = trim($_POST['address'] ?? '');
+    $emergencyContactName = trim($_POST['emergency_contact_name'] ?? '');
+    $emergencyContactPhone = trim($_POST['emergency_contact_phone'] ?? '');
+    if (!empty($emergencyContactPhone) && !preg_match('/^09/', $emergencyContactPhone)) {
+        $emergencyContactPhone = '09' . $emergencyContactPhone;
+    }
     $birthdate = $_POST['birthdate'] ?? '';
     $gender = $_POST['gender'] ?? '';
     $sss = trim($_POST['sss'] ?? '');
@@ -156,13 +161,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         try {
             // Insert into employees table
-            $stmt = $conn->prepare("INSERT INTO employees (employee_id, full_name, email, phone, position, department, date_hired, status, address, birthdate, gender, sss, philhealth, pagibig, tin, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
+            $stmt = $conn->prepare("INSERT INTO employees (employee_id, full_name, email, phone, position, department, date_hired, status, address, emergency_contact_name, emergency_contact_phone, birthdate, gender, sss, philhealth, pagibig, tin, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
             
             if (!$stmt) {
                 throw new Exception('Database prepare error: ' . $conn->error);
             }
             
-            $stmt->bind_param("sssssssssssssss", $employeeId, $fullName, $email, $phone, $position, $department, $dateHired, $status, $address, $birthdate, $gender, $sss, $philhealth, $pagibig, $tin);
+            $stmt->bind_param("sssssssssssssssss", $employeeId, $fullName, $email, $phone, $position, $department, $dateHired, $status, $address, $emergencyContactName, $emergencyContactPhone, $birthdate, $gender, $sss, $philhealth, $pagibig, $tin);
             
             if (!$stmt->execute()) {
                 throw new Exception('Error adding employee: ' . $stmt->error);
@@ -313,6 +318,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <label class="block text-sm font-medium text-slate-700 mb-2">Address</label>
                             <textarea name="address" id="address" rows="2"
                                       class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]"><?php echo htmlspecialchars($_POST['address'] ?? ''); ?></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Emergency Contact Person</label>
+                            <input type="text" name="emergency_contact_name" id="emergency_contact_name"
+                                   value="<?php echo htmlspecialchars($_POST['emergency_contact_name'] ?? ''); ?>"
+                                   class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]" placeholder="Full name">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Emergency Contact Number</label>
+                            <div class="relative">
+                                <span class="absolute left-4 top-2 text-slate-500 text-sm">09</span>
+                                <input type="tel" name="emergency_contact_phone" id="emergency_contact_phone"
+                                       value="<?php echo htmlspecialchars(preg_replace('/^09/', '', $_POST['emergency_contact_phone'] ?? '')); ?>"
+                                       pattern="[0-9]{9}" placeholder="123456789" maxlength="9"
+                                       class="w-full pl-12 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]"
+                                       oninput="this.value = this.value.replace(/[^0-9]/g, ''); if(this.value.length > 9) this.value = this.value.slice(0, 9);">
+                            </div>
+                            <p class="text-xs text-slate-500 mt-1">Format: 09 + 9 digits (optional)</p>
                         </div>
                     </div>
                 </div>

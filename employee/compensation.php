@@ -80,6 +80,7 @@ if ($conn) {
 
 // Get bank details
 $bankDetails = null;
+$pendingBankRequest = null;
 if ($employeeDbId && $conn) {
     $bankStmt = $conn->prepare("SELECT * FROM employee_bank_details WHERE employee_id = ? LIMIT 1");
     if ($bankStmt) {
@@ -88,6 +89,17 @@ if ($employeeDbId && $conn) {
         $bankResult = $bankStmt->get_result();
         $bankDetails = $bankResult->fetch_assoc();
         $bankStmt->close();
+    }
+    $checkReqTable = $conn->query("SHOW TABLES LIKE 'bank_account_change_requests'");
+    if ($checkReqTable && $checkReqTable->num_rows > 0) {
+        $reqStmt = $conn->prepare("SELECT id, requested_at FROM bank_account_change_requests WHERE employee_id = ? AND status = 'Pending' ORDER BY requested_at DESC LIMIT 1");
+        if ($reqStmt) {
+            $reqStmt->bind_param('i', $employeeDbId);
+            $reqStmt->execute();
+            $reqResult = $reqStmt->get_result();
+            $pendingBankRequest = $reqResult->fetch_assoc();
+            $reqStmt->close();
+        }
     }
 }
 
@@ -253,11 +265,18 @@ if ($employeeDbId && $conn) {
             <section class="bg-white rounded-xl shadow-sm border border-slate-100 mb-6">
                 <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                     <h2 class="text-lg font-semibold text-slate-800">My Bank Details</h2>
+                    <?php if ($pendingBankRequest): ?>
+                    <span class="px-3 py-1.5 rounded-lg bg-amber-100 text-amber-800 text-sm font-medium">Request pending approval</span>
+                    <?php else: ?>
                     <button id="editBankBtn" class="px-4 py-2 bg-[#FA9800] text-white text-sm font-medium rounded-lg hover:bg-[#d18a15] transition-colors">
-                        <?php echo $bankDetails ? 'Edit' : 'Add'; ?>
+                        <?php echo $bankDetails ? 'Request change of account' : 'Request bank account'; ?>
                     </button>
+                    <?php endif; ?>
                 </div>
                 <div class="p-6">
+                    <?php if ($pendingBankRequest): ?>
+                    <p class="text-amber-700 text-sm mb-4 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2">You have a pending bank account change request. Admin will review and notify you.</p>
+                    <?php endif; ?>
                     <?php if ($bankDetails): ?>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
@@ -284,7 +303,7 @@ if ($employeeDbId && $conn) {
                             <?php endif; ?>
                         </div>
                     <?php else: ?>
-                        <p class="text-slate-500 text-sm">No bank details added yet. Click "Add" to add your bank details.</p>
+                        <p class="text-slate-500 text-sm">No bank details on file. Click "Request bank account" to submit a request for admin approval.</p>
                     <?php endif; ?>
                 </div>
             </section>
@@ -418,11 +437,11 @@ if ($employeeDbId && $conn) {
         </div>
     </main>
 
-    <!-- Bank Details Modal -->
+    <!-- Bank Details Modal (request for admin approval) -->
     <div id="bankModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
             <div class="p-6 border-b border-slate-200 flex items-center justify-between">
-                <h3 class="text-lg font-semibold text-slate-800"><?php echo $bankDetails ? 'Edit' : 'Add'; ?> Bank Details</h3>
+                <h3 class="text-lg font-semibold text-slate-800"><?php echo $bankDetails ? 'Request change of account' : 'Request bank account'; ?></h3>
                 <button id="closeBankModal" class="text-slate-400 hover:text-slate-600">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -465,9 +484,10 @@ if ($employeeDbId && $conn) {
                                class="w-full p-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FA9800] focus:border-[#FA9800]">
                     </div>
                 </div>
+                <p class="text-slate-500 text-sm mt-2">Changes require admin approval. You will see the update after it is approved.</p>
                 <div class="mt-6 flex gap-3">
                     <button type="submit" class="flex-1 px-4 py-2 bg-[#FA9800] text-white font-medium rounded-lg hover:bg-[#d18a15] transition-colors">
-                        Save
+                        Submit request
                     </button>
                     <button type="button" id="cancelBankBtn" class="px-4 py-2 bg-slate-100 text-slate-700 font-medium rounded-lg hover:bg-slate-200 transition-colors">
                         Cancel
@@ -494,30 +514,23 @@ if ($employeeDbId && $conn) {
             $('#bankForm').on('submit', function(e) {
                 e.preventDefault();
                 const formData = $(this).serialize();
-                
                 $('#bankMessage').addClass('hidden').html('');
-                
                 $.ajax({
-                    url: 'bank-details-save.php',
+                    url: 'bank-account-request.php',
                     type: 'POST',
                     data: formData,
                     dataType: 'json',
                     success: function(res) {
                         if (res.status === 'success') {
                             $('#bankMessage').removeClass('hidden').addClass('p-3 bg-emerald-50 text-emerald-700 rounded-lg text-sm').html(res.message);
-                            setTimeout(function() {
-                                location.reload();
-                            }, 1000);
+                            setTimeout(function() { location.reload(); }, 1500);
                         } else {
-                            $('#bankMessage').removeClass('hidden').addClass('p-3 bg-red-50 text-red-700 rounded-lg text-sm').html(res.message || 'Error saving bank details');
+                            $('#bankMessage').removeClass('hidden').addClass('p-3 bg-red-50 text-red-700 rounded-lg text-sm').html(res.message || 'Error submitting request');
                         }
                     },
                     error: function(xhr) {
-                        var message = 'Error saving bank details. Please try again.';
-                        try {
-                            var res = JSON.parse(xhr.responseText);
-                            if (res.message) message = res.message;
-                        } catch(e) {}
+                        var message = 'Error submitting request. Please try again.';
+                        try { var res = JSON.parse(xhr.responseText); if (res.message) message = res.message; } catch(er) {}
                         $('#bankMessage').removeClass('hidden').addClass('p-3 bg-red-50 text-red-700 rounded-lg text-sm').html(message);
                     }
                 });

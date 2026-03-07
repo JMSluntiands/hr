@@ -13,7 +13,8 @@ $isLeavesSum   = ($currentPage === 'leaves-summary');
 $isLeaves      = ($isLeavesAlloc || $isLeavesSum);
 $isReqLeaves   = ($currentPage === 'request-leaves');
 $isReqDoc      = ($currentPage === 'request-document');
-$isRequest     = ($isReqLeaves || $isReqDoc);
+$isReqBank     = ($currentPage === 'request-bank');
+$isRequest     = ($isReqLeaves || $isReqDoc || $isReqBank);
 $isActivityLog = ($currentPage === 'activity-log');
 $isCompensation = ($currentPage === 'compensation');
 $isAccounts    = ($currentPage === 'accounts');
@@ -103,6 +104,9 @@ $requestArrow   = $isRequest ? ' rotate-180' : '';
                     </a>
                     <a href="request-document" class="flex items-center gap-3 pl-11 pr-3 py-2 text-sm text-white hover:bg-white/10 rounded-lg transition-colors<?php echo $isReqDoc ? ' ' . $activeClass : ''; ?>">
                         Request Document
+                    </a>
+                    <a href="request-bank" class="flex items-center gap-3 pl-11 pr-3 py-2 text-sm text-white hover:bg-white/10 rounded-lg transition-colors<?php echo $isReqBank ? ' ' . $activeClass : ''; ?>">
+                        Request Bank
                     </a>
                 </div>
             </div>
