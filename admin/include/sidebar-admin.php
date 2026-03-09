@@ -16,6 +16,7 @@ $isReqDoc      = ($currentPage === 'request-document');
 $isReqBank     = ($currentPage === 'request-bank');
 $isRequest     = ($isReqLeaves || $isReqDoc || $isReqBank);
 $isActivityLog = ($currentPage === 'activity-log');
+$isProgressiveDiscipline = ($currentPage === 'progressive-discipline');
 $isCompensation = ($currentPage === 'compensation');
 $isAccounts    = ($currentPage === 'accounts');
 $isIdCreation  = ($currentPage === 'id-creation');
@@ -122,6 +123,12 @@ $requestArrow   = $isRequest ? ' rotate-180' : '';
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
                 <span>Activity Log</span>
+            </a>
+            <a href="progressive-discipline" class="flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-white hover:bg-white/10 transition-colors<?php echo $isProgressiveDiscipline ? ' ' . $activeClass : ''; ?>">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4c-.77-1.33-2.69-1.33-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z" />
+                </svg>
+                <span>Progressive Discipline</span>
             </a>
             <a href="announcement" class="flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-white hover:bg-white/10 transition-colors">
                 <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">

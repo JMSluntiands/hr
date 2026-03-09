@@ -95,6 +95,14 @@ include 'include/employee_data.php';
                 </svg>
                 <span>My Compensation</span>
             </a>
+            <a href="progressive-discipline.php"
+               data-url="progressive-discipline.php"
+               class="js-side-link flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 text-sm font-medium text-white">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4c-.77-1.33-2.69-1.33-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z" />
+                </svg>
+                <span>Progressive Discipline</span>
+            </a>
             <!-- Settings -->
             <a href="settings.php"
                data-url="settings.php"
@@ -212,7 +220,7 @@ include 'include/employee_data.php';
                 if (!url) return;
                 e.preventDefault();
 
-                if (url === 'profile.php' || url === 'compensation.php' || url === 'timeoff.php' || url === 'settings.php') {
+                if (url === 'profile.php' || url === 'compensation.php' || url === 'timeoff.php' || url === 'settings.php' || url === 'progressive-discipline.php') {
                     window.location.href = url;
                     return;
                 }
