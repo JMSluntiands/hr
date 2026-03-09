@@ -281,13 +281,15 @@ if ($employeeDbId && $conn) {
             <section class="bg-white rounded-xl shadow-sm border border-slate-100 mb-6">
                 <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                     <h2 class="text-lg font-semibold text-slate-800">My Bank Details</h2>
-                    <?php if ($pendingBankRequest): ?>
-                    <span class="px-3 py-1.5 rounded-lg bg-amber-100 text-amber-800 text-sm font-medium">Request pending approval</span>
-                    <?php else: ?>
-                    <button id="editBankBtn" class="px-4 py-2 bg-[#FA9800] text-white text-sm font-medium rounded-lg hover:bg-[#d18a15] transition-colors">
-                        <?php echo $bankDetails ? 'Request change of account' : 'Request bank account'; ?>
-                    </button>
-                    <?php endif; ?>
+                    <div class="flex items-center gap-2">
+                        <?php if ($pendingBankRequest): ?>
+                        <span class="px-3 py-1.5 rounded-lg bg-amber-100 text-amber-800 text-sm font-medium">Request pending approval</span>
+                        <?php else: ?>
+                        <button id="editBankBtn" class="px-4 py-2 bg-[#FA9800] text-white text-sm font-medium rounded-lg hover:bg-[#d18a15] transition-colors">
+                            <?php echo $bankDetails ? 'Request change of account' : 'Request bank account'; ?>
+                        </button>
+                        <?php endif; ?>
+                    </div>
                 </div>
                 <div class="p-6">
                     <?php if ($pendingBankRequest): ?>
@@ -326,10 +328,23 @@ if ($employeeDbId && $conn) {
 
             <!-- Basic Compensation Section -->
             <section class="bg-white rounded-xl shadow-sm border border-slate-100 mb-6">
-                <div class="px-6 py-4 border-b border-slate-100">
+                <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                     <h2 class="text-lg font-semibold text-slate-800">Basic Compensation</h2>
+                    <button type="button"
+                            class="js-privacy-toggle inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+                            data-target="basicCompPrivacyBody"
+                            aria-label="Hide card details">
+                        <svg class="w-4 h-4 js-eye-open" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.065 7-9.542 7S3.732 16.057 2.458 12z" />
+                        </svg>
+                        <svg class="w-4 h-4 js-eye-closed hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.27-2.943-9.543-7a9.965 9.965 0 012.11-3.592M6.223 6.223A9.956 9.956 0 0112 5c4.478 0 8.27 2.943 9.543 7a9.97 9.97 0 01-4.132 5.411M15 12a3 3 0 00-4.2-2.8M9.88 9.88A3 3 0 0014.12 14.12M3 3l18 18" />
+                        </svg>
+                        <span class="js-eye-label">Hide</span>
+                    </button>
                 </div>
-                <div class="p-6">
+                <div id="basicCompPrivacyBody" class="p-6">
                     <?php if ($compensation): ?>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
@@ -379,11 +394,7 @@ if ($employeeDbId && $conn) {
 
                         <!-- Gross Income (based on new salary) -->
                         <?php if ($currentSalary): 
-                            $totalAllowances = ($compensation['allowance_internet'] ?? 0) + 
-                                             ($compensation['allowance_meal'] ?? 0) + 
-                                             ($compensation['allowance_position'] ?? 0) + 
-                                             ($compensation['allowance_transportation'] ?? 0);
-                            $monthlyGross = $currentSalary + $totalAllowances;
+                            $monthlyGross = $currentSalary;
                             $dailyGross = $monthlyGross / 22; // Assuming 22 working days per month
                             $annualGross = $monthlyGross * 12;
                         ?>
@@ -393,7 +404,7 @@ if ($employeeDbId && $conn) {
                                 <div class="bg-slate-50 p-4 rounded-lg">
                                     <label class="block text-sm font-medium text-slate-600 mb-1">Monthly Gross Income</label>
                                     <p class="text-slate-800 text-xl font-bold">₱<?php echo number_format($monthlyGross, 2); ?></p>
-                                    <p class="text-xs text-slate-500 mt-1">Salary + Allowances</p>
+                                    <p class="text-xs text-slate-500 mt-1">Based on current salary</p>
                                 </div>
                                 <div class="bg-slate-50 p-4 rounded-lg">
                                     <label class="block text-sm font-medium text-slate-600 mb-1">Daily Gross Income</label>
@@ -517,6 +528,25 @@ if ($employeeDbId && $conn) {
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         $(function() {
+            function setPrivacyState($button, isHidden) {
+                const targetId = $button.data('target');
+                if (!targetId) return;
+                const $target = $('#' + targetId);
+                $target.toggleClass('hidden', isHidden);
+                $button.find('.js-eye-open').toggleClass('hidden', isHidden);
+                $button.find('.js-eye-closed').toggleClass('hidden', !isHidden);
+                $button.find('.js-eye-label').text(isHidden ? 'Show' : 'Hide');
+                $button.attr('aria-label', isHidden ? 'Show card details' : 'Hide card details');
+            }
+
+            $('.js-privacy-toggle').on('click', function() {
+                const $button = $(this);
+                const targetId = $button.data('target');
+                const $target = $('#' + targetId);
+                const isHidden = !$target.hasClass('hidden');
+                setPrivacyState($button, isHidden);
+            });
+
             // Bank Details Modal
             $('#editBankBtn').on('click', function() {
                 $('#bankModal').removeClass('hidden');

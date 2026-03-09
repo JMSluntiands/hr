@@ -410,8 +410,7 @@ foreach ($documents as $d) {
                             </div>
                         <?php endif; ?>
                         <?php if ($currentSalary && $compensation):
-                            $totalAllowances = ($compensation['allowance_internet'] ?? 0) + ($compensation['allowance_meal'] ?? 0) + ($compensation['allowance_position'] ?? 0) + ($compensation['allowance_transportation'] ?? 0);
-                            $monthlyGross = $currentSalary + $totalAllowances;
+                            $monthlyGross = $currentSalary;
                             $dailyGross = $monthlyGross / 22;
                             $annualGross = $monthlyGross * 12;
                         ?>

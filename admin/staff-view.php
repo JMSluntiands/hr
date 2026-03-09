@@ -26,6 +26,7 @@ $employee = null;
 $documents = [];
 $compensation = null;
 $latestAdjustment = null;
+$salaryAdjustments = [];
 $bankDetails = null;
 if ($conn) {
     $stmt = $conn->prepare("SELECT * FROM employees WHERE id = ?");
@@ -81,6 +82,17 @@ if ($conn) {
             $adjResult = $adjStmt->get_result();
             $latestAdjustment = $adjResult->fetch_assoc();
             $adjStmt->close();
+        }
+
+        $adjAllStmt = $conn->prepare("SELECT previous_salary, new_salary, reason, approved_by, date_approved, created_at FROM employee_salary_adjustments WHERE employee_id = ? ORDER BY date_approved DESC, created_at DESC");
+        if ($adjAllStmt) {
+            $adjAllStmt->bind_param('i', $employeeId);
+            $adjAllStmt->execute();
+            $adjAllResult = $adjAllStmt->get_result();
+            while ($adjRow = $adjAllResult->fetch_assoc()) {
+                $salaryAdjustments[] = $adjRow;
+            }
+            $adjAllStmt->close();
         }
     }
     
@@ -256,12 +268,6 @@ if ($conn) {
         <div class="bg-white rounded-xl shadow-sm border border-slate-100 mb-6">
             <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                 <h3 class="text-lg font-semibold text-slate-800">Compensation Details</h3>
-                <a href="compensation?employee_id=<?php echo $employeeId; ?>" class="px-4 py-2 bg-[#FA9800] text-white text-sm font-medium rounded-lg hover:bg-[#d97706] transition-colors flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span>Add Salary Adjustment</span>
-                </a>
             </div>
             <div class="p-6">
                 <?php 
@@ -300,11 +306,7 @@ if ($conn) {
                         
                         <!-- Gross Income based on New Salary -->
                         <?php if ($currentSalary): 
-                            $totalAllowances = ($compensation['allowance_internet'] ?? 0) + 
-                                             ($compensation['allowance_meal'] ?? 0) + 
-                                             ($compensation['allowance_position'] ?? 0) + 
-                                             ($compensation['allowance_transportation'] ?? 0);
-                            $monthlyGross = $currentSalary + $totalAllowances;
+                            $monthlyGross = $currentSalary;
                             $dailyGross = $monthlyGross / 22; // Assuming 22 working days per month
                             $annualGross = $monthlyGross * 12;
                         ?>
@@ -314,7 +316,7 @@ if ($conn) {
                                 <div class="bg-slate-50 p-4 rounded-lg">
                                     <p class="text-sm font-medium text-slate-600 mb-1">Monthly Gross Income</p>
                                     <p class="text-slate-800 text-xl font-bold">₱<?php echo number_format($monthlyGross, 2); ?></p>
-                                    <p class="text-xs text-slate-500 mt-1">New Salary + Allowances</p>
+                                    <p class="text-xs text-slate-500 mt-1">Based on current salary</p>
                                 </div>
                                 <div class="bg-slate-50 p-4 rounded-lg">
                                     <p class="text-sm font-medium text-slate-600 mb-1">Daily Gross Income</p>
@@ -361,18 +363,12 @@ if ($conn) {
                 <div class="mt-6 pt-6 border-t border-slate-200">
                     <h4 class="text-md font-semibold text-slate-700 mb-4">Quick Actions</h4>
                     <div class="flex flex-wrap gap-3">
-                        <a href="compensation?employee_id=<?php echo $employeeId; ?>" class="px-4 py-2 bg-[#FA9800] text-white text-sm font-medium rounded-lg hover:bg-[#d97706] transition-colors flex items-center gap-2">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                            </svg>
-                            <span>Add Salary Adjustment</span>
-                        </a>
-                        <a href="compensation" class="px-4 py-2 bg-slate-100 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-200 transition-colors flex items-center gap-2">
+                        <button type="button" id="viewAdjustmentsBtn" class="px-4 py-2 bg-slate-100 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-200 transition-colors flex items-center gap-2">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                             </svg>
                             <span>View All Adjustments</span>
-                        </a>
+                        </button>
                     </div>
                 </div>
                 
@@ -411,6 +407,50 @@ if ($conn) {
                         <p class="text-slate-500 text-sm">No bank details added by employee yet.</p>
                     </div>
                 <?php endif; ?>
+            </div>
+        </div>
+
+        <!-- Salary Adjustments Modal -->
+        <div id="adjustmentsModal" class="hidden fixed inset-0 bg-black/50 z-50 items-center justify-center p-4">
+            <div class="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-slate-800">Salary Adjustment History</h3>
+                    <button type="button" id="closeAdjustmentsModal" class="text-slate-400 hover:text-slate-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="p-6 overflow-y-auto max-h-[75vh]">
+                    <?php if (empty($salaryAdjustments)): ?>
+                        <p class="text-sm text-slate-500">No salary adjustment history available.</p>
+                    <?php else: ?>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full text-sm">
+                                <thead class="bg-slate-50">
+                                    <tr>
+                                        <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Previous Salary</th>
+                                        <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">New Salary</th>
+                                        <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Reason</th>
+                                        <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Approved By</th>
+                                        <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Date Approved</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    <?php foreach ($salaryAdjustments as $adjustment): ?>
+                                        <tr class="hover:bg-slate-50/80">
+                                            <td class="px-4 py-3 text-slate-700">₱<?php echo number_format((float)($adjustment['previous_salary'] ?? 0), 2); ?></td>
+                                            <td class="px-4 py-3 text-slate-700 font-semibold">₱<?php echo number_format((float)($adjustment['new_salary'] ?? 0), 2); ?></td>
+                                            <td class="px-4 py-3 text-slate-700"><?php echo htmlspecialchars($adjustment['reason'] ?? 'N/A'); ?></td>
+                                            <td class="px-4 py-3 text-slate-700"><?php echo htmlspecialchars($adjustment['approved_by'] ?? 'N/A'); ?></td>
+                                            <td class="px-4 py-3 text-slate-700"><?php echo !empty($adjustment['date_approved']) ? date('M d, Y', strtotime($adjustment['date_approved'])) : 'N/A'; ?></td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    <?php endif; ?>
+                </div>
             </div>
         </div>
 
@@ -505,6 +545,9 @@ if ($conn) {
             const requestBtn = document.getElementById('request-dropdown-btn');
             const requestDropdown = document.getElementById('request-dropdown');
             const requestArrow = document.getElementById('request-arrow');
+            const viewAdjustmentsBtn = document.getElementById('viewAdjustmentsBtn');
+            const adjustmentsModal = document.getElementById('adjustmentsModal');
+            const closeAdjustmentsModal = document.getElementById('closeAdjustmentsModal');
 
             function closeOtherDropdowns(exclude) {
                 if (exclude !== 'employees' && employeesDropdown) { employeesDropdown.classList.add('hidden'); if (employeesArrow) employeesArrow.style.transform = 'rotate(0deg)'; }
@@ -556,6 +599,27 @@ if ($conn) {
             }
             if (requestBtn) {
                 requestBtn.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); toggleRequestDropdown(); });
+            }
+
+            if (viewAdjustmentsBtn && adjustmentsModal) {
+                viewAdjustmentsBtn.addEventListener('click', function() {
+                    adjustmentsModal.classList.remove('hidden');
+                    adjustmentsModal.classList.add('flex');
+                });
+            }
+            if (closeAdjustmentsModal && adjustmentsModal) {
+                closeAdjustmentsModal.addEventListener('click', function() {
+                    adjustmentsModal.classList.remove('flex');
+                    adjustmentsModal.classList.add('hidden');
+                });
+            }
+            if (adjustmentsModal) {
+                adjustmentsModal.addEventListener('click', function(e) {
+                    if (e.target === adjustmentsModal) {
+                        adjustmentsModal.classList.remove('flex');
+                        adjustmentsModal.classList.add('hidden');
+                    }
+                });
             }
 
             document.addEventListener('click', function(e) {

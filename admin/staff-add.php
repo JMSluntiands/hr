@@ -43,6 +43,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $philhealth = trim($_POST['philhealth'] ?? '');
     $pagibig = trim($_POST['pagibig'] ?? '');
     $tin = trim($_POST['tin'] ?? '');
+    $basicSalaryMonthlyInput = trim((string)($_POST['basic_salary_monthly'] ?? ''));
+    $basicSalaryMonthly = 0.00;
+    $allowanceInternetInput = trim((string)($_POST['allowance_internet'] ?? '0'));
+    $allowanceMealInput = trim((string)($_POST['allowance_meal'] ?? '0'));
+    $allowancePositionInput = trim((string)($_POST['allowance_position'] ?? '0'));
+    $allowanceTransportationInput = trim((string)($_POST['allowance_transportation'] ?? '0'));
+    $allowanceInternet = 0.00;
+    $allowanceMeal = 0.00;
+    $allowancePosition = 0.00;
+    $allowanceTransportation = 0.00;
     
     // Initialize errors array
     $errors = [];
@@ -79,6 +89,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors[] = 'TIN number must be 12 digits (format: XXX-XXX-XXX-XXX)';
         }
     }
+
+    if ($basicSalaryMonthlyInput !== '') {
+        if (!is_numeric($basicSalaryMonthlyInput)) {
+            $errors[] = 'Compensation monthly must be a valid number';
+        } else {
+            $basicSalaryMonthly = (float)$basicSalaryMonthlyInput;
+            if ($basicSalaryMonthly < 0) {
+                $errors[] = 'Compensation monthly cannot be negative';
+            }
+        }
+    }
+
+    $allowanceFields = [
+        'Internet allowance' => $allowanceInternetInput,
+        'Meal allowance' => $allowanceMealInput,
+        'Position allowance' => $allowancePositionInput,
+        'Transportation allowance' => $allowanceTransportationInput
+    ];
+    foreach ($allowanceFields as $label => $value) {
+        if ($value !== '' && !is_numeric($value)) {
+            $errors[] = $label . ' must be a valid number';
+        } elseif ((float)$value < 0) {
+            $errors[] = $label . ' cannot be negative';
+        }
+    }
+    $allowanceInternet = (float)$allowanceInternetInput;
+    $allowanceMeal = (float)$allowanceMealInput;
+    $allowancePosition = (float)$allowancePositionInput;
+    $allowanceTransportation = (float)$allowanceTransportationInput;
     
     if (empty($fullName)) {
         $errors[] = 'Full Name is required';
@@ -190,6 +229,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new Exception('Error creating user login: ' . $loginStmt->error);
             }
             $loginStmt->close();
+
+            // Ensure compensation table exists and save initial compensation values
+            $createCompTableSql = "CREATE TABLE IF NOT EXISTS `employee_compensation` (
+                `id` int(11) NOT NULL AUTO_INCREMENT,
+                `employee_id` int(11) NOT NULL,
+                `basic_salary_monthly` decimal(10,2) DEFAULT NULL,
+                `basic_salary_daily` decimal(10,2) DEFAULT NULL,
+                `basic_salary_annually` decimal(10,2) DEFAULT NULL,
+                `employment_type` enum('Regular','Contractual','Probationary','Part-time') DEFAULT 'Regular',
+                `effective_date` date NOT NULL,
+                `allowance_internet` decimal(10,2) DEFAULT 0.00,
+                `allowance_meal` decimal(10,2) DEFAULT 0.00,
+                `allowance_position` decimal(10,2) DEFAULT 0.00,
+                `allowance_transportation` decimal(10,2) DEFAULT 0.00,
+                `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                `updated_at` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (`id`),
+                UNIQUE KEY `unique_employee_compensation` (`employee_id`),
+                KEY `idx_employee_id` (`employee_id`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
+
+            if (!$conn->query($createCompTableSql)) {
+                throw new Exception('Error preparing compensation table: ' . $conn->error);
+            }
+
+            $basicSalaryDaily = round($basicSalaryMonthly / 22, 2);
+            $basicSalaryAnnual = round($basicSalaryMonthly * 12, 2);
+            $compEffectiveDate = !empty($dateHired) ? $dateHired : date('Y-m-d');
+            $employmentType = 'Regular';
+
+            $compStmt = $conn->prepare("INSERT INTO employee_compensation (employee_id, basic_salary_monthly, basic_salary_daily, basic_salary_annually, employment_type, effective_date, allowance_internet, allowance_meal, allowance_position, allowance_transportation) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            if (!$compStmt) {
+                throw new Exception('Error preparing compensation insert: ' . $conn->error);
+            }
+
+            $compStmt->bind_param("idddssdddd", $newEmployeeId, $basicSalaryMonthly, $basicSalaryDaily, $basicSalaryAnnual, $employmentType, $compEffectiveDate, $allowanceInternet, $allowanceMeal, $allowancePosition, $allowanceTransportation);
+            if (!$compStmt->execute()) {
+                throw new Exception('Error saving compensation details: ' . $compStmt->error);
+            }
+            $compStmt->close();
             
             // Commit transaction if everything succeeds
             $conn->commit();
@@ -441,6 +520,61 @@ if ($conn) {
                     </div>
                 </div>
 
+                <!-- Compensation Information Section -->
+                <div class="pb-4 mb-6">
+                    <h2 class="text-lg font-semibold text-slate-800 mb-4">Compensation Information</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Compensation Monthly</label>
+                            <input type="number" name="basic_salary_monthly" id="basic_salary_monthly"
+                                   value="<?php echo htmlspecialchars($_POST['basic_salary_monthly'] ?? '0'); ?>"
+                                   min="0" step="0.01" placeholder="0.00"
+                                   class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Allowance - Internet</label>
+                            <input type="number" name="allowance_internet" id="allowance_internet"
+                                   value="<?php echo htmlspecialchars($_POST['allowance_internet'] ?? '0'); ?>"
+                                   min="0" step="0.01" placeholder="0.00"
+                                   class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Allowance - Meal</label>
+                            <input type="number" name="allowance_meal" id="allowance_meal"
+                                   value="<?php echo htmlspecialchars($_POST['allowance_meal'] ?? '0'); ?>"
+                                   min="0" step="0.01" placeholder="0.00"
+                                   class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Allowance - Position</label>
+                            <input type="number" name="allowance_position" id="allowance_position"
+                                   value="<?php echo htmlspecialchars($_POST['allowance_position'] ?? '0'); ?>"
+                                   min="0" step="0.01" placeholder="0.00"
+                                   class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Allowance - Transportation</label>
+                            <input type="number" name="allowance_transportation" id="allowance_transportation"
+                                   value="<?php echo htmlspecialchars($_POST['allowance_transportation'] ?? '0'); ?>"
+                                   min="0" step="0.01" placeholder="0.00"
+                                   class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Daily Gross (Auto)</label>
+                            <input type="text" id="basic_salary_daily_preview" readonly
+                                   value="0.00"
+                                   class="w-full px-4 py-2 border border-slate-200 rounded-lg bg-slate-50 text-slate-700 cursor-not-allowed">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Annual Gross (Auto)</label>
+                            <input type="text" id="basic_salary_annual_preview" readonly
+                                   value="0.00"
+                                   class="w-full px-4 py-2 border border-slate-200 rounded-lg bg-slate-50 text-slate-700 cursor-not-allowed">
+                        </div>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-2">Auto-compute formula: Daily Gross = Monthly / 22, Annual Gross = Monthly x 12. Allowances are saved separately.</p>
+                </div>
+
                 <div class="flex justify-end gap-3 pt-4 border-t border-slate-200">
                     <a href="staff" class="px-6 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 font-medium">
                         Cancel
@@ -458,6 +592,24 @@ if ($conn) {
         document.addEventListener('DOMContentLoaded', function() {
             const form = document.getElementById('employeeForm');
             const phoneInput = document.getElementById('phone');
+            const monthlyCompInput = document.getElementById('basic_salary_monthly');
+            const dailyGrossPreview = document.getElementById('basic_salary_daily_preview');
+            const annualGrossPreview = document.getElementById('basic_salary_annual_preview');
+
+            function updateCompensationPreview() {
+                if (!monthlyCompInput || !dailyGrossPreview || !annualGrossPreview) return;
+                const monthly = parseFloat(monthlyCompInput.value);
+                const safeMonthly = Number.isFinite(monthly) && monthly >= 0 ? monthly : 0;
+                const daily = safeMonthly / 22;
+                const annual = safeMonthly * 12;
+                dailyGrossPreview.value = daily.toFixed(2);
+                annualGrossPreview.value = annual.toFixed(2);
+            }
+
+            if (monthlyCompInput) {
+                monthlyCompInput.addEventListener('input', updateCompensationPreview);
+                updateCompensationPreview();
+            }
             
             // Ensure phone number is properly formatted on submit
             if (form) {
