@@ -1,6 +1,31 @@
 (function () {
   var LOGIN_BTN_HTML = "Login";
   var LOGIN_BTN_LOADING_HTML = '<span class="login-spinner"></span> Logging in...';
+  function clearClientCache() {
+    try {
+      localStorage.clear();
+    } catch (e) {}
+    try {
+      sessionStorage.clear();
+    } catch (e) {}
+
+    if (!window.caches || typeof window.caches.keys !== "function") {
+      return Promise.resolve();
+    }
+
+    return window.caches
+      .keys()
+      .then(function (names) {
+        return Promise.all(
+          names.map(function (name) {
+            return window.caches.delete(name);
+          })
+        );
+      })
+      .catch(function () {
+        // Ignore cache API errors; login redirect should still continue.
+      });
+  }
 
   function setLoading($btn, loading) {
     if (loading) {
@@ -62,6 +87,7 @@
       method: "POST",
       data: { email: email, password: password },
       dataType: "json",
+      cache: false,
       complete: function () {
         clearTimeout(fallbackTimer);
         runRestore();
@@ -76,7 +102,12 @@
         }).showToast();
 
         if (response.status === "success") {
-          setTimeout(function () { window.location.href = "index.php"; }, 800);
+          clearClientCache().finally(function () {
+            var cacheBuster = response.cache_buster || Date.now().toString();
+            setTimeout(function () {
+              window.location.href = "index.php?cb=" + encodeURIComponent(cacheBuster);
+            }, 800);
+          });
         }
       },
       error: function (xhr, status, error) {

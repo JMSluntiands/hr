@@ -3,6 +3,9 @@ session_start();
 include '../../database/db.php';
 
 header('Content-Type: application/json');
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Pragma: no-cache');
+header('Expires: 0');
 
 $email = trim($_POST['email'] ?? '');
 $password = $_POST['password'] ?? '';
@@ -29,8 +32,11 @@ $user = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 
 if ($user) {
+    session_regenerate_id(true);
     $_SESSION['user_id'] = $user['id'];
     $_SESSION['role'] = $user['role'] ?? 'employee';
+    unset($_SESSION['admin_module']);
+    $_SESSION['login_cache_buster'] = bin2hex(random_bytes(8));
 
     // Update last login timestamp (if column exists)
     $cc = $conn->query("SHOW COLUMNS FROM user_login LIKE 'last_login'");
@@ -50,6 +56,7 @@ if ($user) {
         'message' => 'Login successful',
         'role' => $_SESSION['role'],
         'is_default_password' => $isDefaultPassword,
+        'cache_buster' => $_SESSION['login_cache_buster'],
     ]);
 } else {
     echo json_encode(['status' => 'error', 'message' => 'Invalid email or password']);

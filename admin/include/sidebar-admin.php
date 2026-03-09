@@ -155,5 +155,6 @@ $requestArrow   = $isRequest ? ' rotate-180' : '';
                 </span>
             </div>
             <a href="../logout.php" class="block text-xs font-medium text-white/80 hover:text-white">Logout</a>
+        <a href="module-select.php" class="block text-xs font-medium text-white/80 hover:text-white mt-2">Back to Main Menu</a>
         </div>
     </aside>

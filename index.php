@@ -2,21 +2,30 @@
 <html lang="en">
   <head>
     <?php
+      header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+      header('Pragma: no-cache');
+      header('Expires: 0');
       session_start();
 
         // Kung naka-login na
         if (isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
           // Simplified roles: admin at employee lang
-          $roleRedirects = [
-              "admin"    => "admin/index.php",
-              "Admin"    => "admin/index.php",
-              "employee" => "employee/index.php",
-              "Employee" => "employee/index.php"
-          ];
+          $role = strtolower((string)$_SESSION['role']);
 
-          $role = $_SESSION['role'];
-          $target = $roleRedirects[$role] ?? "admin/index.php"; // default admin kung may hindi kilalang role
-          header("Location: " . $target);
+          if ($role === 'admin') {
+            $selectedModule = $_SESSION['admin_module'] ?? '';
+
+            if ($selectedModule === 'inventory') {
+              header('Location: inventory/index.php');
+            } elseif ($selectedModule === 'hr') {
+              header('Location: admin/index.php');
+            } else {
+              header('Location: admin/module-select.php');
+            }
+            exit;
+          }
+
+          header('Location: employee/index.php');
           exit;
         }
       ?>
@@ -184,7 +193,14 @@
     (function() {
       var q = new URLSearchParams(window.location.search);
       var err = q.get('error');
-      if (!err) return;
+      var hasCacheBuster = q.has('cb');
+      if (!err && !hasCacheBuster) return;
+
+      if (!err && hasCacheBuster) {
+        history.replaceState({}, '', window.location.pathname);
+        return;
+      }
+
       var msg = {
         google_not_configured: 'Google Sign-In is not configured.',
         google_denied: 'Google sign-in was cancelled or denied.',

@@ -219,6 +219,14 @@ if ($conn && $employeeDbId) {
                 </svg>
                 <span>My Compensation</span>
             </a>
+            <a href="inventory.php"
+               data-url="inventory.php"
+               class="js-side-link flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 text-sm font-medium text-white">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V7a2 2 0 00-2-2h-3V3H9v2H6a2 2 0 00-2 2v6m16 0v6a2 2 0 01-2 2H6a2 2 0 01-2-2v-6m16 0H4m4 0v2m8-2v2" />
+                </svg>
+                <span>My Inventory</span>
+            </a>
             <a href="progressive-discipline.php"
                data-url="progressive-discipline.php"
                class="js-side-link flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 text-sm font-medium text-white">
@@ -558,7 +566,7 @@ if ($conn && $employeeDbId) {
           if (!url) return;
           e.preventDefault();
 
-          if (url === 'profile.php' || url === 'compensation.php' || url === 'timeoff.php' || url === 'settings.php' || url === 'progressive-discipline.php') {
+          if (url === 'profile.php' || url === 'compensation.php' || url === 'timeoff.php' || url === 'settings.php' || url === 'progressive-discipline.php' || url === 'inventory.php') {
             window.location.href = url;
             return;
           }

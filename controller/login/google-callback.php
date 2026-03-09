@@ -1,5 +1,8 @@
 <?php
 session_start();
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Pragma: no-cache');
+header('Expires: 0');
 
 $configPath = dirname(__DIR__, 2) . '/config/google-oauth.php';
 if (!is_file($configPath)) {
@@ -95,13 +98,14 @@ if (!$user) {
 $_SESSION['user_id'] = $user['id'];
 $_SESSION['role'] = $user['role'] ?? 'employee';
 $_SESSION['is_default_password'] = false;
+unset($_SESSION['admin_module']);
+session_regenerate_id(true);
+$_SESSION['login_cache_buster'] = bin2hex(random_bytes(8));
 
-$roleRedirects = [
-    'admin'    => 'admin/index.php',
-    'Admin'    => 'admin/index.php',
-    'employee' => 'employee/index.php',
-    'Employee' => 'employee/index.php',
-];
-$target = $roleRedirects[$_SESSION['role']] ?? 'admin/index.php';
-header('Location: ../../' . $target);
+if (strtolower((string)$_SESSION['role']) === 'admin') {
+    header('Location: ../../admin/module-select.php?cb=' . urlencode($_SESSION['login_cache_buster']));
+    exit;
+}
+
+header('Location: ../../employee/index.php?cb=' . urlencode($_SESSION['login_cache_buster']));
 exit;
