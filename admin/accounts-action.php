@@ -26,36 +26,6 @@ if (!$id || !$action) {
     exit;
 }
 
-if ($action === 'unlock') {
-    $cols = [];
-    $r = $conn->query("SHOW COLUMNS FROM user_login");
-    if ($r) { while ($row = $r->fetch_assoc()) $cols[] = $row['Field']; }
-    $hasLocked = in_array('locked', $cols);
-
-    if (!$hasLocked) {
-        $_SESSION['accounts_msg'] = 'Unlock not available. Run database setup.';
-        header('Location: ' . $redirect);
-        exit;
-    }
-
-    $stmt = $conn->prepare("UPDATE user_login SET locked = 0, failed_attempts = 0, locked_at = NULL, unlock_requested = 0 WHERE id = ?");
-    if (!$stmt) {
-        $_SESSION['accounts_msg'] = 'Database error.';
-        header('Location: ' . $redirect);
-        exit;
-    }
-    $stmt->bind_param('i', $id);
-    if ($stmt->execute()) {
-        logActivity($conn, 'Unlock Account', 'user_login', $id, "Unlocked account id $id");
-        $_SESSION['accounts_msg'] = '✓ Account unlocked.';
-    } else {
-        $_SESSION['accounts_msg'] = 'Failed to unlock.';
-    }
-    $stmt->close();
-    header('Location: ' . $redirect);
-    exit;
-}
-
 if ($action === 'edit_role') {
     $role = trim($_POST['role'] ?? '');
     if (!in_array(strtolower($role), ['admin', 'employee'])) {

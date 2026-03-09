@@ -21,21 +21,15 @@ if ($conn) {
         while ($row = $r->fetch_assoc()) $cols[] = $row['Field'];
     }
     $hasLastChange = in_array('last_password_change', $cols);
-    $hasLocked = in_array('locked', $cols);
-    $hasUnlockReq = in_array('unlock_requested', $cols);
 
     $sel = "SELECT id, email, role";
     if ($hasLastChange) $sel .= ", last_password_change";
-    if ($hasLocked) $sel .= ", locked, locked_at";
-    if ($hasUnlockReq) $sel .= ", unlock_requested";
     $sel .= " FROM user_login ORDER BY email";
 
     $res = $conn->query($sel);
     if ($res && $res->num_rows > 0) {
         while ($row = $res->fetch_assoc()) {
             $row['_has_last'] = $hasLastChange;
-            $row['_has_locked'] = $hasLocked;
-            $row['_has_unlock_req'] = $hasUnlockReq;
             $accounts[] = $row;
         }
     }
@@ -68,7 +62,7 @@ if (isset($_SESSION['accounts_msg'])) {
         <div class="flex items-center justify-between mb-6">
             <div>
                 <h1 class="text-2xl font-semibold text-slate-800">Accounts</h1>
-                <p class="text-sm text-slate-500 mt-1">User login accounts — edit role, unlock locked accounts</p>
+                <p class="text-sm text-slate-500 mt-1">User login accounts — edit role</p>
             </div>
         </div>
 
@@ -86,15 +80,11 @@ if (isset($_SESSION['accounts_msg'])) {
                             <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Email</th>
                             <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Last change password</th>
                             <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Role</th>
-                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Status</th>
                             <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($accounts as $a): 
-                            $isLocked = !empty($a['_has_locked']) && !empty($a['locked']);
-                            $unlockReq = !empty($a['_has_unlock_req']) && !empty($a['unlock_requested']);
-                        ?>
+                        <?php foreach ($accounts as $a): ?>
                         <tr class="border-b border-slate-100 hover:bg-slate-50">
                             <td class="px-4 py-3 text-slate-700"><?php echo htmlspecialchars($a['email'] ?? ''); ?></td>
                             <td class="px-4 py-3 text-slate-600">
@@ -112,25 +102,10 @@ if (isset($_SESSION['accounts_msg'])) {
                                 </span>
                             </td>
                             <td class="px-4 py-3">
-                                <?php if ($isLocked): ?>
-                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
-                                        Locked
-                                        <?php if ($unlockReq): ?><span class="text-red-500" title="Unlock requested">•</span><?php endif; ?>
-                                    </span>
-                                <?php else: ?>
-                                    <span class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">Active</span>
-                                <?php endif; ?>
-                            </td>
-                            <td class="px-4 py-3">
                                 <div class="flex items-center gap-2">
                                     <button type="button" class="edit-role-btn p-2 rounded-lg bg-[#d97706] hover:bg-[#b45309] text-white transition-colors" title="Edit role" data-id="<?php echo (int)$a['id']; ?>" data-email="<?php echo htmlspecialchars($a['email']); ?>" data-role="<?php echo htmlspecialchars($a['role'] ?? ''); ?>">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                                     </button>
-                                    <?php if ($isLocked): ?>
-                                    <a href="accounts-action?action=unlock&id=<?php echo (int)$a['id']; ?>" class="p-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition-colors" title="Unlock" onclick="return confirm('Unlock this account?');">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" /></svg>
-                                    </a>
-                                    <?php endif; ?>
                                 </div>
                             </td>
                         </tr>

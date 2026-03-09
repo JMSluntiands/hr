@@ -247,6 +247,23 @@ foreach ($documents as $d) {
                     </form>
                     <div id="profilePhotoMessage" class="hidden text-sm text-center max-w-[200px]"></div>
                 </div>
+                <div class="flex flex-col items-center gap-3 flex-shrink-0">
+                    <p class="text-sm font-medium text-slate-700">Signature</p>
+                    <div id="signaturePreview" class="w-40 h-16 border border-slate-200 rounded-lg bg-white flex items-center justify-center overflow-hidden">
+                        <?php
+                        $sigPath = !empty($employeeData['signature']) && file_exists(__DIR__ . '/../uploads/' . $employeeData['signature']) ? $employeeData['signature'] : null;
+                        if ($sigPath): ?>
+                            <img id="signatureImg" src="../uploads/<?php echo htmlspecialchars($sigPath); ?>" alt="Signature" class="max-w-full max-h-full object-contain">
+                        <?php else: ?>
+                            <img id="signatureImg" src="" alt="" class="max-w-full max-h-full object-contain hidden">
+                            <span id="signaturePlaceholder" class="text-slate-400 text-xs">No signature</span>
+                        <?php endif; ?>
+                    </div>
+                    <input type="file" name="signature" id="signatureInput" accept="image/jpeg,image/jpg,image/png" class="hidden">
+                    <button type="button" id="signatureUploadBtn" class="px-3 py-1.5 bg-[#d97706] hover:bg-[#b45309] text-white text-sm font-medium rounded-lg transition-colors">Upload signature</button>
+                    <p class="text-xs text-slate-500 text-center">JPG or PNG, max 1MB</p>
+                    <div id="signatureMessage" class="hidden text-sm text-center max-w-[200px]"></div>
+                </div>
                 <div class="flex-1">
                     <h2 class="text-2xl font-semibold text-slate-800 mb-1"><?php echo htmlspecialchars($employee['full_name'] ?? ''); ?></h2>
                     <p class="text-sm text-slate-500 mb-2"><?php echo htmlspecialchars($employee['employee_id'] ?? ''); ?></p>
@@ -693,6 +710,50 @@ foreach ($documents as $d) {
               var m = 'Upload failed. Please try again.';
               try { var r = JSON.parse(xhr.responseText); if (r.message) m = r.message; } catch(er) {}
               $('#profilePhotoMessage').removeClass('hidden').addClass('text-red-600').html(m);
+            }
+          });
+        });
+
+        // Signature upload
+        $(document).on('click', '#signatureUploadBtn', function(e) {
+          e.preventDefault();
+          $('#signatureInput').click();
+        });
+        $(document).on('change', '#signatureInput', function() {
+          var $input = $(this);
+          var files = $input[0].files;
+          if (!files || !files.length) return;
+          var fd = new FormData();
+          fd.append('signature', files[0]);
+          $('#signatureMessage').addClass('hidden').html('');
+          $('#signatureUploadBtn').prop('disabled', true).text('Uploading...');
+          $.ajax({
+            url: 'signature-upload.php',
+            type: 'POST',
+            data: fd,
+            processData: false,
+            contentType: false,
+            dataType: 'json',
+            success: function(res) {
+              $('#signatureUploadBtn').prop('disabled', false).text('Upload signature');
+              $input.val('');
+              if (res.status === 'success') {
+                $('#signatureMessage').removeClass('hidden').addClass('text-emerald-600').html(res.message);
+                if (res.path) {
+                  $('#signatureImg').attr('src', '../uploads/' + res.path).removeClass('hidden');
+                  $('#signaturePlaceholder').addClass('hidden');
+                }
+                setTimeout(function() { location.reload(); }, 800);
+              } else {
+                $('#signatureMessage').removeClass('hidden').addClass('text-red-600').html(res.message || 'Upload failed');
+              }
+            },
+            error: function(xhr) {
+              $('#signatureUploadBtn').prop('disabled', false).text('Upload signature');
+              $input.val('');
+              var m = 'Upload failed. Please try again.';
+              try { var r = JSON.parse(xhr.responseText); if (r.message) m = r.message; } catch(er) {}
+              $('#signatureMessage').removeClass('hidden').addClass('text-red-600').html(m);
             }
           });
         });

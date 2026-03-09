@@ -117,13 +117,6 @@
             Sign in with Google
           </a>
         </form>
-
-        <div id="loginLockedNotice" class="hidden mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-          <p class="text-sm text-amber-800 mb-2">Account locked. Request an unlock from admin?</p>
-          <p class="text-xs text-amber-700 mb-2">Email: <span id="loginLockedEmail"></span></p>
-          <input type="hidden" id="requestUnlockEmail" value="">
-          <button type="button" id="requestUnlockBtn" class="w-full py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-lg">Request unlock</button>
-        </div>
       </div>
     </div>
 
@@ -177,13 +170,6 @@
               Sign in with Google
             </a>
           </form>
-
-          <div id="loginLockedNoticeMobile" class="hidden mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-            <p class="text-sm text-amber-800 mb-2">Account locked. Request an unlock from admin?</p>
-            <p class="text-xs text-amber-700 mb-2">Email: <span id="loginLockedEmailMobile"></span></p>
-            <input type="hidden" id="requestUnlockEmailMobile" value="">
-            <button type="button" id="requestUnlockBtnMobile" class="w-full py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-lg">Request unlock</button>
-          </div>
         </div>
       </div>
     </div>

@@ -18,6 +18,7 @@ $isRequest     = ($isReqLeaves || $isReqDoc || $isReqBank);
 $isActivityLog = ($currentPage === 'activity-log');
 $isCompensation = ($currentPage === 'compensation');
 $isAccounts    = ($currentPage === 'accounts');
+$isIdCreation  = ($currentPage === 'id-creation');
 
 $activeClass = 'bg-white/20';
 $employeesOpen = $isEmployees ? '' : ' hidden';
@@ -67,6 +68,12 @@ $requestArrow   = $isRequest ? ' rotate-180' : '';
                     </a>
                 </div>
             </div>
+            <a href="id-creation" class="flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-white hover:bg-white/10 transition-colors<?php echo $isIdCreation ? ' ' . $activeClass : ''; ?>">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-3 3c0 1.657 1.343 3 3 3s3-1.343 3-3a3.001 3.001 0 00-3-3z" />
+                </svg>
+                <span>ID Creation</span>
+            </a>
             <!-- Leaves Dropdown -->
             <div class="dropdown-container">
                 <button type="button" id="leaves-dropdown-btn" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-white hover:bg-white/10 cursor-pointer transition-colors<?php echo $isLeaves ? ' ' . $activeClass : ''; ?>">

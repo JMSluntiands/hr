@@ -210,6 +210,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = implode('<br>', $errors);
     }
 }
+
+// Next Employee ID for display (auto-filled on form)
+$nextEmployeeId = '';
+if ($conn) {
+    $check = $conn->query("SHOW TABLES LIKE 'employees'");
+    if ($check && $check->num_rows > 0) {
+        $nextEmployeeId = 'EMP-' . date('Ymd') . '-' . str_pad(rand(1, 999), 3, '0', STR_PAD_LEFT);
+        $stmt = $conn->prepare("SELECT id FROM employees WHERE employee_id = ?");
+        $stmt->bind_param('s', $nextEmployeeId);
+        $stmt->execute();
+        if ($stmt->get_result()->num_rows > 0) {
+            $nextEmployeeId = 'EMP-' . date('Ymd') . '-' . str_pad(rand(1, 999), 3, '0', STR_PAD_LEFT);
+        }
+        $stmt->close();
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -272,6 +288,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="border-b border-slate-200 pb-4 mb-6">
                     <h2 class="text-lg font-semibold text-slate-800 mb-4">Personal Information</h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Employee ID</label>
+                            <input type="text" value="<?php echo htmlspecialchars($nextEmployeeId); ?>" readonly
+                                   class="w-full max-w-xs px-4 py-2 border border-slate-200 rounded-lg bg-slate-50 text-slate-700 font-mono cursor-not-allowed">
+                            <p class="text-xs text-slate-500 mt-1">Auto-generated. This ID will be assigned when you submit.</p>
+                        </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-2">Full Name <span class="text-red-500">*</span></label>
                             <input type="text" name="full_name" id="full_name" required 
