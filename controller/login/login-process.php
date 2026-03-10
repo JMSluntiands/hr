@@ -32,9 +32,40 @@ $user = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 
 if ($user) {
+    $userEmail = $user['email'] ?? '';
+    if ($userEmail !== '') {
+        $empStmt = $conn->prepare('SELECT status FROM employees WHERE email = ? LIMIT 1');
+        if ($empStmt) {
+            $empStmt->bind_param('s', $userEmail);
+            $empStmt->execute();
+            $empRow = $empStmt->get_result()->fetch_assoc();
+            $empStmt->close();
+            if ($empRow && strtolower((string)($empRow['status'] ?? '')) !== 'active') {
+                echo json_encode(['status' => 'error', 'message' => 'Your account is inactive. Please contact HR.']);
+                exit;
+            }
+        }
+    }
+
     session_regenerate_id(true);
     $_SESSION['user_id'] = $user['id'];
     $_SESSION['role'] = $user['role'] ?? 'employee';
+    $displayName = 'Unknown';
+    if ($userEmail !== '') {
+        $nameStmt = $conn->prepare('SELECT full_name FROM employees WHERE email = ? LIMIT 1');
+        if ($nameStmt) {
+            $nameStmt->bind_param('s', $userEmail);
+            $nameStmt->execute();
+            $nameRow = $nameStmt->get_result()->fetch_assoc();
+            $nameStmt->close();
+            if ($nameRow && !empty(trim((string)($nameRow['full_name'] ?? '')))) {
+                $displayName = trim($nameRow['full_name']);
+            } else {
+                $displayName = $userEmail;
+            }
+        }
+    }
+    $_SESSION['name'] = $displayName;
     unset($_SESSION['admin_module']);
     $_SESSION['login_cache_buster'] = bin2hex(random_bytes(8));
 

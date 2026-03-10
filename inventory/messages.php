@@ -39,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->execute();
                 $stmt->close();
                 $desc = 'Admin marked inventory appeal message as read (allocation #' . $allocationId . ').';
-                inventoryLogActivity($conn, inventoryActionWithItemCode('Mark Message Read', $itemCode), 'Message', $allocationId, $desc);
+                inventoryLogActivity($conn, inventoryActionWithItemCode('Mark Message Read', $itemCode), 'Message', $allocationId, $desc, null, $itemCode);
             }
         }
         header('Location: messages.php?status=updated');
@@ -54,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               AND TRIM(employee_appeal) <> ''
               AND admin_viewed_at IS NULL
         ");
-        inventoryLogActivity($conn, inventoryActionWithItemCode('Mark All Messages Read', 'MULTI'), 'Message', null, 'Admin marked all unread inventory appeal messages as read.');
+        inventoryLogActivity($conn, inventoryActionWithItemCode('Mark All Messages Read', 'MULTI'), 'Message', null, 'Admin marked all unread inventory appeal messages as read.', null, 'MULTI');
         header('Location: messages.php?status=updated');
         exit;
     }

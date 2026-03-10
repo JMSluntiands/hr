@@ -75,6 +75,7 @@ if ($conn) {
     if ($checkActivityTable && $checkActivityTable->num_rows > 0) {
         $activitySql = "SELECT action, description, created_at 
                        FROM activity_logs 
+                       WHERE entity_type NOT LIKE 'Inventory%'
                        ORDER BY created_at DESC 
                        LIMIT 5";
         $activityResult = $conn->query($activitySql);

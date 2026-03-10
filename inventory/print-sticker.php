@@ -125,7 +125,7 @@ $dateArrived = (string)($item['date_arrived'] ?? '');
 <body>
     <div class="actions">
         <button class="btn" onclick="window.print()">Print Sticker</button>
-        <a class="btn" href="item.php" style="background:#334155;">Back</a>
+        <a class="btn" href="item.php?tab=list" style="background:#334155;">Back</a>
     </div>
 
     <div class="sticker">

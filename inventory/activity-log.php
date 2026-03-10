@@ -20,12 +20,11 @@ $logs = [];
 $tableMissing = false;
 
 if ($conn) {
-    $checkTable = $conn->query("SHOW TABLES LIKE 'activity_logs'");
+    $checkTable = $conn->query("SHOW TABLES LIKE 'inventory_activity_logs'");
     if ($checkTable && $checkTable->num_rows > 0) {
         $sql = "
             SELECT *
-            FROM activity_logs
-            WHERE entity_type LIKE 'Inventory%'
+            FROM inventory_activity_logs
             ORDER BY created_at DESC
             LIMIT 500
         ";
@@ -80,11 +79,12 @@ if ($conn) {
                     <thead>
                         <tr>
                             <th>Date & Time</th>
-                            <th>User</th>
+                            <th>Updated By</th>
                             <th>Action</th>
                             <th>Entity</th>
+                            <th>Item Code</th>
                             <th>Description</th>
-                            <th>IP</th>
+                            <th>Change Details</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -92,13 +92,16 @@ if ($conn) {
                             <tr>
                                 <td><?php echo !empty($log['created_at']) ? htmlspecialchars(date('M d, Y h:i:s A', strtotime($log['created_at']))) : '—'; ?></td>
                                 <td>
-                                    <?php echo htmlspecialchars((string)($log['user_name'] ?? 'Unknown')); ?>
-                                    <div class="text-xs text-slate-500">ID: <?php echo (int)($log['user_id'] ?? 0); ?></div>
+                                    <?php echo htmlspecialchars((string)($log['user_name'] ?? '—')); ?>
+                                    <?php if (!empty($log['user_id'])): ?>
+                                        <div class="text-xs text-slate-500">ID: <?php echo (int)$log['user_id']; ?></div>
+                                    <?php endif; ?>
                                 </td>
                                 <td><?php echo htmlspecialchars((string)($log['action'] ?? '')); ?></td>
                                 <td><?php echo htmlspecialchars((string)($log['entity_type'] ?? '')); ?></td>
+                                <td><?php echo htmlspecialchars((string)($log['item_code'] ?? '—')); ?></td>
                                 <td><?php echo htmlspecialchars((string)($log['description'] ?? '')); ?></td>
-                                <td><?php echo htmlspecialchars((string)($log['ip_address'] ?? '—')); ?></td>
+                                <td class="whitespace-pre-wrap text-slate-600"><?php echo htmlspecialchars((string)($log['change_details'] ?? '')); ?></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>

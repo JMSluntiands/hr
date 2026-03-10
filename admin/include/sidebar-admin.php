@@ -28,6 +28,33 @@ $requestOpen   = $isRequest ? '' : ' hidden';
 $employeesArrow = $isEmployees ? ' rotate-180' : '';
 $leavesArrow    = $isLeaves ? ' rotate-180' : '';
 $requestArrow   = $isRequest ? ' rotate-180' : '';
+
+$requestLeavesPending = 0;
+$requestDocPending = 0;
+$requestBankPending = 0;
+if (isset($conn) && $conn) {
+    $t = $conn->query("SHOW TABLES LIKE 'leave_requests'");
+    if ($t && $t->num_rows > 0) {
+        $r = $conn->query("SELECT COUNT(*) AS c FROM leave_requests WHERE status = 'Pending'");
+        if ($r && $row = $r->fetch_assoc()) $requestLeavesPending = (int)$row['c'];
+    }
+    $t = $conn->query("SHOW TABLES LIKE 'document_requests'");
+    if ($t && $t->num_rows > 0) {
+        $r = $conn->query("SELECT COUNT(*) AS c FROM document_requests WHERE status = 'Pending'");
+        if ($r && $row = $r->fetch_assoc()) $requestDocPending += (int)$row['c'];
+    }
+    $t = $conn->query("SHOW TABLES LIKE 'employee_document_uploads'");
+    if ($t && $t->num_rows > 0) {
+        $r = $conn->query("SELECT COUNT(*) AS c FROM employee_document_uploads WHERE status = 'Pending'");
+        if ($r && $row = $r->fetch_assoc()) $requestDocPending += (int)$row['c'];
+    }
+    $t = $conn->query("SHOW TABLES LIKE 'bank_account_change_requests'");
+    if ($t && $t->num_rows > 0) {
+        $r = $conn->query("SELECT COUNT(*) AS c FROM bank_account_change_requests WHERE status = 'Pending'");
+        if ($r && $row = $r->fetch_assoc()) $requestBankPending = (int)$row['c'];
+    }
+}
+$requestTotalPending = $requestLeavesPending + $requestDocPending + $requestBankPending;
 ?>
     <!-- Sidebar - z-40 so it stays above main content and buttons are clickable -->
     <aside class="fixed inset-y-0 left-0 z-40 w-64 bg-[#FA9800] text-white flex flex-col">
@@ -102,19 +129,31 @@ $requestArrow   = $isRequest ? ' rotate-180' : '';
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                     </svg>
                     <span>Request</span>
+                    <?php if ($requestTotalPending > 0): ?>
+                        <span class="ml-auto min-w-[1.25rem] h-5 px-1.5 flex items-center justify-center rounded-full bg-white/90 text-[#FA9800] text-xs font-semibold"><?php echo $requestTotalPending; ?></span>
+                    <?php endif; ?>
                     <svg id="request-arrow" class="w-4 h-4 ml-auto transition-transform text-white pointer-events-none<?php echo $requestArrow; ?>" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                     </svg>
                 </button>
                 <div id="request-dropdown" class="space-y-1 mt-1<?php echo $requestOpen; ?>">
                     <a href="request-leaves" class="flex items-center gap-3 pl-11 pr-3 py-2 text-sm text-white hover:bg-white/10 rounded-lg transition-colors<?php echo $isReqLeaves ? ' ' . $activeClass : ''; ?>">
-                        Request Leaves
+                        <span>Request Leaves</span>
+                        <?php if ($requestLeavesPending > 0): ?>
+                            <span class="ml-auto min-w-[1.25rem] h-5 px-1.5 flex items-center justify-center rounded-full bg-white/90 text-[#FA9800] text-xs font-semibold"><?php echo $requestLeavesPending; ?></span>
+                        <?php endif; ?>
                     </a>
                     <a href="request-document" class="flex items-center gap-3 pl-11 pr-3 py-2 text-sm text-white hover:bg-white/10 rounded-lg transition-colors<?php echo $isReqDoc ? ' ' . $activeClass : ''; ?>">
-                        Request Document
+                        <span>Request Document</span>
+                        <?php if ($requestDocPending > 0): ?>
+                            <span class="ml-auto min-w-[1.25rem] h-5 px-1.5 flex items-center justify-center rounded-full bg-white/90 text-[#FA9800] text-xs font-semibold"><?php echo $requestDocPending; ?></span>
+                        <?php endif; ?>
                     </a>
                     <a href="request-bank" class="flex items-center gap-3 pl-11 pr-3 py-2 text-sm text-white hover:bg-white/10 rounded-lg transition-colors<?php echo $isReqBank ? ' ' . $activeClass : ''; ?>">
-                        Request Bank
+                        <span>Request Bank</span>
+                        <?php if ($requestBankPending > 0): ?>
+                            <span class="ml-auto min-w-[1.25rem] h-5 px-1.5 flex items-center justify-center rounded-full bg-white/90 text-[#FA9800] text-xs font-semibold"><?php echo $requestBankPending; ?></span>
+                        <?php endif; ?>
                     </a>
                 </div>
             </div>

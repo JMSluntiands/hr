@@ -12,10 +12,10 @@ include '../database/db.php';
 
 $logs = [];
 if ($conn) {
-    // Check if activity_logs table exists
+    // Check if activity_logs table exists (HR only - inventory uses inventory_activity_logs)
     $checkTable = $conn->query("SHOW TABLES LIKE 'activity_logs'");
     if ($checkTable && $checkTable->num_rows > 0) {
-        $sql = "SELECT * FROM activity_logs ORDER BY created_at DESC LIMIT 500";
+        $sql = "SELECT * FROM activity_logs WHERE entity_type NOT LIKE 'Inventory%' ORDER BY created_at DESC LIMIT 500";
         $res = $conn->query($sql);
         if ($res && $res->num_rows > 0) {
             while ($row = $res->fetch_assoc()) {

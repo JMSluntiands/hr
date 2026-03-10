@@ -103,7 +103,7 @@ $reportRows = getInventoryReportRows($conn);
 
 $export = strtolower(trim((string)($_GET['export'] ?? '')));
 if ($export === 'excel') {
-    inventoryLogActivity($conn, inventoryActionWithItemCode('Export Inventory Report Excel', 'ALL'), 'Report Export', null, 'Admin exported inventory report to Excel.');
+    inventoryLogActivity($conn, inventoryActionWithItemCode('Export Inventory Report Excel', 'ALL'), 'Report Export', null, 'Admin exported inventory report to Excel.', null, 'ALL');
     $filename = 'inventory-report-' . date('Ymd-His') . '.csv';
     header('Content-Type: text/csv; charset=UTF-8');
     header('Content-Disposition: attachment; filename="' . $filename . '"');
@@ -126,7 +126,7 @@ if ($export === 'excel') {
 }
 
 if ($export === 'pdf') {
-    inventoryLogActivity($conn, inventoryActionWithItemCode('Export Inventory Report PDF', 'ALL'), 'Report Export', null, 'Admin exported inventory report to PDF.');
+    inventoryLogActivity($conn, inventoryActionWithItemCode('Export Inventory Report PDF', 'ALL'), 'Report Export', null, 'Admin exported inventory report to PDF.', null, 'ALL');
     $autoloadPath = __DIR__ . '/../vendor/autoload.php';
     if (file_exists($autoloadPath)) {
         require_once $autoloadPath;

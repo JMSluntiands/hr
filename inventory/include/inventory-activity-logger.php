@@ -1,7 +1,5 @@
 <?php
 
-require_once __DIR__ . '/../../admin/include/activity-logger.php';
-
 if (!function_exists('inventoryCanLogActivity')) {
     function inventoryCanLogActivity($conn): bool
     {
@@ -11,32 +9,57 @@ if (!function_exists('inventoryCanLogActivity')) {
             return $cached;
         }
 
-        if (!($conn instanceof mysqli) || !function_exists('logActivity')) {
+        if (!($conn instanceof mysqli)) {
             $cached = false;
             return $cached;
         }
 
-        $check = $conn->query("SHOW TABLES LIKE 'activity_logs'");
+        $check = $conn->query("SHOW TABLES LIKE 'inventory_activity_logs'");
         $cached = (bool)($check && $check->num_rows > 0);
         return $cached;
     }
 }
 
 if (!function_exists('inventoryLogActivity')) {
-    function inventoryLogActivity($conn, string $action, string $entityType, ?int $entityId = null, string $description = ''): bool
+    /**
+     * Log inventory activity to inventory_activity_logs table (separate from HR activity_logs).
+     *
+     * @param mysqli $conn
+     * @param string $action e.g. "Update Item [ITEM: LAP-0001]"
+     * @param string $entityType e.g. "Item", "Allocation", "Appeal"
+     * @param int|null $entityId
+     * @param string $description Main description
+     * @param string|null $changeDetails Detailed field changes, e.g. "Item name: Laptop → Desktop\nDescription: old → new"
+     * @param string|null $itemCode e.g. "LAP-0001" for display/filtering
+     */
+    function inventoryLogActivity($conn, string $action, string $entityType, ?int $entityId = null, string $description = '', ?string $changeDetails = null, ?string $itemCode = null): bool
     {
-        if (!inventoryCanLogActivity($conn)) {
+        if (!inventoryCanLogActivity($conn) || !isset($_SESSION['user_id'])) {
             return false;
         }
 
+        $userId = (int)$_SESSION['user_id'];
+        $userName = (string)($_SESSION['name'] ?? 'Unknown');
+        $ipAddress = $_SERVER['REMOTE_ADDR'] ?? null;
         $entityType = trim($entityType);
         if ($entityType === '') {
-            $entityType = 'Inventory';
-        } elseif (stripos($entityType, 'inventory') !== 0) {
-            $entityType = 'Inventory ' . $entityType;
+            $entityType = 'Item';
         }
 
-        return (bool)logActivity($conn, $action, $entityType, $entityId, $description);
+        $stmt = $conn->prepare("
+            INSERT INTO inventory_activity_logs (user_id, user_name, action, entity_type, entity_id, item_code, description, change_details, ip_address)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ");
+        if (!$stmt) {
+            return false;
+        }
+        $changeDetailsVal = $changeDetails !== null && $changeDetails !== '' ? $changeDetails : null;
+        $itemCodeVal = $itemCode !== null && $itemCode !== '' ? $itemCode : null;
+        $stmt->bind_param('isssissss', $userId, $userName, $action, $entityType, $entityId, $itemCodeVal, $description, $changeDetailsVal, $ipAddress);
+        $result = $stmt->execute();
+        $stmt->close();
+
+        return (bool)$result;
     }
 }
 

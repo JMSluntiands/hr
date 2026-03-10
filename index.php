@@ -208,7 +208,8 @@
         google_token_failed: 'Could not verify Google sign-in. Try again.',
         google_no_email: 'Google did not provide your email.',
         domain_restricted: 'Access is restricted to @luntiands.com email addresses only.',
-        no_hr_account: 'No HR account found for this email. Ask admin to add you.'
+        no_hr_account: 'No HR account found for this email. Ask admin to add you.',
+        account_inactive: 'Your account is inactive. Please contact HR.'
       }[err] || 'Something went wrong. Please try again.';
       Toastify({ text: msg, duration: 5000, gravity: 'top', position: 'right', backgroundColor: '#e3342f' }).showToast();
       history.replaceState({}, '', window.location.pathname);

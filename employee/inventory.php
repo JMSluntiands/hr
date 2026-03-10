@@ -49,7 +49,7 @@ if ($conn && $employeeDbId) {
             if ($ok && $affected > 0) {
                 $itemCode = inventoryGetItemCodeByAllocationId($conn, $allocationId);
                 $desc = 'Employee submitted inventory appeal for allocation #' . $allocationId . '.';
-                inventoryLogActivity($conn, inventoryActionWithItemCode('Submit Appeal', $itemCode), 'Appeal', $allocationId, $desc);
+                inventoryLogActivity($conn, inventoryActionWithItemCode('Submit Appeal', $itemCode), 'Appeal', $allocationId, $desc, null, $itemCode);
                 header('Location: inventory.php?status=appeal_sent');
                 exit;
             }

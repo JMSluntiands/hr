@@ -176,10 +176,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         $ok = deleteInventoryItem($conn, $rowId);
         if ($ok) {
-            inventoryLogActivity($conn, inventoryActionWithItemCode('Delete Item', $itemCode), 'Item', $rowId, 'Deleted inventory item record #' . $rowId . '.');
+            $deleteDetails = '';
+            if ($itemBeforeDelete) {
+                $deleteDetails = "Item ID: " . ($itemBeforeDelete['item_id'] ?? '') . "\n"
+                    . "Item name: " . ($itemBeforeDelete['item_name'] ?? '') . "\n"
+                    . "Description: " . (trim((string)($itemBeforeDelete['description'] ?? '')) ?: '(empty)') . "\n"
+                    . "Type: " . (trim((string)($itemBeforeDelete['type'] ?? '')) ?: '(empty)') . "\n"
+                    . "Condition: " . (trim((string)($itemBeforeDelete['item_condition'] ?? '')) ?: '(empty)');
+            }
+            inventoryLogActivity($conn, inventoryActionWithItemCode('Delete Item', $itemCode), 'Item', $rowId, 'Deleted inventory item record #' . $rowId . '.', $deleteDetails ?: null, $itemCode);
             header('Location: item.php?status=deleted');
         } else {
-            inventoryLogActivity($conn, inventoryActionWithItemCode('Delete Item Failed', $itemCode), 'Item', $rowId, 'Failed to delete inventory item record #' . $rowId . '.');
+            inventoryLogActivity($conn, inventoryActionWithItemCode('Delete Item Failed', $itemCode), 'Item', $rowId, 'Failed to delete inventory item record #' . $rowId . '.', null, $itemCode);
             header('Location: item.php?status=error&message=Unable+to+delete+item');
         }
         exit;
@@ -216,10 +224,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($ok) {
             $newItemDbId = (int)$conn->insert_id;
             $newItemCode = inventoryGetItemCodeByItemDbId($conn, $newItemDbId);
-            inventoryLogActivity($conn, inventoryActionWithItemCode('Create Item', $newItemCode), 'Item', $newItemDbId > 0 ? $newItemDbId : null, 'Created new inventory item: ' . $itemName . '.');
+            $createDetails = "Item name: " . $itemName . "\n"
+                . "Description: " . ($description ?: '(empty)') . "\n"
+                . "Type: " . ($type ?: '(empty)') . "\n"
+                . "Item condition: " . $itemCondition . "\n"
+                . "Remarks: " . ($remarks ?: '(empty)') . "\n"
+                . "Date arrived: " . ($dateArrived ?: '(empty)') . "\n"
+                . "Item picture: " . ($itemImagePath ? 'yes' : 'no');
+            inventoryLogActivity($conn, inventoryActionWithItemCode('Create Item', $newItemCode), 'Item', $newItemDbId > 0 ? $newItemDbId : null, 'Created new inventory item: ' . $itemName . '.', $createDetails, $newItemCode);
             header('Location: item.php?status=created');
         } else {
-            inventoryLogActivity($conn, inventoryActionWithItemCode('Create Item Failed', 'NO-ID'), 'Item', null, 'Failed to create inventory item: ' . $itemName . '.');
+            inventoryLogActivity($conn, inventoryActionWithItemCode('Create Item Failed', 'NO-ID'), 'Item', null, 'Failed to create inventory item: ' . $itemName . '.', null, null);
             header('Location: item.php?status=error&message=Unable+to+create+item');
         }
         exit;
@@ -227,6 +242,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'update' && $rowId > 0) {
         $itemCode = inventoryGetItemCodeByItemDbId($conn, $rowId);
+        $itemBefore = getInventoryItemById($conn, $rowId);
+
         $ok = updateInventoryItem($conn, $rowId, [
             'item_name' => $itemName,
             'description' => $description,
@@ -240,10 +257,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($ok) {
             $updatedItemCode = inventoryGetItemCodeByItemDbId($conn, $rowId);
             $logItemCode = $updatedItemCode !== '' ? $updatedItemCode : $itemCode;
-            inventoryLogActivity($conn, inventoryActionWithItemCode('Update Item', $logItemCode), 'Item', $rowId, 'Updated inventory item record #' . $rowId . '.');
-            header('Location: item.php?status=updated');
+
+            $changeDetails = [];
+            if ($itemBefore) {
+                $oldName = trim((string)($itemBefore['item_name'] ?? ''));
+                if ($oldName !== $itemName) {
+                    $changeDetails[] = 'Item name: ' . ($oldName ?: '(empty)') . ' → ' . $itemName;
+                }
+                $oldDesc = trim((string)($itemBefore['description'] ?? ''));
+                if ($oldDesc !== $description) {
+                    $changeDetails[] = 'Description: ' . ($oldDesc ?: '(empty)') . ' → ' . ($description ?: '(empty)');
+                }
+                $oldType = trim((string)($itemBefore['type'] ?? ''));
+                if ($oldType !== $type) {
+                    $changeDetails[] = 'Type: ' . ($oldType ?: '(empty)') . ' → ' . ($type ?: '(empty)');
+                }
+                $oldCond = trim((string)($itemBefore['item_condition'] ?? ''));
+                if ($oldCond !== $itemCondition) {
+                    $changeDetails[] = 'Item condition: ' . ($oldCond ?: '(empty)') . ' → ' . $itemCondition;
+                }
+                $oldRemarks = trim((string)($itemBefore['remarks'] ?? ''));
+                if ($oldRemarks !== $remarks) {
+                    $changeDetails[] = 'Remarks: ' . ($oldRemarks ?: '(empty)') . ' → ' . ($remarks ?: '(empty)');
+                }
+                $oldDate = trim((string)($itemBefore['date_arrived'] ?? ''));
+                if ($oldDate !== $dateArrived) {
+                    $changeDetails[] = 'Date arrived: ' . ($oldDate ?: '(empty)') . ' → ' . ($dateArrived ?: '(empty)');
+                }
+                $oldImg = trim((string)($itemBefore['item_image_path'] ?? ''));
+                if ($oldImg !== $itemImagePath) {
+                    $changeDetails[] = 'Item picture: ' . ($oldImg ? 'changed' : '(none)') . ' → ' . ($itemImagePath ? 'updated' : '(removed)');
+                }
+            }
+            $changeDetailsStr = implode("\n", $changeDetails);
+            $desc = !empty($changeDetails) ? 'Updated inventory item.' : 'Updated inventory item (no field changes).';
+
+            inventoryLogActivity($conn, inventoryActionWithItemCode('Update Item', $logItemCode), 'Item', $rowId, $desc, $changeDetailsStr ?: null, $logItemCode);
+            $returnTab = $_POST['return_tab'] ?? '';
+            if ($returnTab === 'list') {
+                header('Location: item.php?tab=list&status=updated');
+            } else {
+                header('Location: item.php?status=updated');
+            }
         } else {
-            inventoryLogActivity($conn, inventoryActionWithItemCode('Update Item Failed', $itemCode), 'Item', $rowId, 'Failed to update inventory item record #' . $rowId . '.');
+            inventoryLogActivity($conn, inventoryActionWithItemCode('Update Item Failed', $itemCode), 'Item', $rowId, 'Failed to update inventory item record #' . $rowId . '.', null, $itemCode);
             header('Location: item.php?status=error&message=Unable+to+update+item');
         }
         exit;
@@ -397,7 +454,7 @@ if ($editItemId > 0) {
         <?php if ($status === 'created'): ?>
             <div class="mb-4 rounded-lg bg-green-50 border border-green-200 text-green-700 px-4 py-3 text-sm">Item created successfully.</div>
         <?php elseif ($status === 'updated'): ?>
-            <div class="mb-4 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 text-sm">Item updated successfully.</div>
+            <div class="mb-4 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 text-sm">The item has been updated successfully.</div>
         <?php elseif ($status === 'deleted'): ?>
             <div class="mb-4 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 px-4 py-3 text-sm">Item deleted successfully.</div>
         <?php elseif ($status === 'error'): ?>
@@ -727,6 +784,77 @@ if ($editItemId > 0) {
         </div>
     </div>
 
+    <div id="itemEditModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl my-8">
+            <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-slate-800">Edit Item</h3>
+                <button type="button" class="closeModalBtn text-slate-500 hover:text-slate-700 text-xl leading-none" data-target="itemEditModal">×</button>
+            </div>
+            <form id="editItemForm" method="POST" enctype="multipart/form-data" class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input type="hidden" name="action" value="update">
+                <input type="hidden" name="return_tab" value="list">
+                <input type="hidden" name="id" id="editRowId" value="">
+                <input type="hidden" name="current_image_path" id="editCurrentImagePath" value="">
+
+                <div>
+                    <label class="block text-sm text-slate-600 mb-1">Item Name</label>
+                    <select name="item_name" id="editItemName" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" required>
+                        <option value="">Select item</option>
+                        <?php foreach ($itemOptions as $option): ?>
+                            <option value="<?php echo htmlspecialchars($option); ?>"><?php echo htmlspecialchars($option); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm text-slate-600 mb-1">Item ID (Auto)</label>
+                    <input type="text" id="editItemIdPreview" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-slate-50" readonly value="">
+                </div>
+
+                <div>
+                    <label class="block text-sm text-slate-600 mb-1">Description</label>
+                    <input type="text" name="description" id="editDescription" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" value="">
+                </div>
+
+                <div>
+                    <label class="block text-sm text-slate-600 mb-1">Type</label>
+                    <input type="text" name="type" id="editType" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" value="">
+                </div>
+
+                <div>
+                    <label class="block text-sm text-slate-600 mb-1">Item Condition</label>
+                    <select name="item_condition" id="editItemCondition" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" required>
+                        <option value="">Select condition</option>
+                        <?php foreach ($itemConditions as $condition): ?>
+                            <option value="<?php echo htmlspecialchars($condition); ?>"><?php echo htmlspecialchars($condition); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm text-slate-600 mb-1">Remarks</label>
+                    <input type="text" name="remarks" id="editRemarks" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" value="">
+                </div>
+
+                <div>
+                    <label class="block text-sm text-slate-600 mb-1">Date Arrived / Purchased</label>
+                    <input type="date" name="date_arrived" id="editDateArrived" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" value="">
+                </div>
+
+                <div>
+                    <label class="block text-sm text-slate-600 mb-1">Item Picture</label>
+                    <input type="file" name="item_image" id="editItemImage" accept=".jpg,.jpeg,.png,.gif,.webp" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white">
+                    <p id="editCurrentImageNote" class="mt-1 text-xs text-slate-500">No current image.</p>
+                </div>
+
+                <div class="md:col-span-2 flex gap-2 pt-2">
+                    <button type="submit" class="px-4 py-2 bg-[#FA9800] text-white rounded-lg text-sm font-medium hover:opacity-90 transition">Update Item</button>
+                    <button type="button" class="editModalCloseBtn px-4 py-2 bg-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-300 transition">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
     <script>
@@ -799,9 +927,27 @@ if ($editItemId > 0) {
                 });
 
                 $('.editBtn').on('click', function () {
-                    const itemId = this.dataset.id || '';
-                    if (!itemId) return;
-                    window.location.href = 'item.php?tab=add&edit_id=' + encodeURIComponent(itemId);
+                    const btn = this;
+                    $('#editRowId').val(btn.dataset.id || '');
+                    $('#editCurrentImagePath').val(btn.dataset.item_image_path || '');
+                    $('#editItemName').val(btn.dataset.item_name || '');
+                    $('#editItemIdPreview').val(btn.dataset.item_id || '');
+                    $('#editDescription').val(btn.dataset.description || '');
+                    $('#editType').val(btn.dataset.type || '');
+                    $('#editItemCondition').val(btn.dataset.item_condition || '');
+                    $('#editRemarks').val(btn.dataset.remarks || '');
+                    $('#editDateArrived').val(btn.dataset.date_arrived || '');
+                    $('#editItemImage').val('');
+                    const imgPath = (btn.dataset.item_image_path || '').trim();
+                    const noteEl = $('#editCurrentImageNote');
+                    noteEl.empty();
+                    if (imgPath) {
+                        noteEl.append(document.createTextNode('Current image: '));
+                        noteEl.append($('<a>', { class: 'text-blue-600 hover:underline', target: '_blank', href: imgPath, text: 'View' }));
+                    } else {
+                        noteEl.text('No current image.');
+                    }
+                    $('#itemEditModal').removeClass('hidden');
                 });
 
                 $('.viewBtn').on('click', function () {
@@ -969,7 +1115,11 @@ if ($editItemId > 0) {
                 }
             });
 
-            $('#itemViewModal, #itemHistoryModal').on('click', function (event) {
+            $('.editModalCloseBtn').on('click', function () {
+                $('#itemEditModal').addClass('hidden');
+            });
+
+            $('#itemViewModal, #itemHistoryModal, #itemEditModal').on('click', function (event) {
                 if (event.target === this) {
                     $(this).addClass('hidden');
                 }

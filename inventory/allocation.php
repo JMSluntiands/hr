@@ -159,11 +159,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($ok) {
             $desc = 'Allocated inventory item #' . $inventoryItemId . ' to employee #' . $employeeId . ' (date received: ' . $dateReceived . ').';
             $itemCode = inventoryGetItemCodeByItemDbId($conn, $inventoryItemId);
-            inventoryLogActivity($conn, inventoryActionWithItemCode('Create Allocation', $itemCode), 'Allocation', $inventoryItemId, $desc);
+            inventoryLogActivity($conn, inventoryActionWithItemCode('Create Allocation', $itemCode), 'Allocation', $inventoryItemId, $desc, null, $itemCode);
             header('Location: allocation.php?status=created');
         } else {
             $itemCode = inventoryGetItemCodeByItemDbId($conn, $inventoryItemId);
-            inventoryLogActivity($conn, inventoryActionWithItemCode('Create Allocation Failed', $itemCode), 'Allocation', $inventoryItemId, 'Failed to allocate inventory item #' . $inventoryItemId . ' to employee #' . $employeeId . '.');
+            inventoryLogActivity($conn, inventoryActionWithItemCode('Create Allocation Failed', $itemCode), 'Allocation', $inventoryItemId, 'Failed to allocate inventory item #' . $inventoryItemId . ' to employee #' . $employeeId . '.', null, $itemCode);
             header('Location: allocation.php?status=error&message=Unable+to+save+allocation.');
         }
         exit;
@@ -215,11 +215,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($ok && $affected > 0) {
             $desc = 'Returned allocation #' . $allocationId . ' (date return: ' . $dateReturn . ').';
             $itemCode = inventoryGetItemCodeByAllocationId($conn, $allocationId);
-            inventoryLogActivity($conn, inventoryActionWithItemCode('Return Allocation', $itemCode), 'Allocation', $allocationId, $desc);
+            inventoryLogActivity($conn, inventoryActionWithItemCode('Return Allocation', $itemCode), 'Allocation', $allocationId, $desc, null, $itemCode);
             header('Location: allocation.php?status=returned');
         } else {
             $itemCode = inventoryGetItemCodeByAllocationId($conn, $allocationId);
-            inventoryLogActivity($conn, inventoryActionWithItemCode('Return Allocation Failed', $itemCode), 'Allocation', $allocationId, 'Failed to return allocation #' . $allocationId . '.');
+            inventoryLogActivity($conn, inventoryActionWithItemCode('Return Allocation Failed', $itemCode), 'Allocation', $allocationId, 'Failed to return allocation #' . $allocationId . '.', null, $itemCode);
             header('Location: allocation.php?status=error&message=Unable+to+process+return.');
         }
         exit;
@@ -259,7 +259,7 @@ $selectedEmployeeIdForExport = (int)($_GET['employee_id'] ?? 0);
 $export = strtolower(trim((string)($_GET['export'] ?? '')));
 if ($export === 'pdf') {
     $targetItemCode = $selectedEmployeeIdForExport > 0 ? 'FILTERED' : 'ALL';
-    inventoryLogActivity($conn, inventoryActionWithItemCode('Export Allocation Report PDF', $targetItemCode), 'Allocation Report', $selectedEmployeeIdForExport > 0 ? $selectedEmployeeIdForExport : null, 'Admin exported allocation report to PDF.');
+    inventoryLogActivity($conn, inventoryActionWithItemCode('Export Allocation Report PDF', $targetItemCode), 'Allocation Report', $selectedEmployeeIdForExport > 0 ? $selectedEmployeeIdForExport : null, 'Admin exported allocation report to PDF.', null, $targetItemCode);
     $rowsForPdf = getAllocationRows($conn, $selectedEmployeeIdForExport);
 
     $autoloadPath = __DIR__ . '/../vendor/autoload.php';

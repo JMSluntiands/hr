@@ -95,8 +95,39 @@ if (!$user) {
     exit;
 }
 
+$userEmail = $user['email'] ?? '';
+if ($userEmail !== '') {
+    $empStmt = $conn->prepare('SELECT status FROM employees WHERE email = ? LIMIT 1');
+    if ($empStmt) {
+        $empStmt->bind_param('s', $userEmail);
+        $empStmt->execute();
+        $empRow = $empStmt->get_result()->fetch_assoc();
+        $empStmt->close();
+        if ($empRow && strtolower((string)($empRow['status'] ?? '')) !== 'active') {
+            header('Location: ../../index.php?error=account_inactive');
+            exit;
+        }
+    }
+}
+
 $_SESSION['user_id'] = $user['id'];
 $_SESSION['role'] = $user['role'] ?? 'employee';
+$displayName = 'Unknown';
+if ($userEmail !== '') {
+    $nameStmt = $conn->prepare('SELECT full_name FROM employees WHERE email = ? LIMIT 1');
+    if ($nameStmt) {
+        $nameStmt->bind_param('s', $userEmail);
+        $nameStmt->execute();
+        $nameRow = $nameStmt->get_result()->fetch_assoc();
+        $nameStmt->close();
+        if ($nameRow && !empty(trim((string)($nameRow['full_name'] ?? '')))) {
+            $displayName = trim($nameRow['full_name']);
+        } else {
+            $displayName = $userEmail;
+        }
+    }
+}
+$_SESSION['name'] = $displayName;
 $_SESSION['is_default_password'] = false;
 unset($_SESSION['admin_module']);
 session_regenerate_id(true);
