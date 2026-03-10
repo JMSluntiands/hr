@@ -56,8 +56,32 @@ if (isset($conn) && $conn) {
 }
 $requestTotalPending = $requestLeavesPending + $requestDocPending + $requestBankPending;
 ?>
-    <!-- Sidebar - z-40 so it stays above main content and buttons are clickable -->
-    <aside class="fixed inset-y-0 left-0 z-40 w-64 bg-[#FA9800] text-white flex flex-col">
+    <!-- Mobile Top Bar -->
+    <header class="md:hidden fixed inset-x-0 top-0 z-30 bg-[#FA9800] text-white flex items-center justify-between px-4 py-3 shadow">
+        <div class="flex items-center gap-2">
+            <div class="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center">
+                <span class="text-lg font-semibold">
+                    <?php echo strtoupper(substr($adminName, 0, 1)); ?>
+                </span>
+            </div>
+            <div class="flex flex-col leading-tight">
+                <span class="text-sm font-medium">
+                    <?php echo htmlspecialchars($adminName); ?>
+                </span>
+                <span class="text-[11px] text-white/80">
+                    Administrator
+                </span>
+            </div>
+        </div>
+        <button type="button" class="p-2 rounded-md bg-white/10 hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/60" data-sidebar-toggle>
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+        </button>
+    </header>
+
+    <!-- Sidebar - desktop fixed, mobile slide-over -->
+    <aside id="admin-sidebar" class="fixed inset-y-0 left-0 z-40 w-64 bg-[#FA9800] text-white flex flex-col transform -translate-x-full transition-transform duration-200 md:translate-x-0">
         <div class="p-6 flex items-center gap-4 border-b border-white/20">
             <div class="w-14 h-14 rounded-full overflow-hidden bg-white/20 flex items-center justify-center">
                 <span class="text-2xl font-semibold text-white">
@@ -186,7 +210,7 @@ $requestTotalPending = $requestLeavesPending + $requestDocPending + $requestBank
                 <span>Accounts</span>
             </a>
         </nav>
-        <div class="p-4 border-t border-white/20">
+        <div class="p-4 border-t border-white/20 mt-auto">
             <div class="flex items-center justify-between text-xs font-medium mb-2 text-white/80">
                 <span>Role</span>
                 <span class="px-2 py-0.5 rounded-full bg-white/10 text-white font-medium">
@@ -196,4 +220,6 @@ $requestTotalPending = $requestLeavesPending + $requestDocPending + $requestBank
             <a href="../logout.php" class="block text-xs font-medium text-white/80 hover:text-white">Logout</a>
         <a href="module-select.php" class="block text-xs font-medium text-white/80 hover:text-white mt-2">Back to Main Menu</a>
         </div>
-    </aside>
+        </aside>
+        <!-- Mobile sidebar backdrop -->
+        <div id="admin-sidebar-backdrop" class="fixed inset-0 z-30 bg-black/40 hidden md:hidden"></div>

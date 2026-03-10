@@ -46,7 +46,7 @@
             }
         }
     });
-    
+
     // Close dropdowns when clicking outside
     document.addEventListener('click', function(e) {
         const dropdownBtn = e.target.closest('[id$="-dropdown-btn"]');
@@ -67,4 +67,86 @@
             });
         }
     });
+})();
+
+// Mobile sidebar toggles (admin + inventory)
+(function() {
+    'use strict';
+
+    function initSidebarToggle(options) {
+        const sidebar = document.getElementById(options.sidebarId);
+        if (!sidebar) return;
+
+        const backdrop = options.backdropId ? document.getElementById(options.backdropId) : null;
+        const toggleButtons = document.querySelectorAll(options.toggleSelector);
+
+        function openSidebar() {
+            sidebar.classList.remove('-translate-x-full');
+            sidebar.classList.add('translate-x-0');
+            if (backdrop) {
+                backdrop.classList.remove('hidden');
+            }
+        }
+
+        function closeSidebar() {
+            sidebar.classList.add('-translate-x-full');
+            sidebar.classList.remove('translate-x-0');
+            if (backdrop) {
+                backdrop.classList.add('hidden');
+            }
+        }
+
+        toggleButtons.forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const isHidden = sidebar.classList.contains('-translate-x-full');
+                if (isHidden) {
+                    openSidebar();
+                } else {
+                    closeSidebar();
+                }
+            });
+        });
+
+        if (backdrop) {
+            backdrop.addEventListener('click', function() {
+                closeSidebar();
+            });
+        }
+
+        // Ensure proper state on resize
+        window.addEventListener('resize', function() {
+            if (window.innerWidth >= 768) { // md breakpoint
+                sidebar.classList.remove('-translate-x-full');
+                if (backdrop) {
+                    backdrop.classList.add('hidden');
+                }
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                if (backdrop) {
+                    backdrop.classList.add('hidden');
+                }
+            }
+        });
+    }
+
+    function initAllSidebars() {
+        initSidebarToggle({
+            sidebarId: 'admin-sidebar',
+            backdropId: 'admin-sidebar-backdrop',
+            toggleSelector: '[data-sidebar-toggle]'
+        });
+
+        initSidebarToggle({
+            sidebarId: 'inventory-sidebar',
+            backdropId: 'inventory-sidebar-backdrop',
+            toggleSelector: '[data-inventory-sidebar-toggle]'
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initAllSidebars);
+    } else {
+        initAllSidebars();
+    }
 })();

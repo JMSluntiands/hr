@@ -227,7 +227,7 @@ foreach ($documents as $d) {
     </aside>
 
     <!-- Main Content (only this area scrolls) -->
-    <main class="ml-64 min-h-screen p-8 space-y-6 overflow-y-auto">
+    <main class="min-h-screen p-8 space-y-6 overflow-y-auto md:ml-64 md:pt-8 pt-16">
         <div id="main-inner">
         <!-- Header (view only - same as admin) -->
         <div class="flex items-center justify-between mb-6">

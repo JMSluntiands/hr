@@ -447,7 +447,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php include __DIR__ . '/include/sidebar-admin.php'; ?>
 
     <!-- Main Content -->
-    <main class="ml-64 min-h-screen overflow-y-auto p-8">
+    <main class="min-h-screen overflow-y-auto p-4 pt-16 md:pt-8 md:ml-64 md:p-8">
         <!-- Header -->
         <div class="flex items-center justify-between mb-6">
             <div>

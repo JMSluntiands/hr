@@ -103,7 +103,7 @@ if ($conn) {
     <?php include __DIR__ . '/include/sidebar-admin.php'; ?>
 
     <!-- Main Content -->
-    <main class="ml-64 min-h-screen overflow-y-auto p-8">
+    <main class="min-h-screen overflow-y-auto p-4 pt-16 md:pt-8 md:ml-64 md:p-8">
         <!-- Header -->
         <div class="flex items-center justify-between mb-6">
             <div>
@@ -114,7 +114,7 @@ if ($conn) {
 
         <!-- DataTable -->
         <div class="bg-white rounded-xl shadow-sm border border-slate-100">
-            <div class="p-6">
+            <div class="p-6 overflow-x-auto">
                 <table id="summaryTable" class="min-w-full text-sm">
                     <thead>
                         <tr class="border-b border-slate-200">

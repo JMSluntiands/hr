@@ -127,8 +127,11 @@ include 'include/employee_data.php';
         </div>
     </aside>
 
+    <!-- Mobile sidebar backdrop -->
+    <div id="employee-sidebar-backdrop" class="fixed inset-0 z-20 bg-black/40 hidden md:hidden"></div>
+
     <!-- Main Content -->
-    <main class="ml-64 min-h-screen p-8">
+    <main class="min-h-screen p-4 pt-16 md:pt-8 md:ml-64 md:p-8">
         <div id="main-inner">
             <!-- Header -->
             <div class="mb-8">

@@ -61,7 +61,7 @@ if ($conn) {
 <body class="font-inter bg-[#f1f5f9] min-h-screen">
     <?php include __DIR__ . '/include/sidebar-inventory.php'; ?>
 
-    <main class="ml-64 min-h-screen overflow-y-auto p-8">
+    <main class="min-h-screen overflow-y-auto p-4 pt-16 md:pt-8 md:ml-64 md:p-8">
         <div class="mb-6">
             <h1 class="text-2xl font-semibold text-slate-800">Inventory Activity Log</h1>
             <p class="text-sm text-slate-500 mt-1">Track actions related to inventory module.</p>
@@ -125,5 +125,7 @@ if ($conn) {
             });
         });
     </script>
+
+    <script src="../admin/include/sidebar-dropdown.js"></script>
 </body>
 </html>

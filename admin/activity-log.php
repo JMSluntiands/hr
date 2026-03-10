@@ -41,7 +41,7 @@ if ($conn) {
 <body class="font-inter bg-[#f1f5f9] min-h-screen">
     <?php include __DIR__ . '/include/sidebar-admin.php'; ?>
 
-    <main class="ml-64 min-h-screen overflow-y-auto p-8">
+    <main class="min-h-screen overflow-y-auto p-4 pt-16 md:pt-8 md:ml-64 md:p-8">
         <div class="flex items-center justify-between mb-6">
             <div>
                 <h1 class="text-2xl font-semibold text-slate-800">Activity Log</h1>
@@ -50,7 +50,7 @@ if ($conn) {
         </div>
 
         <div class="bg-white rounded-xl shadow-sm border border-slate-100">
-            <div class="p-6">
+            <div class="p-6 overflow-x-auto">
                 <table id="activityTable" class="min-w-full text-sm">
                     <thead>
                         <tr class="border-b border-slate-200">

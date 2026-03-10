@@ -158,8 +158,36 @@ if ($conn && $employeeDbId) {
     </script>
 </head>
 <body class="font-inter bg-[#f1f5f9] min-h-screen">
+    <!-- Mobile Top Bar -->
+    <header class="md:hidden fixed inset-x-0 top-0 z-30 bg-[#FA9800] text-white flex items-center justify-between px-4 py-3 shadow">
+        <div class="flex items-center gap-2">
+            <div class="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center overflow-hidden">
+                <?php if (!empty($employeePhoto) && file_exists(__DIR__ . '/../uploads/' . $employeePhoto)): ?>
+                    <img src="../uploads/<?php echo htmlspecialchars($employeePhoto); ?>" alt="" class="w-full h-full object-cover">
+                <?php else: ?>
+                    <span class="text-lg font-semibold">
+                        <?php echo strtoupper(substr($employeeName, 0, 1)); ?>
+                    </span>
+                <?php endif; ?>
+            </div>
+            <div class="flex flex-col leading-tight min-w-0">
+                <span class="text-sm font-medium truncate">
+                    <?php echo htmlspecialchars($employeeName); ?>
+                </span>
+                <span class="text-[11px] text-white/80">
+                    Employee
+                </span>
+            </div>
+        </div>
+        <button type="button" class="p-2 rounded-md bg-white/10 hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/60" data-employee-sidebar-toggle>
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+        </button>
+    </header>
+
     <!-- Sidebar (fixed) -->
-    <aside class="fixed inset-y-0 left-0 w-64 bg-[#FA9800] text-white flex flex-col">
+    <aside id="employee-sidebar" class="fixed inset-y-0 left-0 w-64 bg-[#FA9800] text-white flex flex-col transform -translate-x-full transition-transform duration-200 md:translate-x-0">
         <div class="p-6 flex items-center gap-4 border-b border-white/20">
             <div class="w-14 h-14 rounded-full overflow-hidden bg-white/20 flex items-center justify-center flex-shrink-0">
                 <?php if (!empty($employeePhoto) && file_exists(__DIR__ . '/../uploads/' . $employeePhoto)): ?>
@@ -251,8 +279,11 @@ if ($conn && $employeeDbId) {
         </div>
     </aside>
 
+    <!-- Mobile sidebar backdrop -->
+    <div id="employee-sidebar-backdrop" class="fixed inset-0 z-20 bg-black/40 hidden md:hidden"></div>
+
     <!-- Main Content -->
-    <main class="ml-64 min-h-screen p-8 space-y-6 overflow-y-auto">
+    <main class="min-h-screen p-4 pt-16 md:pt-8 md:ml-64 md:p-8 space-y-6 overflow-y-auto">
         <div id="main-inner">
         <!-- Header -->
         <div class="flex items-center justify-between mb-4">

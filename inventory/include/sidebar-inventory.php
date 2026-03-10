@@ -29,7 +29,31 @@ if (isset($conn) && $conn instanceof mysqli) {
 }
 $activeClass = 'bg-white/20';
 ?>
-<aside class="fixed inset-y-0 left-0 z-40 w-64 bg-[#FA9800] text-white flex flex-col">
+<!-- Mobile Top Bar for Inventory -->
+<header class="md:hidden fixed inset-x-0 top-0 z-30 bg-[#FA9800] text-white flex items-center justify-between px-4 py-3 shadow">
+    <div class="flex items-center gap-2">
+        <div class="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center">
+            <span class="text-lg font-semibold">
+                <?php echo strtoupper(substr($adminName, 0, 1)); ?>
+            </span>
+        </div>
+        <div class="flex flex-col leading-tight">
+            <span class="text-sm font-medium">
+                <?php echo htmlspecialchars($adminName); ?>
+            </span>
+            <span class="text-[11px] text-white/80">
+                Inventory Admin
+            </span>
+        </div>
+    </div>
+    <button type="button" class="p-2 rounded-md bg-white/10 hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/60" data-inventory-sidebar-toggle>
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+    </button>
+</header>
+
+<aside id="inventory-sidebar" class="fixed inset-y-0 left-0 z-40 w-64 bg-[#FA9800] text-white flex flex-col transform -translate-x-full transition-transform duration-200 md:translate-x-0">
     <div class="p-6 flex items-center gap-4 border-b border-white/20">
         <div class="w-14 h-14 rounded-full overflow-hidden bg-white/20 flex items-center justify-center">
             <span class="text-2xl font-semibold text-white">

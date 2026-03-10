@@ -441,7 +441,7 @@ if ($editItemId > 0) {
 <body class="font-inter bg-[#f1f5f9] min-h-screen">
     <?php include __DIR__ . '/include/sidebar-inventory.php'; ?>
 
-    <main class="ml-64 min-h-screen overflow-y-auto p-8">
+    <main class="min-h-screen overflow-y-auto p-4 pt-16 md:pt-8 md:ml-64 md:p-8">
         <h1 class="text-2xl font-semibold text-slate-800 mb-6">Item Management</h1>
         <section class="mb-6">
             <div class="inline-flex rounded-lg bg-white border border-slate-200 p-1 shadow-sm">
@@ -1127,5 +1127,7 @@ if ($editItemId > 0) {
 
         });
     </script>
+
+    <script src="../admin/include/sidebar-dropdown.js"></script>
 </body>
 </html>

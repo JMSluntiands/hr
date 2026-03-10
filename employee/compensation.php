@@ -270,7 +270,7 @@ if ($employeeDbId && $conn) {
     </aside>
 
     <!-- Main Content -->
-    <main class="ml-64 min-h-screen p-8 overflow-y-auto">
+    <main class="min-h-screen p-8 overflow-y-auto md:ml-64 md:pt-8 pt-16">
         <div id="main-inner">
             <!-- Top Bar -->
             <div class="flex items-center justify-between mb-8">

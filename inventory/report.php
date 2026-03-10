@@ -213,7 +213,7 @@ $message = $_GET['message'] ?? '';
 <body class="font-inter bg-[#f1f5f9] min-h-screen">
     <?php include __DIR__ . '/include/sidebar-inventory.php'; ?>
 
-    <main class="ml-64 min-h-screen overflow-y-auto p-8">
+    <main class="min-h-screen overflow-y-auto p-4 pt-16 md:pt-8 md:ml-64 md:p-8">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
             <div>
                 <h1 class="text-2xl font-semibold text-slate-800">Inventory Report</h1>
@@ -267,5 +267,7 @@ $message = $_GET['message'] ?? '';
             });
         });
     </script>
+
+    <script src="../admin/include/sidebar-dropdown.js"></script>
 </body>
 </html>
