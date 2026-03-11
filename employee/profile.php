@@ -133,8 +133,36 @@ foreach ($documents as $d) {
     </script>
 </head>
 <body class="font-inter bg-[#f1f5f9] min-h-screen">
-    <!-- Sidebar (fixed) -->
-    <aside class="fixed inset-y-0 left-0 w-64 bg-[#FA9800] text-white flex flex-col">
+    <!-- Mobile Top Bar -->
+    <header class="md:hidden fixed inset-x-0 top-0 z-30 bg-[#FA9800] text-white flex items-center justify-between px-4 py-3 shadow">
+        <div class="flex items-center gap-2">
+            <div class="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center overflow-hidden">
+                <?php if (!empty($employeePhoto) && file_exists(__DIR__ . '/../uploads/' . $employeePhoto)): ?>
+                    <img src="../uploads/<?php echo htmlspecialchars($employeePhoto); ?>" alt="" class="w-full h-full object-cover">
+                <?php else: ?>
+                    <span class="text-lg font-semibold">
+                        <?php echo strtoupper(substr($employeeName, 0, 1)); ?>
+                    </span>
+                <?php endif; ?>
+            </div>
+            <div class="flex flex-col leading-tight min-w-0">
+                <span class="text-sm font-medium truncate">
+                    <?php echo htmlspecialchars($employeeName); ?>
+                </span>
+                <span class="text-[11px] text-white/80">
+                    Employee
+                </span>
+            </div>
+        </div>
+        <button type="button" class="p-2 rounded-md bg-white/10 hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/60" data-employee-sidebar-toggle>
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+        </button>
+    </header>
+
+    <!-- Sidebar (fixed / mobile slide-over) -->
+    <aside id="employee-sidebar" class="fixed inset-y-0 left-0 z-40 w-64 bg-[#FA9800] text-white flex flex-col transform -translate-x-full transition-transform duration-200 md:translate-x-0">
         <div class="p-6 flex items-center gap-4 border-b border-white/20">
             <div class="w-14 h-14 rounded-full overflow-hidden bg-white/20 flex items-center justify-center flex-shrink-0">
                 <?php if (!empty($employeePhoto) && file_exists(__DIR__ . '/../uploads/' . $employeePhoto)): ?>
@@ -223,11 +251,17 @@ foreach ($documents as $d) {
         </nav>
         <div class="p-4 border-t border-white/20">
             <a href="../logout.php" class="block text-xs font-medium text-white/80 hover:text-white">Logout</a>
+            <a href="module-select.php" class="block text-xs font-medium text-white/80 hover:text-white mt-2">
+                Back to Main Menu
+            </a>
         </div>
     </aside>
 
+    <!-- Mobile sidebar backdrop -->
+    <div id="employee-sidebar-backdrop" class="fixed inset-0 z-20 bg-black/40 hidden md:hidden"></div>
+
     <!-- Main Content (only this area scrolls) -->
-    <main class="min-h-screen p-8 space-y-6 overflow-y-auto md:ml-64 md:pt-8 pt-16">
+    <main class="min-h-screen space-y-6 overflow-y-auto md:ml-64 pt-24 md:pt-8 px-4 md:px-8 pb-8">
         <div id="main-inner">
         <!-- Header (view only - same as admin) -->
         <div class="flex items-center justify-between mb-6">
@@ -242,9 +276,10 @@ foreach ($documents as $d) {
         <?php else: ?>
 
         <!-- Employee Details (same layout as admin staff-view) -->
-        <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-6 mb-6">
-            <div class="flex items-start gap-6 mb-6">
-                <div class="flex flex-col items-center gap-3 flex-shrink-0">
+        <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-6 mb-6 mt-4 md:mt-6">
+            <div class="flex flex-col md:flex-row md:items-start gap-6 mb-6">
+                <div class="flex flex-col md:flex-row items-center gap-6 flex-shrink-0">
+                    <div class="flex flex-col items-center gap-3">
                     <div id="profilePhotoPreview" class="w-24 h-24 rounded-full overflow-hidden bg-slate-200 flex items-center justify-center">
                         <?php
                         $photo = !empty($employee['profile_picture']) && file_exists(__DIR__ . '/../uploads/' . $employee['profile_picture']) ? $employee['profile_picture'] : null;
@@ -262,8 +297,8 @@ foreach ($documents as $d) {
                         <p class="text-xs text-slate-500">JPG or PNG, max 2MB</p>
                     </form>
                     <div id="profilePhotoMessage" class="hidden text-sm text-center max-w-[200px]"></div>
-                </div>
-                <div class="flex flex-col items-center gap-3 flex-shrink-0">
+                    </div>
+                    <div class="flex flex-col items-center gap-3">
                     <p class="text-sm font-medium text-slate-700">Signature</p>
                     <div id="signaturePreview" class="w-40 h-16 border border-slate-200 rounded-lg bg-white flex items-center justify-center overflow-hidden">
                         <?php
@@ -279,8 +314,9 @@ foreach ($documents as $d) {
                     <button type="button" id="signatureUploadBtn" class="px-3 py-1.5 bg-[#d97706] hover:bg-[#b45309] text-white text-sm font-medium rounded-lg transition-colors">Upload signature</button>
                     <p class="text-xs text-slate-500 text-center">JPG or PNG, max 1MB</p>
                     <div id="signatureMessage" class="hidden text-sm text-center max-w-[200px]"></div>
+                    </div>
                 </div>
-                <div class="flex-1">
+                <div class="flex-1 text-center md:text-left">
                     <h2 class="text-2xl font-semibold text-slate-800 mb-1"><?php echo htmlspecialchars($employee['full_name'] ?? ''); ?></h2>
                     <p class="text-sm text-slate-500 mb-2"><?php echo htmlspecialchars($employee['employee_id'] ?? ''); ?></p>
                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?php echo ($employee['status'] ?? 'Active') === 'Active' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'; ?>">
@@ -634,6 +670,7 @@ foreach ($documents as $d) {
     </main>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="include/sidebar-employee.js"></script>
     <script>
       $(function () {
         $('.js-side-link').on('click', function (e) {

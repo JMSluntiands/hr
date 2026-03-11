@@ -254,7 +254,7 @@ if ($employeeDbId && $conn) {
     </header>
 
     <!-- Sidebar -->
-    <aside id="employee-sidebar" class="fixed inset-y-0 left-0 w-64 bg-[#FA9800] text-white flex flex-col transform -translate-x-full transition-transform duration-200 md:translate-x-0">
+    <aside id="employee-sidebar" class="fixed inset-y-0 left-0 z-40 w-64 bg-[#FA9800] text-white flex flex-col transform -translate-x-full transition-transform duration-200 md:translate-x-0">
         <div class="p-6 flex items-center gap-4 border-b border-white/20">
             <div class="w-14 h-14 rounded-full overflow-hidden bg-white/20 flex items-center justify-center flex-shrink-0">
                 <?php if (!empty($employeePhoto) && file_exists(__DIR__ . '/../uploads/' . $employeePhoto)): ?>
@@ -343,6 +343,9 @@ if ($employeeDbId && $conn) {
         </nav>
         <div class="p-4 border-t border-white/20">
             <a href="../logout.php" class="block text-xs font-medium text-white/80 hover:text-white">Logout</a>
+            <a href="module-select.php" class="block text-xs font-medium text-white/80 hover:text-white mt-2">
+                Back to Main Menu
+            </a>
         </div>
     </aside>
 
@@ -567,64 +570,8 @@ if ($employeeDbId && $conn) {
     </div>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="include/sidebar-employee.js"></script>
     <script>
-      // Employee mobile sidebar toggle
-      (function() {
-        function initEmployeeSidebar() {
-          const sidebar = document.getElementById('employee-sidebar');
-          if (!sidebar) return;
-
-          const backdrop = document.getElementById('employee-sidebar-backdrop');
-          const toggleButtons = document.querySelectorAll('[data-employee-sidebar-toggle]');
-
-          function openSidebar() {
-            sidebar.classList.remove('-translate-x-full');
-            sidebar.classList.add('translate-x-0');
-            if (backdrop) backdrop.classList.remove('hidden');
-          }
-
-          function closeSidebar() {
-            sidebar.classList.add('-translate-x-full');
-            sidebar.classList.remove('translate-x-0');
-            if (backdrop) backdrop.classList.add('hidden');
-          }
-
-          toggleButtons.forEach(function(btn) {
-            btn.addEventListener('click', function(e) {
-              e.preventDefault();
-              const isHidden = sidebar.classList.contains('-translate-x-full');
-              if (isHidden) {
-                openSidebar();
-              } else {
-                closeSidebar();
-              }
-            });
-          });
-
-          if (backdrop) {
-            backdrop.addEventListener('click', function() {
-              closeSidebar();
-            });
-          }
-
-          window.addEventListener('resize', function() {
-            if (window.innerWidth >= 768) {
-              sidebar.classList.remove('-translate-x-full');
-              if (backdrop) backdrop.classList.add('hidden');
-            } else {
-              sidebar.classList.add('-translate-x-full');
-              if (backdrop) backdrop.classList.add('hidden');
-            }
-          });
-        }
-
-        if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', initEmployeeSidebar);
-        } else {
-          initEmployeeSidebar();
-        }
-      })();
-
       $(function () {
         $('.js-side-link').on('click', function (e) {
           const url = $(this).data('url');

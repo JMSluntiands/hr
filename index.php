@@ -7,28 +7,44 @@
       header('Expires: 0');
       session_start();
 
-        // Kung naka-login na
-        if (isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
-          // Simplified roles: admin at employee lang
-          $role = strtolower((string)$_SESSION['role']);
+      // Kung naka-login na
+      if (isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
+        // Simplified roles: admin at employee lang
+        $role = strtolower((string)$_SESSION['role']);
 
-          if ($role === 'admin') {
-            $selectedModule = $_SESSION['admin_module'] ?? '';
+        if ($role === 'admin') {
+          $selectedModule = $_SESSION['admin_module'] ?? '';
 
-            if ($selectedModule === 'inventory') {
-              header('Location: inventory/index.php');
-            } elseif ($selectedModule === 'hr') {
-              header('Location: admin/index.php');
-            } else {
-              header('Location: admin/module-select.php');
-            }
-            exit;
+          if ($selectedModule === 'inventory') {
+            header('Location: inventory/index.php');
+          } elseif ($selectedModule === 'workforce') {
+            header('Location: workforce/index.php');
+          } elseif ($selectedModule === 'hr') {
+            header('Location: admin/index.php');
+          } else {
+            header('Location: admin/module-select.php');
           }
-
-          header('Location: employee/index.php');
           exit;
         }
-      ?>
+
+        if ($role === 'employee') {
+          $selectedEmployeeModule = $_SESSION['employee_module'] ?? '';
+
+          if ($selectedEmployeeModule === 'timekeeping') {
+            header('Location: employee/timekeeping/index.php');
+          } elseif ($selectedEmployeeModule === 'profile') {
+            header('Location: employee/profile.php');
+          } else {
+            header('Location: employee/module-select.php');
+          }
+          exit;
+        }
+
+        // Fallback kung ibang role man, diretso sa employee dashboard
+        header('Location: employee/index.php');
+        exit;
+      }
+    ?>
 
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>

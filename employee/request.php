@@ -62,7 +62,7 @@ include 'include/employee_data.php';
     </header>
 
     <!-- Sidebar (fixed) -->
-    <aside id="employee-sidebar" class="fixed inset-y-0 left-0 w-64 bg-[#FA9800] text-white flex flex-col transform -translate-x-full transition-transform duration-200 md:translate-x-0">
+    <aside id="employee-sidebar" class="fixed inset-y-0 left-0 z-40 w-64 bg-[#FA9800] text-white flex flex-col transform -translate-x-full transition-transform duration-200 md:translate-x-0">
         <div class="p-6 flex items-center gap-4 border-b border-white/20">
             <div class="w-14 h-14 rounded-full overflow-hidden bg-white/20 flex items-center justify-center flex-shrink-0">
                 <?php if (!empty($employeePhoto) && file_exists(__DIR__ . '/../uploads/' . $employeePhoto)): ?>
@@ -223,6 +223,7 @@ include 'include/employee_data.php';
     </main>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="include/sidebar-employee.js"></script>
     <script>
       $(function () {
         // Sidebar partial-load behavior
