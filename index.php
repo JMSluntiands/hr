@@ -209,9 +209,15 @@
     (function() {
       var q = new URLSearchParams(window.location.search);
       var err = q.get('error');
+      var timeout = q.get('timeout');
       var hasCacheBuster = q.has('cb');
-      if (!err && !hasCacheBuster) return;
+      if (!err && !timeout && !hasCacheBuster) return;
 
+      if (timeout) {
+        Toastify({ text: 'You have been logged out due to inactivity.', duration: 5000, gravity: 'top', position: 'right', backgroundColor: '#f59e0b' }).showToast();
+        history.replaceState({}, '', window.location.pathname);
+        return;
+      }
       if (!err && hasCacheBuster) {
         history.replaceState({}, '', window.location.pathname);
         return;

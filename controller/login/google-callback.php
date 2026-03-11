@@ -129,6 +129,7 @@ if ($userEmail !== '') {
 }
 $_SESSION['name'] = $displayName;
 $_SESSION['is_default_password'] = false;
+$_SESSION['last_activity'] = time();
 unset($_SESSION['admin_module']);
 session_regenerate_id(true);
 $_SESSION['login_cache_buster'] = bin2hex(random_bytes(8));

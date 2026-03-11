@@ -51,7 +51,7 @@
       }
     });
     let logoutTimer;
-    const logoutAfter = 30 * 60 * 1000; // 30 mins = 1800s
+    const logoutAfter = 5 * 60 * 1000; // 5 mins idle = auto logout
 
     function startTimer() {
       logoutTimer = setTimeout(autoLogout, logoutAfter);

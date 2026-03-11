@@ -5,6 +5,7 @@ if (!isset($_SESSION['user_id'])) {
     header('Location: ../index.php');
     exit;
 }
+require_once __DIR__ . '/../controller/session_timeout.php';
 
 include '../database/db.php';
 include 'include/employee_data.php';
@@ -13,121 +14,10 @@ $position   = $position ?: ($_SESSION['position'] ?? '');
 $department = $department ?: ($_SESSION['department'] ?? '');
 $hireDate   = $dateHired ?: ($_SESSION['hire_date'] ?? '');
 
-// Get Time Off Summary from database
-$remainingLeave = 0;
-$usedLeave = 0;
-$pendingCount = 0;
-$slTotal = 0;
-$vlTotal = 0;
-$blTotal = 0;
-$elTotal = 0;
-$currentYear = (int)date('Y');
+include 'include/employee_leave_data.php';
 
+// Dashboard also counts pending document requests
 if ($employeeDbId && $conn) {
-    // Get leave allocations for current year (for totals only)
-    $checkAlloc = $conn->query("SHOW TABLES LIKE 'leave_allocations'");
-    if ($checkAlloc && $checkAlloc->num_rows > 0) {
-        // Get SL and VL totals separately
-        $typeAllocStmt = $conn->prepare("SELECT leave_type, total_days FROM leave_allocations WHERE employee_id = ? AND year = ?");
-        if ($typeAllocStmt) {
-            $typeAllocStmt->bind_param('ii', $employeeDbId, $currentYear);
-            $typeAllocStmt->execute();
-            $typeAllocResult = $typeAllocStmt->get_result();
-            while ($typeRow = $typeAllocResult->fetch_assoc()) {
-                if ($typeRow['leave_type'] === 'Sick Leave') {
-                    $slTotal = (int)($typeRow['total_days'] ?? 0);
-                } elseif ($typeRow['leave_type'] === 'Vacation Leave') {
-                    $vlTotal = (int)($typeRow['total_days'] ?? 0);
-                } elseif ($typeRow['leave_type'] === 'Bereavement Leave') {
-                    $blTotal = (int)($typeRow['total_days'] ?? 0);
-                } elseif ($typeRow['leave_type'] === 'Emergency Leave') {
-                    $elTotal = (int)($typeRow['total_days'] ?? 0);
-                }
-            }
-            $typeAllocStmt->close();
-        }
-        
-        // If no data found, try with string year format
-        if ($slTotal == 0 && $vlTotal == 0) {
-            $yearStr = (string)$currentYear;
-            $typeAllocStmt2 = $conn->prepare("SELECT leave_type, total_days FROM leave_allocations WHERE employee_id = ? AND year = ?");
-            if ($typeAllocStmt2) {
-                $typeAllocStmt2->bind_param('is', $employeeDbId, $yearStr);
-                $typeAllocStmt2->execute();
-                $typeAllocResult2 = $typeAllocStmt2->get_result();
-                while ($typeRow2 = $typeAllocResult2->fetch_assoc()) {
-                    if ($typeRow2['leave_type'] === 'Sick Leave') {
-                        $slTotal = (int)($typeRow2['total_days'] ?? 0);
-                    } elseif ($typeRow2['leave_type'] === 'Vacation Leave') {
-                        $vlTotal = (int)($typeRow2['total_days'] ?? 0);
-                    } elseif ($typeRow2['leave_type'] === 'Bereavement Leave') {
-                        $blTotal = (int)($typeRow2['total_days'] ?? 0);
-                    } elseif ($typeRow2['leave_type'] === 'Emergency Leave') {
-                        $elTotal = (int)($typeRow2['total_days'] ?? 0);
-                    }
-                }
-                $typeAllocStmt2->close();
-            }
-        }
-    }
-    
-    // Calculate used days from approved leave requests (current year only)
-    $slUsed = 0;
-    $vlUsed = 0;
-    $checkLeaveReq = $conn->query("SHOW TABLES LIKE 'leave_requests'");
-    if ($checkLeaveReq && $checkLeaveReq->num_rows > 0) {
-        $usedQuery = "SELECT leave_type,
-                     SUM(CASE 
-                         WHEN start_date = end_date THEN 1
-                         ELSE COALESCE(days, DATEDIFF(end_date, start_date) + 1)
-                     END) as used_days
-                     FROM leave_requests 
-                     WHERE employee_id = ? 
-                     AND status = 'Approved'
-                     AND YEAR(start_date) = ?
-                     GROUP BY leave_type";
-        $usedStmt = $conn->prepare($usedQuery);
-        if ($usedStmt) {
-            $usedStmt->bind_param('ii', $employeeDbId, $currentYear);
-            $usedStmt->execute();
-            $usedResult = $usedStmt->get_result();
-            while ($usedRow = $usedResult->fetch_assoc()) {
-                $leaveType = $usedRow['leave_type'];
-                $days = (int)($usedRow['used_days'] ?? 0);
-                if ($leaveType === 'Sick Leave') {
-                    $slUsed += $days;
-                } elseif ($leaveType === 'Vacation Leave') {
-                    $vlUsed += $days;
-                } elseif ($leaveType === 'Bereavement Leave' || $leaveType === 'Emergency Leave') {
-                    // BL and EL use VL credits
-                    $vlUsed += $days;
-                }
-            }
-            $usedStmt->close();
-        }
-    }
-    
-    // Calculate remaining and total used
-    $slRemaining = max(0, $slTotal - $slUsed);
-    $vlRemaining = max(0, $vlTotal - $vlUsed);
-    $remainingLeave = $slRemaining + $vlRemaining;
-    $usedLeave = $slUsed + $vlUsed;
-    
-    // Get pending leave requests count (reuse the table check from above)
-    if ($checkLeaveReq && $checkLeaveReq->num_rows > 0) {
-        $pendingStmt = $conn->prepare("SELECT COUNT(*) as count FROM leave_requests WHERE employee_id = ? AND status = 'Pending'");
-        if ($pendingStmt) {
-            $pendingStmt->bind_param('i', $employeeDbId);
-            $pendingStmt->execute();
-            $pendingResult = $pendingStmt->get_result();
-            if ($pendingRow = $pendingResult->fetch_assoc()) {
-                $pendingCount = (int)($pendingRow['count'] ?? 0);
-            }
-            $pendingStmt->close();
-        }
-    }
-    
-    // Get pending document requests count
     $checkDocReq = $conn->query("SHOW TABLES LIKE 'document_requests'");
     if ($checkDocReq && $checkDocReq->num_rows > 0) {
         $docPendingStmt = $conn->prepare("SELECT COUNT(*) as count FROM document_requests WHERE employee_id = ? AND status = 'Pending'");
@@ -287,14 +177,14 @@ if ($employeeDbId && $conn) {
                 </svg>
                 <span>My Profile</span>
             </a>
-            <!-- My Time Off -->
+            <!-- My Leave Credits -->
             <a href="timeoff.php"
                data-url="timeoff.php"
                class="js-side-link flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 text-sm font-medium text-white">
                 <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
-                <span>My Time Off</span>
+                <span>My Leave Credits</span>
             </a>
             <!-- My Request -->
             <a href="request.php"

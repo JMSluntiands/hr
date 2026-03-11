@@ -8,6 +8,7 @@ if (!isset($_SESSION['user_id'])) {
     header('Location: ../index.php');
     exit;
 }
+require_once __DIR__ . '/../controller/session_timeout.php';
 
 $role = strtolower((string)($_SESSION['role'] ?? ''));
 

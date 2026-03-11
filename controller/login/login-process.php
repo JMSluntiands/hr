@@ -50,6 +50,7 @@ if ($user) {
     session_regenerate_id(true);
     $_SESSION['user_id'] = $user['id'];
     $_SESSION['role'] = $user['role'] ?? 'employee';
+    $_SESSION['last_activity'] = time();
     $displayName = 'Unknown';
     if ($userEmail !== '') {
         $nameStmt = $conn->prepare('SELECT full_name FROM employees WHERE email = ? LIMIT 1');

@@ -5,6 +5,7 @@ if (!isset($_SESSION['user_id'])) {
     header('Location: ../index.php');
     exit;
 }
+require_once __DIR__ . '/../controller/session_timeout.php';
 
 include '../database/db.php';
 include 'include/employee_data.php';
@@ -103,6 +104,7 @@ if ($conn && $employeeDbId) {
     <title>My Inventory</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
     <script>
         tailwind.config = {
             theme: {
@@ -177,7 +179,7 @@ if ($conn && $employeeDbId) {
                 <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
-                <span>My Time Off</span>
+                <span>My Leave Credits</span>
             </a>
             <a href="request.php" data-url="request.php" class="js-side-link flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 text-sm font-medium text-white">
                 <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -256,7 +258,7 @@ if ($conn && $employeeDbId) {
                     </div>
                 <?php else: ?>
                     <div class="p-6 overflow-x-auto">
-                        <table class="min-w-full text-sm">
+                        <table id="inventoryTable" class="min-w-full text-sm display w-full">
                             <thead class="bg-slate-50">
                                 <tr>
                                     <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Item ID</th>
@@ -265,7 +267,7 @@ if ($conn && $employeeDbId) {
                                     <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Type</th>
                                     <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Condition</th>
                                     <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Date Received</th>
-                                    <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Appeal / Remarks</th>
+                                    <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide no-sort">Appeal / Remarks</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100">
@@ -351,9 +353,26 @@ if ($conn && $employeeDbId) {
     </div>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
     <script src="include/sidebar-employee.js"></script>
+    <style>
+      .dataTables_wrapper .dataTables_filter input { border: 1px solid #cbd5e1; border-radius: 0.5rem; padding: 0.25rem 0.5rem; margin-left: 0.5rem; }
+      .dataTables_wrapper .dataTables_length select { border: 1px solid #cbd5e1; border-radius: 0.5rem; padding: 0.25rem 0.5rem; }
+      .dataTables_wrapper .dataTables_info, .dataTables_wrapper .dataTables_paginate { padding-top: 0.75rem; font-size: 0.875rem; color: #64748b; }
+      .dataTables_wrapper .dataTables_paginate .paginate_button { padding: 0.25rem 0.75rem; margin: 0 1px; border-radius: 0.375rem; }
+      .dataTables_wrapper .dataTables_paginate .paginate_button.current { background: #FA9800; color: #fff !important; border-color: #FA9800; }
+    </style>
     <script>
       $(function () {
+        if ($('#inventoryTable').length && $('#inventoryTable tbody tr').length > 0 && $('#inventoryTable tbody tr').first().find('td').length > 1) {
+          $('#inventoryTable').DataTable({
+            order: [[5, 'desc']],
+            pageLength: 10,
+            lengthMenu: [[5, 10, 25, 50], [5, 10, 25, 50]],
+            columnDefs: [{ orderable: false, targets: 6 }],
+            language: { search: 'Search:', lengthMenu: 'Show _MENU_ entries', info: 'Showing _START_ to _END_ of _TOTAL_ items', infoEmpty: 'No items', infoFiltered: '(filtered from _MAX_)', paginate: { first: 'First', last: 'Last', next: 'Next', previous: 'Previous' } }
+          });
+        }
         const appealModal = document.getElementById('appealModal');
         const appealAllocationId = document.getElementById('appealAllocationId');
         const appealItemLabel = document.getElementById('appealItemLabel');
