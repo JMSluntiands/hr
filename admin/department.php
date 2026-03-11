@@ -103,43 +103,35 @@ unset($_SESSION['department_msg']);
                 </tr>
                 </thead>
                 <tbody>
-                <?php if (count($departments) === 0): ?>
-                    <tr>
-                        <td colspan="3" class="px-4 py-6 text-center text-slate-500 text-sm">
-                            No departments found. Add your first department above.
+                <?php foreach ($departments as $dept): ?>
+                    <tr class="border-b border-slate-100 hover:bg-slate-50">
+                        <td class="px-4 py-3 text-slate-700">
+                            <span class="font-medium"><?php echo htmlspecialchars($dept['name']); ?></span>
+                        </td>
+                        <td class="px-4 py-3 text-slate-500">
+                            <?php echo $dept['created_at'] ? date('M d, Y', strtotime($dept['created_at'])) : '—'; ?>
+                        </td>
+                        <td class="px-4 py-3">
+                            <div class="flex items-center justify-end gap-2">
+                                <button type="button"
+                                        class="edit-dept-btn p-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors text-xs"
+                                        data-id="<?php echo (int)$dept['id']; ?>"
+                                        data-name="<?php echo htmlspecialchars($dept['name']); ?>">
+                                    Edit
+                                </button>
+                                <form action="department-action.php" method="POST"
+                                      onsubmit="return confirm('Delete this department? This cannot be undone.');">
+                                    <input type="hidden" name="action" value="delete">
+                                    <input type="hidden" name="id" value="<?php echo (int)$dept['id']; ?>">
+                                    <button type="submit"
+                                            class="p-2 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors text-xs">
+                                        Delete
+                                    </button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
-                <?php else: ?>
-                    <?php foreach ($departments as $dept): ?>
-                        <tr class="border-b border-slate-100 hover:bg-slate-50">
-                            <td class="px-4 py-3 text-slate-700">
-                                <span class="font-medium"><?php echo htmlspecialchars($dept['name']); ?></span>
-                            </td>
-                            <td class="px-4 py-3 text-slate-500">
-                                <?php echo $dept['created_at'] ? date('M d, Y', strtotime($dept['created_at'])) : '—'; ?>
-                            </td>
-                            <td class="px-4 py-3">
-                                <div class="flex items-center justify-end gap-2">
-                                    <button type="button"
-                                            class="edit-dept-btn p-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors text-xs"
-                                            data-id="<?php echo (int)$dept['id']; ?>"
-                                            data-name="<?php echo htmlspecialchars($dept['name']); ?>">
-                                        Edit
-                                    </button>
-                                    <form action="department-action.php" method="POST"
-                                          onsubmit="return confirm('Delete this department? This cannot be undone.');">
-                                        <input type="hidden" name="action" value="delete">
-                                        <input type="hidden" name="id" value="<?php echo (int)$dept['id']; ?>">
-                                        <button type="submit"
-                                                class="p-2 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors text-xs">
-                                            Delete
-                                        </button>
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                <?php endif; ?>
+                <?php endforeach; ?>
                 </tbody>
             </table>
         </div>
