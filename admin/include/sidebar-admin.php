@@ -19,6 +19,8 @@ $isActivityLog = ($currentPage === 'activity-log');
 $isProgressiveDiscipline = ($currentPage === 'progressive-discipline');
 $isCompensation = ($currentPage === 'compensation');
 $isAccounts    = ($currentPage === 'accounts');
+$isDepartment  = ($currentPage === 'department');
+$isEmploymentType = ($currentPage === 'employment-type');
 $isIdCreation  = ($currentPage === 'id-creation');
 
 $activeClass = 'bg-white/20';
@@ -204,6 +206,23 @@ $requestTotalPending = $requestLeavesPending + $requestDocPending + $requestBank
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <span>Compensation</span>
+            </a>
+
+            <!-- Setting header -->
+            <div class="px-3 pt-4 pb-1 text-xs font-semibold uppercase tracking-wide text-white/70">
+                Setting
+            </div>
+            <a href="department" class="flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-white hover:bg-white/10 transition-colors<?php echo $isDepartment ? ' ' . $activeClass : ''; ?>">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-5-3.87M9 11a4 4 0 100-8 4 4 0 000 8zm0 0a7 7 0 00-7 7v1h7m4-8a4 4 0 110 8" />
+                </svg>
+                <span>Department</span>
+            </a>
+            <a href="employment-type" class="flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-white hover:bg-white/10 transition-colors<?php echo $isEmploymentType ? ' ' . $activeClass : ''; ?>">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A4 4 0 017 11h3.172a4 4 0 013.536 2.036l1.121 1.964A4 4 0 0018.828 17H19a2 2 0 110 4H7a4 4 0 01-1.879-7.596zM10 5a3 3 0 116 0 3 3 0 01-6 0z" />
+                </svg>
+                <span>Employment Type</span>
             </a>
             <a href="accounts" class="flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-white hover:bg-white/10 transition-colors<?php echo $isAccounts ? ' ' . $activeClass : ''; ?>">
                 <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>

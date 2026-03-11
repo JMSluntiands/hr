@@ -14,9 +14,9 @@ if ($docId <= 0) {
     exit;
 }
 
-// Get document and verify ownership
+// Get current user (for role / ownership check)
 $userId = (int)$_SESSION['user_id'];
-$userStmt = $conn->prepare("SELECT email FROM user_login WHERE id = ?");
+$userStmt = $conn->prepare("SELECT email, role FROM user_login WHERE id = ?");
 $userStmt->bind_param('i', $userId);
 $userStmt->execute();
 $userResult = $userStmt->get_result();
@@ -40,8 +40,11 @@ if (!$doc || empty($doc['file_path'])) {
     exit;
 }
 
-// Verify ownership
-if ($user['email'] !== $doc['email']) {
+// Verify ownership (employees) or allow admins to view any document
+$userEmail = $user['email'] ?? '';
+$userRole  = strtolower($user['role'] ?? '');
+
+if ($userRole !== 'admin' && $userEmail !== ($doc['email'] ?? '')) {
     header('HTTP/1.1 403 Forbidden');
     exit;
 }

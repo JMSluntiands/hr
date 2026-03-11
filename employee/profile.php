@@ -43,6 +43,7 @@ $position     = $employeeData['position'] ?? $_SESSION['position'] ?? '';
 $department   = $employeeData['department'] ?? $_SESSION['department'] ?? '';
 $employeeId   = $employeeData['employee_id'] ?? $_SESSION['employee_id'] ?? '';
 $dateHired    = !empty($employeeData['date_hired']) ? date('M d, Y', strtotime($employeeData['date_hired'])) : ($employeeData['date_hired'] ?? '');
+$employmentTypeName = null;
 
 // Documents as list (same as admin staff-view)
 $documents = [];
@@ -75,6 +76,20 @@ if ($employeeDbId && $conn) {
             $compStmt->close();
         }
     }
+
+    // Resolve employment type name from master table
+    if (!empty($employeeData['employment_type_id'])) {
+        $typeStmt = $conn->prepare("SELECT name FROM employment_types WHERE id = ? LIMIT 1");
+        if ($typeStmt) {
+            $typeStmt->bind_param('i', $employeeData['employment_type_id']);
+            $typeStmt->execute();
+            $typeRes = $typeStmt->get_result();
+            if ($typeRow = $typeRes->fetch_assoc()) {
+                $employmentTypeName = $typeRow['name'] ?? null;
+            }
+            $typeStmt->close();
+        }
+    }
     $checkAdjTable = $conn->query("SHOW TABLES LIKE 'employee_salary_adjustments'");
     if ($checkAdjTable && $checkAdjTable->num_rows > 0) {
         $adjStmt = $conn->prepare("SELECT * FROM employee_salary_adjustments WHERE employee_id = ? ORDER BY date_approved DESC, created_at DESC LIMIT 1");
@@ -101,8 +116,18 @@ if ($employeeDbId && $conn) {
 
 $employee = $employeeData; // alias for same template as admin
 
-// Required document types for HRIS 201; latest upload per type for status
-$documentTypes = ['Birth Certificate (PSA)', 'Government IDs (Valid ID Set)', 'Employment Contract', 'Company ID Form'];
+// Required document types; latest upload per type for status
+$documentTypes = [
+    'SSS',
+    'Philhealth',
+    'Pag-Ibig',
+    'TIN',
+    'NBI Clearance',
+    'Police Clearance',
+    'Bank Account',
+    'Employee Agreement Contract',
+    'Contractual Agreement Contract',
+];
 $documentsByType = [];
 foreach ($documents as $d) {
     if (!isset($documentsByType[$d['document_type']])) {
@@ -364,7 +389,7 @@ foreach ($documents as $d) {
             <!-- Employment Information -->
             <div class="border-t border-slate-200 pt-6 mb-6">
                 <h3 class="text-lg font-semibold text-slate-800 mb-4">Employment Information</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
                         <p class="text-sm text-slate-500 mb-1">Position</p>
                         <p class="font-medium text-slate-800"><?php echo htmlspecialchars($employee['position'] ?? 'N/A'); ?></p>
@@ -372,6 +397,20 @@ foreach ($documents as $d) {
                     <div>
                         <p class="text-sm text-slate-500 mb-1">Department</p>
                         <p class="font-medium text-slate-800"><?php echo htmlspecialchars($employee['department'] ?? 'N/A'); ?></p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-slate-500 mb-1">Employment Type</p>
+                        <p class="font-medium text-slate-800">
+                            <?php
+                            if ($employmentTypeName) {
+                                echo htmlspecialchars($employmentTypeName);
+                            } elseif (!empty($compensation['employment_type'])) {
+                                echo htmlspecialchars($compensation['employment_type']);
+                            } else {
+                                echo 'N/A';
+                            }
+                            ?>
+                        </p>
                     </div>
                     <div>
                         <p class="text-sm text-slate-500 mb-1">Date Hired</p>
@@ -533,6 +572,7 @@ foreach ($documents as $d) {
                 <table class="min-w-full text-sm">
                     <thead class="bg-slate-50">
                         <tr>
+                            <th class="w-10 text-center px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">Done</th>
                             <th class="text-left px-4 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">Document Type</th>
                             <th class="text-left px-4 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">Status</th>
                             <th class="text-left px-4 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">Last Updated</th>
@@ -553,8 +593,30 @@ foreach ($documents as $d) {
                                 $statusText = $status === 'Approved' ? 'Verified' : ($status === 'Rejected' ? 'Rejected' : 'Pending validation');
                             }
                             $lastUpdated = $doc && isset($doc['updated_at']) && $doc['updated_at'] ? date('M d, Y', strtotime($doc['updated_at'])) : ($doc && !empty($doc['created_at']) ? date('M d, Y', strtotime($doc['created_at'])) : '—');
+                            $isApproved = $status === 'Approved';
                         ?>
                         <tr>
+                            <td class="px-3 py-2 text-center">
+                                <?php if ($isApproved): ?>
+                                    <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500 text-white">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                    </span>
+                                <?php elseif ($hasFile): ?>
+                                    <span class="inline-flex items-center justify-center w-5 h-5 rounded-full border border-amber-300 text-amber-400">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01" />
+                                        </svg>
+                                    </span>
+                                <?php else: ?>
+                                    <span class="inline-flex items-center justify-center w-5 h-5 rounded-full border border-slate-300 text-slate-300">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <circle cx="12" cy="12" r="5" stroke-width="2" />
+                                        </svg>
+                                    </span>
+                                <?php endif; ?>
+                            </td>
                             <td class="px-4 py-2 text-slate-700"><?php echo htmlspecialchars($docType); ?></td>
                             <td class="px-4 py-2">
                                 <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold <?php echo $statusClass; ?>"><?php echo htmlspecialchars($statusText); ?></span>

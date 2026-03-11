@@ -17,6 +17,36 @@ include 'include/activity-logger.php';
 $success = '';
 $error = '';
 
+// Load department options from departments master table
+$departmentOptions = [];
+// Load employment type options from employment_types master table
+$employmentTypeOptions = [];
+if ($conn) {
+    $checkDept = $conn->query("SHOW TABLES LIKE 'departments'");
+    if ($checkDept && $checkDept->num_rows > 0) {
+        $deptRes = $conn->query("SELECT name FROM departments ORDER BY name");
+        if ($deptRes && $deptRes->num_rows > 0) {
+            while ($d = $deptRes->fetch_assoc()) {
+                if (!empty($d['name'])) {
+                    $departmentOptions[] = $d['name'];
+                }
+            }
+        }
+    }
+
+    $checkTypes = $conn->query("SHOW TABLES LIKE 'employment_types'");
+    if ($checkTypes && $checkTypes->num_rows > 0) {
+        $typeRes = $conn->query("SELECT id, name FROM employment_types ORDER BY name");
+        if ($typeRes && $typeRes->num_rows > 0) {
+            while ($t = $typeRes->fetch_assoc()) {
+                if (!empty($t['name'])) {
+                    $employmentTypeOptions[] = $t;
+                }
+            }
+        }
+    }
+}
+
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Get form data
@@ -43,12 +73,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $philhealth = trim($_POST['philhealth'] ?? '');
     $pagibig = trim($_POST['pagibig'] ?? '');
     $tin = trim($_POST['tin'] ?? '');
+    $nbiClearance = trim($_POST['nbi_clearance'] ?? '');
+    $policeClearance = trim($_POST['police_clearance'] ?? '');
     $basicSalaryMonthlyInput = trim((string)($_POST['basic_salary_monthly'] ?? ''));
     $basicSalaryMonthly = 0.00;
     $allowanceInternetInput = trim((string)($_POST['allowance_internet'] ?? '0'));
     $allowanceMealInput = trim((string)($_POST['allowance_meal'] ?? '0'));
     $allowancePositionInput = trim((string)($_POST['allowance_position'] ?? '0'));
     $allowanceTransportationInput = trim((string)($_POST['allowance_transportation'] ?? '0'));
+    $employmentTypeId = isset($_POST['employment_type']) ? (int)$_POST['employment_type'] : 0;
     $allowanceInternet = 0.00;
     $allowanceMeal = 0.00;
     $allowancePosition = 0.00;
@@ -146,6 +179,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($department)) {
         $errors[] = 'Department is required';
     }
+
+    if (!$employmentTypeId) {
+        $errors[] = 'Employment type is required';
+    }
     
     if (empty($dateHired)) {
         $errors[] = 'Date Hired is required';
@@ -200,13 +237,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         try {
             // Insert into employees table
-            $stmt = $conn->prepare("INSERT INTO employees (employee_id, full_name, email, phone, position, department, date_hired, status, address, emergency_contact_name, emergency_contact_phone, birthdate, gender, sss, philhealth, pagibig, tin, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
+            $stmt = $conn->prepare("INSERT INTO employees (employee_id, full_name, email, phone, position, department, employment_type_id, date_hired, status, address, emergency_contact_name, emergency_contact_phone, birthdate, gender, sss, philhealth, pagibig, tin, nbi_clearance, police_clearance, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
             
             if (!$stmt) {
                 throw new Exception('Database prepare error: ' . $conn->error);
             }
             
-            $stmt->bind_param("sssssssssssssssss", $employeeId, $fullName, $email, $phone, $position, $department, $dateHired, $status, $address, $emergencyContactName, $emergencyContactPhone, $birthdate, $gender, $sss, $philhealth, $pagibig, $tin);
+            $stmt->bind_param("ssssssissssssssssss", $employeeId, $fullName, $email, $phone, $position, $department, $employmentTypeId, $dateHired, $status, $address, $emergencyContactName, $emergencyContactPhone, $birthdate, $gender, $sss, $philhealth, $pagibig, $tin, $nbiClearance, $policeClearance);
             
             if (!$stmt->execute()) {
                 throw new Exception('Error adding employee: ' . $stmt->error);
@@ -257,7 +294,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $basicSalaryDaily = round($basicSalaryMonthly / 22, 2);
             $basicSalaryAnnual = round($basicSalaryMonthly * 12, 2);
             $compEffectiveDate = !empty($dateHired) ? $dateHired : date('Y-m-d');
+
+            // Map master employment type name to compensation enum
             $employmentType = 'Regular';
+            if (!empty($employmentTypeOptions)) {
+                foreach ($employmentTypeOptions as $opt) {
+                    if ((int)$opt['id'] === $employmentTypeId) {
+                        $nameLower = strtolower($opt['name']);
+                        if (strpos($nameLower, 'contract') !== false) {
+                            $employmentType = 'Contractual';
+                        } elseif (strpos($nameLower, 'probation') !== false) {
+                            $employmentType = 'Probationary';
+                        } elseif (strpos($nameLower, 'part') !== false) {
+                            $employmentType = 'Part-time';
+                        } else {
+                            $employmentType = 'Regular';
+                        }
+                        break;
+                    }
+                }
+            }
 
             $compStmt = $conn->prepare("INSERT INTO employee_compensation (employee_id, basic_salary_monthly, basic_salary_daily, basic_salary_annually, employment_type, effective_date, allowance_internet, allowance_meal, allowance_position, allowance_transportation) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             if (!$compStmt) {
@@ -366,7 +422,7 @@ if ($conn) {
                 <!-- Personal Information Section -->
                 <div class="border-b border-slate-200 pb-4 mb-6">
                     <h2 class="text-lg font-semibold text-slate-800 mb-4">Personal Information</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div class="md:col-span-2">
                             <label class="block text-sm font-medium text-slate-700 mb-2">Employee ID</label>
                             <input type="text" value="<?php echo htmlspecialchars($nextEmployeeId); ?>" readonly
@@ -456,11 +512,29 @@ if ($conn) {
                             <label class="block text-sm font-medium text-slate-700 mb-2">Department <span class="text-red-500">*</span></label>
                             <select name="department" id="department" required class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]">
                                 <option value="">Select Department</option>
-                                <option value="IT Department" <?php echo (isset($_POST['department']) && $_POST['department'] === 'IT Department') ? 'selected' : ''; ?>>IT Department</option>
-                                <option value="Human Resources" <?php echo (isset($_POST['department']) && $_POST['department'] === 'Human Resources') ? 'selected' : ''; ?>>Human Resources</option>
-                                <option value="Finance" <?php echo (isset($_POST['department']) && $_POST['department'] === 'Finance') ? 'selected' : ''; ?>>Finance</option>
-                                <option value="Marketing" <?php echo (isset($_POST['department']) && $_POST['department'] === 'Marketing') ? 'selected' : ''; ?>>Marketing</option>
-                                <option value="Sales" <?php echo (isset($_POST['department']) && $_POST['department'] === 'Sales') ? 'selected' : ''; ?>>Sales</option>
+                                <?php
+                                $selectedDept = $_POST['department'] ?? '';
+                                foreach ($departmentOptions as $deptName):
+                                ?>
+                                    <option value="<?php echo htmlspecialchars($deptName); ?>" <?php echo ($selectedDept === $deptName) ? 'selected' : ''; ?>>
+                                        <?php echo htmlspecialchars($deptName); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <span class="error-message text-red-500 text-xs mt-1 hidden"></span>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Employment Type <span class="text-red-500">*</span></label>
+                            <select name="employment_type" id="employment_type" required class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]">
+                                <option value="">Select Employment Type</option>
+                                <?php
+                                $selectedTypeId = isset($_POST['employment_type']) ? (int)$_POST['employment_type'] : 0;
+                                foreach ($employmentTypeOptions as $type):
+                                ?>
+                                    <option value="<?php echo (int)$type['id']; ?>" <?php echo ($selectedTypeId === (int)$type['id']) ? 'selected' : ''; ?>>
+                                        <?php echo htmlspecialchars($type['name']); ?>
+                                    </option>
+                                <?php endforeach; ?>
                             </select>
                             <span class="error-message text-red-500 text-xs mt-1 hidden"></span>
                         </div>
@@ -516,6 +590,18 @@ if ($conn) {
                                    pattern="[0-9]{3}-[0-9]{3}-[0-9]{3}-[0-9]{3}" placeholder="XXX-XXX-XXX-XXX" maxlength="15"
                                    class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]">
                             <p class="text-xs text-slate-500 mt-1">12 digits (format: XXX-XXX-XXX-XXX)</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">NBI Clearance Number</label>
+                            <input type="text" name="nbi_clearance" id="nbi_clearance" 
+                                   value="<?php echo htmlspecialchars($_POST['nbi_clearance'] ?? ''); ?>"
+                                   class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Police Clearance Number</label>
+                            <input type="text" name="police_clearance" id="police_clearance" 
+                                   value="<?php echo htmlspecialchars($_POST['police_clearance'] ?? ''); ?>"
+                                   class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]">
                         </div>
                     </div>
                 </div>

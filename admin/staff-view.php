@@ -28,6 +28,18 @@ $compensation = null;
 $latestAdjustment = null;
 $salaryAdjustments = [];
 $bankDetails = null;
+$employmentTypeName = null;
+$documentTypes = [
+    'SSS',
+    'Philhealth',
+    'Pag-Ibig',
+    'TIN',
+    'NBI Clearance',
+    'Police Clearance',
+    'Bank Account',
+    'Employee Agreement Contract',
+    'Contractual Agreement Contract',
+];
 if ($conn) {
     $stmt = $conn->prepare("SELECT * FROM employees WHERE id = ?");
     $stmt->bind_param("i", $employeeId);
@@ -39,6 +51,20 @@ if ($conn) {
     if (!$employee) {
         header('Location: staff.php');
         exit;
+    }
+
+    // Resolve employment type name from master table
+    if (!empty($employee['employment_type_id'])) {
+        $typeStmt = $conn->prepare("SELECT name FROM employment_types WHERE id = ? LIMIT 1");
+        if ($typeStmt) {
+            $typeStmt->bind_param('i', $employee['employment_type_id']);
+            $typeStmt->execute();
+            $typeRes = $typeStmt->get_result();
+            if ($typeRow = $typeRes->fetch_assoc()) {
+                $employmentTypeName = $typeRow['name'] ?? null;
+            }
+            $typeStmt->close();
+        }
     }
     
     // Fetch employee documents
@@ -220,7 +246,7 @@ if ($conn) {
             <!-- Employment Information -->
             <div class="border-t border-slate-200 pt-6 mb-6">
                 <h3 class="text-lg font-semibold text-slate-800 mb-4">Employment Information</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
                         <p class="text-sm text-slate-500 mb-1">Position</p>
                         <p class="font-medium text-slate-800"><?php echo htmlspecialchars($employee['position'] ?? 'N/A'); ?></p>
@@ -228,6 +254,20 @@ if ($conn) {
                     <div>
                         <p class="text-sm text-slate-500 mb-1">Department</p>
                         <p class="font-medium text-slate-800"><?php echo htmlspecialchars($employee['department'] ?? 'N/A'); ?></p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-slate-500 mb-1">Employment Type</p>
+                        <p class="font-medium text-slate-800">
+                            <?php
+                            if ($employmentTypeName) {
+                                echo htmlspecialchars($employmentTypeName);
+                            } elseif (!empty($compensation['employment_type'])) {
+                                echo htmlspecialchars($compensation['employment_type']);
+                            } else {
+                                echo 'N/A';
+                            }
+                            ?>
+                        </p>
                     </div>
                     <div>
                         <p class="text-sm text-slate-500 mb-1">Date Hired</p>
@@ -459,75 +499,156 @@ if ($conn) {
             <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
                 <div>
                     <h3 class="text-lg font-semibold text-slate-800">Employee Documents</h3>
-                    <p class="text-sm text-slate-500 mt-1">Documents uploaded by employee</p>
+                    <p class="text-sm text-slate-500 mt-1">Checklist and files uploaded by employee</p>
                 </div>
             </div>
-            <div class="p-6">
-                <?php if (empty($documents)): ?>
-                    <div class="text-center py-8 text-slate-500">
-                        <svg class="w-16 h-16 mx-auto mb-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        <p class="text-sm">No documents uploaded yet.</p>
+            <div class="p-6 space-y-6">
+                <?php
+                $documentsByType = [];
+                foreach ($documents as $d) {
+                    if (!isset($documentsByType[$d['document_type']])) {
+                        $documentsByType[$d['document_type']] = $d;
+                    }
+                }
+                ?>
+                <!-- Checklist -->
+                <div>
+                    <h4 class="text-sm font-semibold text-slate-700 mb-3">Document Checklist</h4>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full text-xs md:text-sm">
+                            <thead class="bg-slate-50">
+                                <tr>
+                                    <th class="w-10 text-center px-3 py-2 font-semibold text-slate-500 uppercase tracking-wide">Done</th>
+                                    <th class="text-left px-4 py-2 font-semibold text-slate-500 uppercase tracking-wide">Document Type</th>
+                                    <th class="text-left px-4 py-2 font-semibold text-slate-500 uppercase tracking-wide">Status</th>
+                                    <th class="text-left px-4 py-2 font-semibold text-slate-500 uppercase tracking-wide">Last Updated</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <?php foreach ($documentTypes as $docType):
+                                    $doc = $documentsByType[$docType] ?? null;
+                                    $hasFile = $doc && !empty($doc['file_path']);
+                                    if (!$hasFile) {
+                                        $status = 'No File';
+                                        $statusClass = 'bg-slate-100 text-slate-600';
+                                        $statusText = 'No File';
+                                    } else {
+                                        $status = $doc['status'] ?? 'Pending';
+                                        $statusClass = $status === 'Approved' ? 'bg-emerald-100 text-emerald-700' :
+                                                      ($status === 'Rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700');
+                                        $statusText = $status === 'Approved' ? 'Approved' :
+                                                      ($status === 'Rejected' ? 'Rejected' : 'Pending validation');
+                                    }
+                                    $lastUpdated = $doc && isset($doc['updated_at']) && $doc['updated_at']
+                                        ? date('M d, Y', strtotime($doc['updated_at']))
+                                        : ($doc && !empty($doc['created_at']) ? date('M d, Y', strtotime($doc['created_at'])) : '—');
+                                    $isApproved = $status === 'Approved';
+                                ?>
+                                <tr>
+                                    <td class="px-3 py-2 text-center">
+                                        <?php if ($isApproved): ?>
+                                            <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500 text-white">
+                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                                                </svg>
+                                            </span>
+                                        <?php elseif ($hasFile): ?>
+                                            <span class="inline-flex items-center justify-center w-5 h-5 rounded-full border border-amber-300 text-amber-400" title="Uploaded but not approved yet">
+                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01" />
+                                                </svg>
+                                            </span>
+                                        <?php else: ?>
+                                            <span class="inline-flex items-center justify-center w-5 h-5 rounded-full border border-slate-300 text-slate-300">
+                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <circle cx="12" cy="12" r="5" stroke-width="2" />
+                                                </svg>
+                                            </span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="px-4 py-2 text-slate-700"><?php echo htmlspecialchars($docType); ?></td>
+                                    <td class="px-4 py-2">
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold <?php echo $statusClass; ?>">
+                                            <?php echo htmlspecialchars($statusText); ?>
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-2 text-slate-500 text-xs"><?php echo $lastUpdated; ?></td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
                     </div>
-                <?php else: ?>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <?php foreach ($documents as $doc): 
-                            $fileUrl = !empty($doc['file_path']) ? '../uploads/' . htmlspecialchars($doc['file_path']) : '';
-                            $isImage = $fileUrl && preg_match('/\.(jpg|jpeg|png|gif|webp)$/i', $doc['file_path']);
-                            $isPdf = $fileUrl && preg_match('/\.pdf$/i', $doc['file_path']);
-                            $status = $doc['status'] ?? 'Pending';
-                            $statusClass = $status === 'Approved' ? 'bg-emerald-100 text-emerald-700' : 
-                                          ($status === 'Rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700');
-                        ?>
-                        <div class="border border-slate-200 rounded-lg p-4 hover:bg-slate-50 transition-colors">
-                            <div class="flex items-start justify-between mb-3">
-                                <h4 class="font-medium text-slate-800 text-sm"><?php echo htmlspecialchars($doc['document_type'] ?? 'Document'); ?></h4>
-                                <span class="px-2 py-0.5 rounded-full text-xs font-medium <?php echo $statusClass; ?>">
-                                    <?php echo htmlspecialchars($status); ?>
-                                </span>
-                            </div>
-                            
-                            <?php if ($fileUrl && file_exists(__DIR__ . '/../uploads/' . $doc['file_path'])): ?>
-                                <?php if ($isImage): ?>
-                                    <div class="mb-3 rounded border border-slate-200 overflow-hidden">
-                                        <img src="<?php echo $fileUrl; ?>" alt="<?php echo htmlspecialchars($doc['document_type'] ?? ''); ?>" class="w-full h-32 object-cover">
-                                    </div>
-                                <?php elseif ($isPdf): ?>
-                                    <div class="mb-3 p-4 bg-red-50 rounded border border-red-200 text-center">
-                                        <svg class="w-12 h-12 mx-auto text-red-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </div>
+
+                <!-- Uploaded files grid -->
+                <div>
+                    <h4 class="text-sm font-semibold text-slate-700 mb-3">Uploaded Files</h4>
+                    <?php if (empty($documents)): ?>
+                        <div class="text-center py-8 text-slate-500">
+                            <svg class="w-16 h-16 mx-auto mb-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <p class="text-sm">No documents uploaded yet.</p>
+                        </div>
+                    <?php else: ?>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <?php foreach ($documents as $doc): 
+                                $fileUrl = !empty($doc['file_path']) ? '../uploads/' . htmlspecialchars($doc['file_path']) : '';
+                                $isImage = $fileUrl && preg_match('/\.(jpg|jpeg|png|gif|webp)$/i', $doc['file_path']);
+                                $isPdf = $fileUrl && preg_match('/\.pdf$/i', $doc['file_path']);
+                                $status = $doc['status'] ?? 'Pending';
+                                $statusClass = $status === 'Approved' ? 'bg-emerald-100 text-emerald-700' : 
+                                              ($status === 'Rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700');
+                            ?>
+                            <div class="border border-slate-200 rounded-lg p-4 hover:bg-slate-50 transition-colors">
+                                <div class="flex items-start justify-between mb-3">
+                                    <h4 class="font-medium text-slate-800 text-sm"><?php echo htmlspecialchars($doc['document_type'] ?? 'Document'); ?></h4>
+                                    <span class="px-2 py-0.5 rounded-full text-xs font-medium <?php echo $statusClass; ?>">
+                                        <?php echo htmlspecialchars($status); ?>
+                                    </span>
+                                </div>
+                                
+                                <?php if ($fileUrl && file_exists(__DIR__ . '/../uploads/' . $doc['file_path'])): ?>
+                                    <?php if ($isImage): ?>
+                                        <div class="mb-3 rounded border border-slate-200 overflow-hidden">
+                                            <img src="<?php echo $fileUrl; ?>" alt="<?php echo htmlspecialchars($doc['document_type'] ?? ''); ?>" class="w-full h-32 object-cover">
+                                        </div>
+                                    <?php elseif ($isPdf): ?>
+                                        <div class="mb-3 p-4 bg-red-50 rounded border border-red-200 text-center">
+                                            <svg class="w-12 h-12 mx-auto text-red-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                            </svg>
+                                            <span class="text-xs text-red-700 font-medium">PDF Document</span>
+                                        </div>
+                                    <?php else: ?>
+                                        <div class="mb-3 p-4 bg-slate-50 rounded border border-slate-200 text-center">
+                                            <svg class="w-12 h-12 mx-auto text-slate-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                            </svg>
+                                            <span class="text-xs text-slate-700 font-medium">Document File</span>
+                                        </div>
+                                    <?php endif; ?>
+                                    
+                                    <a href="<?php echo $fileUrl; ?>" target="_blank" class="inline-flex items-center gap-2 text-sm text-[#d97706] hover:text-[#b45309] font-medium">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                                         </svg>
-                                        <span class="text-xs text-red-700 font-medium">PDF Document</span>
-                                    </div>
+                                        View/Download
+                                    </a>
                                 <?php else: ?>
                                     <div class="mb-3 p-4 bg-slate-50 rounded border border-slate-200 text-center">
-                                        <svg class="w-12 h-12 mx-auto text-slate-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                        </svg>
-                                        <span class="text-xs text-slate-700 font-medium">Document File</span>
+                                        <p class="text-xs text-slate-500">File not found</p>
                                     </div>
                                 <?php endif; ?>
                                 
-                                <a href="<?php echo $fileUrl; ?>" target="_blank" class="inline-flex items-center gap-2 text-sm text-[#d97706] hover:text-[#b45309] font-medium">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                                    </svg>
-                                    View/Download
-                                </a>
-                            <?php else: ?>
-                                <div class="mb-3 p-4 bg-slate-50 rounded border border-slate-200 text-center">
-                                    <p class="text-xs text-slate-500">File not found</p>
-                                </div>
-                            <?php endif; ?>
-                            
-                            <?php if (!empty($doc['created_at'])): ?>
-                                <p class="text-xs text-slate-400 mt-2">Uploaded: <?php echo date('M d, Y', strtotime($doc['created_at'])); ?></p>
-                            <?php endif; ?>
+                                <?php if (!empty($doc['created_at'])): ?>
+                                    <p class="text-xs text-slate-400 mt-2">Uploaded: <?php echo date('M d, Y', strtotime($doc['created_at'])); ?></p>
+                                <?php endif; ?>
+                            </div>
+                            <?php endforeach; ?>
                         </div>
-                        <?php endforeach; ?>
-                    </div>
-                <?php endif; ?>
+                    <?php endif; ?>
+                </div>
             </div>
         </div>
     </main>

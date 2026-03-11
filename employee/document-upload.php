@@ -38,7 +38,17 @@ if (!$employee) {
 
 $employeeId = (int)$employee['id'];
 $documentType = trim($_POST['document_type'] ?? '');
-$allowedTypes = ['Birth Certificate (PSA)', 'Government IDs (Valid ID Set)', 'Employment Contract', 'Company ID Form'];
+$allowedTypes = [
+    'SSS',
+    'Philhealth',
+    'Pag-Ibig',
+    'TIN',
+    'NBI Clearance',
+    'Police Clearance',
+    'Bank Account',
+    'Employee Agreement Contract',
+    'Contractual Agreement Contract',
+];
 
 if (empty($documentType) || !in_array($documentType, $allowedTypes, true)) {
     header('Content-Type: application/json');

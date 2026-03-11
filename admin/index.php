@@ -20,6 +20,7 @@ include '../database/db.php';
 $totalEmployees = 0;
 $openRequests = 0;
 $pendingApprovals = 0;
+$departmentStats = [];
 
 if ($conn) {
     // Count total employees
@@ -65,6 +66,27 @@ if ($conn) {
     
     // Pending approvals (same as open requests - all items needing approval)
     $pendingApprovals = $openRequests;
+
+    // Employees per department (active only)
+    $checkDeptTable = $conn->query("SHOW TABLES LIKE 'departments'");
+    if ($checkDeptTable && $checkDeptTable->num_rows > 0) {
+        $deptSql = "
+            SELECT d.name AS department_name,
+                   COUNT(e.id) AS total_employees
+            FROM departments d
+            LEFT JOIN employees e 
+                ON e.department = d.name
+               AND e.status = 'Active'
+            GROUP BY d.id, d.name
+            ORDER BY d.name
+        ";
+        $deptResult = $conn->query($deptSql);
+        if ($deptResult && $deptResult->num_rows > 0) {
+            while ($row = $deptResult->fetch_assoc()) {
+                $departmentStats[] = $row;
+            }
+        }
+    }
 }
 
 // Get recent activities
@@ -193,6 +215,54 @@ function timeAgo($datetime) {
                 <p class="text-xs text-slate-500">Items that need your decision</p>
             </section>
         </div>
+
+        <!-- Employees by Department Cards -->
+        <?php if (!empty($departmentStats)): ?>
+        <section class="bg-white rounded-xl shadow-sm border border-slate-100 mb-8">
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                <h2 class="text-sm font-semibold text-slate-700">Employees by Department</h2>
+                <span class="text-xs text-slate-400">Active employees per department</span>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                    <?php foreach ($departmentStats as $index => $dept): ?>
+                        <?php
+                        $colorPalettes = [
+                            ['card' => 'bg-amber-500',   'icon' => 'bg-amber-400 text-white'],
+                            ['card' => 'bg-emerald-500', 'icon' => 'bg-emerald-400 text-white'],
+                            ['card' => 'bg-sky-500',     'icon' => 'bg-sky-400 text-white'],
+                            ['card' => 'bg-violet-500',  'icon' => 'bg-violet-400 text-white'],
+                            ['card' => 'bg-rose-500',    'icon' => 'bg-rose-400 text-white'],
+                        ];
+                        $scheme = $colorPalettes[$index % count($colorPalettes)];
+                        ?>
+                        <div class="relative overflow-hidden rounded-xl shadow-sm text-white border border-white/20 <?php echo $scheme['card']; ?>">
+                            <div class="absolute -right-8 -top-8 w-20 h-20 rounded-full bg-white/10"></div>
+                            <div class="absolute -left-10 -bottom-10 w-24 h-24 rounded-full bg-black/10 opacity-10"></div>
+                            <div class="relative p-4 flex items-center justify-between gap-3">
+                                <div>
+                                    <p class="text-[11px] font-semibold tracking-wide uppercase mb-1 text-white/80">
+                                        <?php echo htmlspecialchars($dept['department_name']); ?>
+                                    </p>
+                                    <p class="text-2xl font-semibold">
+                                        <?php echo (int)($dept['total_employees'] ?? 0); ?>
+                                    </p>
+                                    <p class="text-xs text-white/80 mt-1">
+                                        <?php echo ((int)($dept['total_employees'] ?? 0) === 1) ? 'Active employee' : 'Active employees'; ?>
+                                    </p>
+                                </div>
+                                <div class="flex items-center justify-center w-10 h-10 rounded-full flex-shrink-0 <?php echo $scheme['icon']; ?>">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-5-3.87M9 11a4 4 0 100-8 4 4 0 000 8zm0 0a7 7 0 00-7 7v1h7m4-8a4 4 0 110 8" />
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </section>
+        <?php endif; ?>
 
         <!-- Recent Activity -->
         <section class="bg-white rounded-xl shadow-sm border border-slate-100">

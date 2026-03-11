@@ -29,6 +29,8 @@ $sql = "CREATE TABLE IF NOT EXISTS `employees` (
   `philhealth` varchar(50) DEFAULT NULL,
   `pagibig` varchar(50) DEFAULT NULL,
   `tin` varchar(50) DEFAULT NULL,
+  `nbi_clearance` varchar(50) DEFAULT NULL,
+  `police_clearance` varchar(50) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
