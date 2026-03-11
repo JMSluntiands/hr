@@ -16,31 +16,6 @@ if (strtolower((string)($_SESSION['role'] ?? '')) !== 'admin') {
 }
 
 $inventoryUrl = '../inventory/index.php';
-$error = '';
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $module = strtolower(trim((string)($_POST['module'] ?? '')));
-
-    if ($module === 'hr') {
-        $_SESSION['admin_module'] = 'hr';
-        header('Location: index.php');
-        exit;
-    }
-
-    if ($module === 'inventory') {
-        $_SESSION['admin_module'] = 'inventory';
-        header('Location: ' . $inventoryUrl);
-        exit;
-    }
-
-    if ($module === 'workforce') {
-        $_SESSION['admin_module'] = 'workforce';
-        header('Location: ../workforce/index.php');
-        exit;
-    }
-
-    $error = 'Please choose a valid module.';
-}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -65,43 +40,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <h1 class="text-2xl font-bold text-slate-800 mb-2">Welcome, Admin</h1>
         <p class="text-slate-600 mb-6">Choose which system you want to open.</p>
 
-        <?php if ($error): ?>
-            <div class="mb-4 rounded-lg bg-red-50 text-red-700 text-sm px-4 py-3 border border-red-200">
-                <?php echo htmlspecialchars($error); ?>
-            </div>
-        <?php endif; ?>
-
-        <form method="POST" class="space-y-3">
-            <button
-                type="submit"
-                name="module"
-                value="hr"
-                class="w-full text-left p-4 rounded-xl border border-slate-200 hover:border-amber-400 hover:bg-amber-50 transition"
+        <div class="space-y-3">
+            <a
+                href="index.php"
+                class="block w-full text-left p-4 rounded-xl border border-slate-200 hover:border-amber-400 hover:bg-amber-50 transition"
             >
                 <span class="block text-base font-semibold text-slate-800">HR Management</span>
                 <span class="block text-sm text-slate-500">Employee records, leave requests, documents, and HR dashboard.</span>
-            </button>
+            </a>
 
-            <button
-                type="submit"
-                name="module"
-                value="workforce"
-                class="w-full text-left p-4 rounded-xl border border-slate-200 hover:border-amber-400 hover:bg-amber-50 transition"
+            <a
+                href="../workforce/index.php"
+                class="block w-full text-left p-4 rounded-xl border border-slate-200 hover:border-amber-400 hover:bg-amber-50 transition"
             >
                 <span class="block text-base font-semibold text-slate-800">Workforce Management System</span>
                 <span class="block text-sm text-slate-500">Staff, leaves, requests, compensation, and workforce dashboard.</span>
-            </button>
+            </a>
 
-            <button
-                type="submit"
-                name="module"
-                value="inventory"
-                class="w-full text-left p-4 rounded-xl border border-slate-200 hover:border-amber-400 hover:bg-amber-50 transition"
+            <a
+                href="<?php echo htmlspecialchars($inventoryUrl, ENT_QUOTES, 'UTF-8'); ?>"
+                class="block w-full text-left p-4 rounded-xl border border-slate-200 hover:border-amber-400 hover:bg-amber-50 transition"
             >
                 <span class="block text-base font-semibold text-slate-800">Inventory Management</span>
                 <span class="block text-sm text-slate-500">Open the inventory system for stocks and item tracking.</span>
-            </button>
-        </form>
+            </a>
+        </div>
     </div>
 </body>
 </html>

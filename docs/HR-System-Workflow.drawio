@@ -1,0 +1,187 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/29.6.1 Chrome/142.0.7444.265 Electron/39.8.0 Safari/537.36" version="29.6.1">
+  <diagram name="HR System - Full Workflow" id="hr-full-workflow">
+    <mxGraphModel dx="2696" dy="1840" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="0.8" pageWidth="2400" pageHeight="1800" background="#1a1a2e" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=24;fontStyle=1;fontColor=#ffffff;" value="HR System - Buong Workflow (Luntian)" vertex="1">
+          <mxGeometry height="50" width="500" x="600" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="start" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#1e5631;strokeColor=#82b366;fontSize=14;fontColor=#ffffff;" value="Start" vertex="1">
+          <mxGeometry height="60" width="120" x="750" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="login" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2e5090;strokeColor=#6c8ebf;fontSize=13;fontColor=#ffffff;" value="Login (index.php)&lt;br&gt;Email / Password&lt;br&gt;Sign in with Google" vertex="1">
+          <mxGeometry height="80" width="200" x="710" y="200" as="geometry" />
+        </mxCell>
+        <mxCell id="auth" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#8b6914;strokeColor=#d6b656;fontSize=14;fontColor=#ffffff;" value="Role?" vertex="1">
+          <mxGeometry height="100" width="120" x="750" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" edge="1" parent="1" source="start" style="strokeColor=#b0b0b0;" target="login">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" edge="1" parent="1" source="login" style="strokeColor=#b0b0b0;" target="auth">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="admin-label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontStyle=1;fontSize=14;fontColor=#c4a8e0;" value="Admin" vertex="1">
+          <mxGeometry height="35" width="100" x="380" y="460" as="geometry" />
+        </mxCell>
+        <mxCell id="admin-module" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#4a3f6b;strokeColor=#9673a6;fontSize=13;fontColor=#ffffff;" value="Module Select (admin)&lt;br&gt;HR | Workforce | Inventory" vertex="1">
+          <mxGeometry height="80" width="220" x="450" y="495" as="geometry" />
+        </mxCell>
+        <mxCell id="e-admin" edge="1" parent="1" source="auth" style="fontSize=12;strokeColor=#b0b0b0;fontColor=#ffffff;" target="admin-module" value="Admin">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="emp-module" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#8b3a3a;strokeColor=#b85450;fontSize=13;fontColor=#ffffff;" value="Module Select (employee)&lt;br&gt;Timekeeping | Profile" vertex="1">
+          <mxGeometry height="80" width="220" x="1553" y="500" as="geometry" />
+        </mxCell>
+        <mxCell id="e-emp" edge="1" parent="1" source="auth" style="fontSize=12;strokeColor=#b0b0b0;fontColor=#ffffff;" target="emp-module" value="Employee">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="hr-box" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2d2d3d;strokeColor=#888888;dashed=1;dashPattern=8 8;" value="" vertex="1">
+          <mxGeometry height="460" width="480" x="40" y="640" as="geometry" />
+        </mxCell>
+        <mxCell id="hr-title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=16;fontStyle=1;fontColor=#ffffff;" value="ADMIN - HR Module" vertex="1">
+          <mxGeometry height="35" width="220" x="160" y="655" as="geometry" />
+        </mxCell>
+        <mxCell id="hr-dash" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#5a4a7a;fontSize=12;fontColor=#ffffff;" value="Dashboard (admin/index.php)" vertex="1">
+          <mxGeometry height="55" width="160" x="170" y="705" as="geometry" />
+        </mxCell>
+        <mxCell id="hr-staff" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#5a4a7a;fontSize=12;fontColor=#ffffff;" value="Staff&lt;br&gt;Add / List / Edit / View / Documents" vertex="1">
+          <mxGeometry height="65" width="130" x="60" y="785" as="geometry" />
+        </mxCell>
+        <mxCell id="hr-id" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#5a4a7a;fontSize=12;fontColor=#ffffff;" value="ID Creation&lt;br&gt;ID Card Print" vertex="1">
+          <mxGeometry height="65" width="130" x="210" y="785" as="geometry" />
+        </mxCell>
+        <mxCell id="hr-leaves" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#5a4a7a;fontSize=12;fontColor=#ffffff;" value="Leaves&lt;br&gt;Allocation / Summary" vertex="1">
+          <mxGeometry height="65" width="130" x="360" y="785" as="geometry" />
+        </mxCell>
+        <mxCell id="hr-req" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#5a4a7a;fontSize=12;fontColor=#ffffff;" value="Requests&lt;br&gt;Leave / Document / Bank" vertex="1">
+          <mxGeometry height="65" width="130" x="60" y="875" as="geometry" />
+        </mxCell>
+        <mxCell id="hr-activity" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#5a4a7a;fontSize=12;fontColor=#ffffff;" value="Activity Log" vertex="1">
+          <mxGeometry height="65" width="130" x="210" y="875" as="geometry" />
+        </mxCell>
+        <mxCell id="hr-discipline" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#5a4a7a;fontSize=12;fontColor=#ffffff;" value="Progressive&lt;br&gt;Discipline" vertex="1">
+          <mxGeometry height="65" width="130" x="360" y="875" as="geometry" />
+        </mxCell>
+        <mxCell id="hr-announce" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#5a4a7a;fontSize=12;fontColor=#ffffff;" value="Announcements" vertex="1">
+          <mxGeometry height="55" width="130" x="60" y="965" as="geometry" />
+        </mxCell>
+        <mxCell id="hr-comp" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#5a4a7a;fontSize=12;fontColor=#ffffff;" value="Compensation" vertex="1">
+          <mxGeometry height="55" width="130" x="210" y="965" as="geometry" />
+        </mxCell>
+        <mxCell id="hr-accounts" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#5a4a7a;fontSize=12;fontColor=#ffffff;" value="Accounts" vertex="1">
+          <mxGeometry height="55" width="130" x="360" y="965" as="geometry" />
+        </mxCell>
+        <mxCell id="e-hr-from-mod" edge="1" parent="1" source="admin-module" style="fontSize=12;strokeColor=#b0b0b0;fontColor=#ffffff;" target="hr-dash" value="HR">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wf-box" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2d2d3d;strokeColor=#888888;dashed=1;dashPattern=8 8;" value="" vertex="1">
+          <mxGeometry height="230" width="480" x="340" y="1200" as="geometry" />
+        </mxCell>
+        <mxCell id="wf-title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=16;fontStyle=1;fontColor=#ffffff;" value="ADMIN - Workforce Module" vertex="1">
+          <mxGeometry height="35" width="160" x="480" y="1215" as="geometry" />
+        </mxCell>
+        <mxCell id="wf-dash" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#3d5a7a;fontSize=12;fontColor=#ffffff;" value="Dashboard (workforce/index.php)" vertex="1">
+          <mxGeometry height="55" width="180" x="470" y="1265" as="geometry" />
+        </mxCell>
+        <mxCell id="wf-time" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#3d5a7a;fontSize=12;fontColor=#ffffff;" value="Time Keeping" vertex="1">
+          <mxGeometry height="55" width="120" x="370" y="1340" as="geometry" />
+        </mxCell>
+        <mxCell id="wf-payslip" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#3d5a7a;fontSize=12;fontColor=#ffffff;" value="Payslip" vertex="1">
+          <mxGeometry height="55" width="120" x="510" y="1340" as="geometry" />
+        </mxCell>
+        <mxCell id="wf-report" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#3d5a7a;fontSize=12;fontColor=#ffffff;" value="Report" vertex="1">
+          <mxGeometry height="55" width="120" x="650" y="1340" as="geometry" />
+        </mxCell>
+        <mxCell id="e-wf-from-mod" edge="1" parent="1" source="admin-module" style="fontSize=12;strokeColor=#b0b0b0;fontColor=#ffffff;" target="wf-dash" value="Workforce">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="inv-box" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2d2d3d;strokeColor=#888888;dashed=1;dashPattern=8 8;" value="" vertex="1">
+          <mxGeometry height="350" width="470" x="640" y="640" as="geometry" />
+        </mxCell>
+        <mxCell id="inv-title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=16;fontStyle=1;fontColor=#ffffff;" value="ADMIN - Inventory Module" vertex="1">
+          <mxGeometry height="35" width="180" x="779" y="655" as="geometry" />
+        </mxCell>
+        <mxCell id="inv-main" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2d5a3d;fontSize=12;fontColor=#ffffff;" value="Inventory (inventory.php)" vertex="1">
+          <mxGeometry height="55" width="180" x="779" y="705" as="geometry" />
+        </mxCell>
+        <mxCell id="inv-item" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2d5a3d;fontSize=12;fontColor=#ffffff;" value="Item&lt;br&gt;Add / List / History" vertex="1">
+          <mxGeometry height="60" width="120" x="679" y="785" as="geometry" />
+        </mxCell>
+        <mxCell id="inv-alloc" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2d5a3d;fontSize=12;fontColor=#ffffff;" value="Allocation" vertex="1">
+          <mxGeometry height="60" width="120" x="819" y="785" as="geometry" />
+        </mxCell>
+        <mxCell id="inv-report" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2d5a3d;fontSize=12;fontColor=#ffffff;" value="Report" vertex="1">
+          <mxGeometry height="60" width="120" x="959" y="785" as="geometry" />
+        </mxCell>
+        <mxCell id="inv-msg" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2d5a3d;fontSize=12;fontColor=#ffffff;" value="Messages (appeals)" vertex="1">
+          <mxGeometry height="55" width="120" x="679" y="870" as="geometry" />
+        </mxCell>
+        <mxCell id="inv-activity" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2d5a3d;fontSize=12;fontColor=#ffffff;" value="Activity Log" vertex="1">
+          <mxGeometry height="55" width="120" x="819" y="870" as="geometry" />
+        </mxCell>
+        <mxCell id="inv-print" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2d5a3d;fontSize=12;fontColor=#ffffff;" value="Print Sticker" vertex="1">
+          <mxGeometry height="55" width="120" x="959" y="870" as="geometry" />
+        </mxCell>
+        <mxCell id="e-inv-from-mod" edge="1" parent="1" source="admin-module" style="fontSize=12;strokeColor=#b0b0b0;fontColor=#ffffff;" target="inv-main" value="Inventory">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="tk-box" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2d2d3d;strokeColor=#888888;dashed=1;dashPattern=8 8;" value="" vertex="1">
+          <mxGeometry height="220" width="340" x="1150" y="705" as="geometry" />
+        </mxCell>
+        <mxCell id="tk-title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=16;fontStyle=1;fontColor=#ffffff;" value="EMPLOYEE - Timekeeping" vertex="1">
+          <mxGeometry height="35" width="180" x="1230" y="720" as="geometry" />
+        </mxCell>
+        <mxCell id="tk-index" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#6a3d4a;fontSize=12;fontColor=#ffffff;" value="Timesheet (timekeeping/index.php)&lt;br&gt;Overview / Fill-up" vertex="1">
+          <mxGeometry height="65" width="180" x="1170" y="770" as="geometry" />
+        </mxCell>
+        <mxCell id="tk-save" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#6a3d4a;fontSize=11;fontColor=#ffffff;" value="save-timesheet.php&lt;br&gt;get-day-details.php" vertex="1">
+          <mxGeometry height="55" width="100" x="1369" y="775" as="geometry" />
+        </mxCell>
+        <mxCell id="tk-payslip" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#6a3d4a;fontSize=12;fontColor=#ffffff;" value="Payslip" vertex="1">
+          <mxGeometry height="50" width="120" x="1230" y="860" as="geometry" />
+        </mxCell>
+        <mxCell id="e-tk-from-mod" edge="1" parent="1" source="emp-module" style="fontSize=12;strokeColor=#b0b0b0;fontColor=#ffffff;" target="tk-index" value="Timekeeping">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="emp-box" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2d2d3d;strokeColor=#888888;dashed=1;dashPattern=8 8;" value="" vertex="1">
+          <mxGeometry height="380" width="420" x="1453" y="1000" as="geometry" />
+        </mxCell>
+        <mxCell id="emp-title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=16;fontStyle=1;fontColor=#ffffff;" value="EMPLOYEE - Profile / Self-Service" vertex="1">
+          <mxGeometry height="35" width="220" x="1553" y="1015" as="geometry" />
+        </mxCell>
+        <mxCell id="emp-dash" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#6a3d4a;fontSize=12;fontColor=#ffffff;" value="Dashboard (employee/index.php)" vertex="1">
+          <mxGeometry height="55" width="180" x="1573" y="1065" as="geometry" />
+        </mxCell>
+        <mxCell id="emp-profile" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#6a3d4a;fontSize=12;fontColor=#ffffff;" value="Profile&lt;br&gt;Picture / Signature / Docs" vertex="1">
+          <mxGeometry height="60" width="120" x="1473" y="1145" as="geometry" />
+        </mxCell>
+        <mxCell id="emp-timeoff" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#6a3d4a;fontSize=12;fontColor=#ffffff;" value="Time Off&lt;br&gt;Submit / Cancel Leave" vertex="1">
+          <mxGeometry height="60" width="120" x="1613" y="1145" as="geometry" />
+        </mxCell>
+        <mxCell id="emp-req" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#6a3d4a;fontSize=12;fontColor=#ffffff;" value="Requests&lt;br&gt;(Leave/Document)" vertex="1">
+          <mxGeometry height="60" width="120" x="1753" y="1145" as="geometry" />
+        </mxCell>
+        <mxCell id="emp-comp" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#6a3d4a;fontSize=12;fontColor=#ffffff;" value="Compensation&lt;br&gt;Bank Request" vertex="1">
+          <mxGeometry height="55" width="120" x="1473" y="1230" as="geometry" />
+        </mxCell>
+        <mxCell id="emp-inv" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#6a3d4a;fontSize=12;fontColor=#ffffff;" value="My Inventory" vertex="1">
+          <mxGeometry height="55" width="120" x="1613" y="1230" as="geometry" />
+        </mxCell>
+        <mxCell id="emp-disc" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#6a3d4a;fontSize=12;fontColor=#ffffff;" value="Progressive&lt;br&gt;Discipline" vertex="1">
+          <mxGeometry height="55" width="120" x="1753" y="1230" as="geometry" />
+        </mxCell>
+        <mxCell id="emp-settings" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#6a3d4a;fontSize=12;fontColor=#ffffff;" value="Settings&lt;br&gt;Change Password" vertex="1">
+          <mxGeometry height="55" width="140" x="1553" y="1310" as="geometry" />
+        </mxCell>
+        <mxCell id="emp-payslip" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#6a3d4a;fontSize=12;fontColor=#ffffff;" value="Payslip" vertex="1">
+          <mxGeometry height="45" width="120" x="1713" y="1315" as="geometry" />
+        </mxCell>
+        <mxCell id="e-emp-from-mod" edge="1" parent="1" source="emp-module" style="fontSize=12;strokeColor=#b0b0b0;fontColor=#ffffff;" target="emp-dash" value="Profile">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
