@@ -20,7 +20,8 @@ if (!$conn || !$id || !in_array($action, ['approve', 'decline'], true)) {
 $adminId = (int)$_SESSION['user_id'];
 $adminName = $_SESSION['name'] ?? 'Admin';
 
-$reqStmt = $conn->prepare("SELECT r.*, e.full_name, e.employee_id FROM bank_account_change_requests r JOIN employees e ON e.id = r.employee_id WHERE r.id = ? AND r.status = 'Pending'");
+// Use r.employee_id (numeric) for saving; alias e.employee_id so it doesn't overwrite r.employee_id
+$reqStmt = $conn->prepare("SELECT r.*, e.full_name, e.employee_id AS employee_badge FROM bank_account_change_requests r JOIN employees e ON e.id = r.employee_id WHERE r.id = ? AND r.status = 'Pending'");
 $reqStmt->bind_param('i', $id);
 $reqStmt->execute();
 $reqResult = $reqStmt->get_result();
@@ -39,13 +40,7 @@ $empName = $req['full_name'] ?? 'Unknown';
 if ($action === 'approve') {
     $conn->begin_transaction();
     try {
-        $upd = $conn->prepare("UPDATE bank_account_change_requests SET status = 'Approved', approved_by = ?, approved_by_name = ?, approved_at = NOW(), rejection_reason = NULL WHERE id = ?");
-        $upd->bind_param('isi', $adminId, $adminName, $id);
-        if (!$upd->execute()) {
-            throw new Exception('Failed to update request');
-        }
-        $upd->close();
-
+        // 1. Ensure employee_bank_details table exists
         $checkBank = $conn->query("SHOW TABLES LIKE 'employee_bank_details'");
         if (!$checkBank || $checkBank->num_rows == 0) {
             $conn->query("CREATE TABLE IF NOT EXISTS `employee_bank_details` (
@@ -69,6 +64,7 @@ if ($action === 'approve') {
         $accountType = $req['account_type'] ?? 'Savings';
         $branch = $req['branch'] ?? '';
 
+        // 2. Write to employee_bank_details FIRST (so we never mark Approved unless this succeeds)
         $existStmt = $conn->prepare("SELECT id FROM employee_bank_details WHERE employee_id = ?");
         $existStmt->bind_param('i', $employeeId);
         $existStmt->execute();
@@ -77,20 +73,43 @@ if ($action === 'approve') {
         $existStmt->close();
 
         if ($exists) {
-            $updBank = $conn->prepare("UPDATE employee_bank_details SET bank_name = ?, account_number = ?, account_name = ?, account_type = ?, branch = ? WHERE employee_id = ?");
+            $updBank = $conn->prepare("UPDATE employee_bank_details SET bank_name = ?, account_number = ?, account_name = ?, account_type = ?, branch = ?, updated_at = NOW() WHERE employee_id = ?");
             $updBank->bind_param('sssssi', $bankName, $accountNumber, $accountName, $accountType, $branch, $employeeId);
-            $updBank->execute();
+            if (!$updBank->execute()) {
+                throw new Exception('Failed to update employee bank details: ' . $conn->error);
+            }
             $updBank->close();
         } else {
             $insBank = $conn->prepare("INSERT INTO employee_bank_details (employee_id, bank_name, account_number, account_name, account_type, branch) VALUES (?, ?, ?, ?, ?, ?)");
             $insBank->bind_param('isssss', $employeeId, $bankName, $accountNumber, $accountName, $accountType, $branch);
-            $insBank->execute();
+            if (!$insBank->execute()) {
+                throw new Exception('Failed to save employee bank details: ' . $conn->error);
+            }
             $insBank->close();
         }
 
+        // 3. Verify the row exists so employee will see it
+        $verifyStmt = $conn->prepare("SELECT id, bank_name, account_number FROM employee_bank_details WHERE employee_id = ? LIMIT 1");
+        $verifyStmt->bind_param('i', $employeeId);
+        $verifyStmt->execute();
+        $verifyResult = $verifyStmt->get_result();
+        $verified = $verifyResult->fetch_assoc();
+        $verifyStmt->close();
+        if (!$verified) {
+            throw new Exception('Bank details were not saved. Please try again.');
+        }
+
+        // 4. Only then mark the request as Approved
+        $upd = $conn->prepare("UPDATE bank_account_change_requests SET status = 'Approved', approved_by = ?, approved_by_name = ?, approved_at = NOW(), rejection_reason = NULL WHERE id = ?");
+        $upd->bind_param('isi', $adminId, $adminName, $id);
+        if (!$upd->execute()) {
+            throw new Exception('Failed to update request status');
+        }
+        $upd->close();
+
         $conn->commit();
         logActivity($conn, 'Approve Bank Account Change', 'Bank Request', $id, "Approved bank account change for $empName");
-        $_SESSION['request_bank_msg'] = '✓ Bank account change approved and updated.';
+        $_SESSION['request_bank_msg'] = '✓ Bank account change approved and updated. Employee can refresh My Compensation to see their bank details.';
     } catch (Exception $e) {
         $conn->rollback();
         $_SESSION['request_bank_msg'] = 'Failed: ' . $e->getMessage();

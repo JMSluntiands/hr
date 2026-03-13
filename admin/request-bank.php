@@ -20,7 +20,7 @@ $bankRequests = [];
 if ($conn) {
     $checkTable = $conn->query("SHOW TABLES LIKE 'bank_account_change_requests'");
     if ($checkTable && $checkTable->num_rows > 0) {
-        $sql = "SELECT r.*, e.full_name, e.employee_id 
+        $sql = "SELECT r.*, e.full_name, e.employee_id AS employee_badge 
                 FROM bank_account_change_requests r 
                 JOIN employees e ON e.id = r.employee_id 
                 WHERE r.status = 'Pending' 
@@ -89,7 +89,7 @@ if ($conn) {
                         <tr class="border-b border-slate-100 hover:bg-slate-50">
                             <td class="px-4 py-3">
                                 <div class="font-medium text-slate-700"><?php echo htmlspecialchars($r['full_name'] ?? ''); ?></div>
-                                <div class="text-xs text-slate-500"><?php echo htmlspecialchars($r['employee_id'] ?? ''); ?></div>
+                                <div class="text-xs text-slate-500"><?php echo htmlspecialchars($r['employee_badge'] ?? $r['employee_id'] ?? ''); ?></div>
                             </td>
                             <td class="px-4 py-3 text-slate-600"><?php echo !empty($r['requested_at']) ? date('M d, Y H:i', strtotime($r['requested_at'])) : '—'; ?></td>
                             <td class="px-4 py-3">

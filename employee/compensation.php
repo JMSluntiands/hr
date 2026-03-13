@@ -7,6 +7,10 @@ if (!isset($_SESSION['user_id'])) {
 }
 require_once __DIR__ . '/../controller/session_timeout.php';
 
+// Prevent caching so bank details show immediately after admin approval
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Pragma: no-cache');
+
 include '../database/db.php';
 include 'include/employee_data.php';
 
@@ -325,7 +329,7 @@ if ($employeeDbId && $conn) {
                 </div>
                 <div class="p-6">
                     <?php if ($pendingBankRequest): ?>
-                    <p class="text-amber-700 text-sm mb-4 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2">You have a pending bank account change request. Admin will review and notify you.</p>
+                    <p class="text-amber-700 text-sm mb-4 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2">You have a pending bank account change request. Admin will review and notify you. After approval, refresh this page to see your bank details.</p>
                     <?php endif; ?>
                     <?php if ($bankDetails): ?>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -354,6 +358,7 @@ if ($employeeDbId && $conn) {
                         </div>
                     <?php else: ?>
                         <p class="text-slate-500 text-sm">No bank details on file. Click "Request bank account" to submit a request for admin approval.</p>
+                        <p class="text-slate-500 text-xs mt-2">If your request was just approved, <a href="compensation.php" class="text-[#FA9800] font-medium hover:underline">refresh this page</a> to see your bank details.</p>
                     <?php endif; ?>
                 </div>
             </section>
