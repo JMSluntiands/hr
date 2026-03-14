@@ -15,7 +15,7 @@ include '../database/db.php';
 
 $emp = null;
 if ($conn) {
-    $stmt = $conn->prepare("SELECT id, employee_id, full_name, email, phone, position, department, date_hired, address, profile_picture, sss, philhealth, pagibig, tin FROM employees WHERE id = ? LIMIT 1");
+    $stmt = $conn->prepare("SELECT id, employee_id, full_name, email, phone, position, department, date_hired, address, secondary_workplace, profile_picture, sss, philhealth, pagibig, tin FROM employees WHERE id = ? LIMIT 1");
     $stmt->bind_param('i', $id);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -51,6 +51,7 @@ $companyName = 'Luntiands';
         /* Standard ID size: ~54mm x 86mm (CR80 portrait) = 204px x 323px at 96dpi */
         .id-card {
             width: 204px;
+            height: 323px;
             min-height: 323px;
             border-radius: 10px;
             overflow: hidden;
@@ -64,10 +65,16 @@ $companyName = 'Luntiands';
         }
         .id-card-back {
             width: 204px;
+            height: 323px;
             min-height: 323px;
             border-radius: 10px;
             overflow: hidden;
             box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+        }
+        .id-card-back-scroll {
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
         }
         .id-cards-row {
             display: flex;
@@ -133,29 +140,34 @@ $companyName = 'Luntiands';
             <div class="text-xs font-bold"><?php echo htmlspecialchars($companyName); ?></div>
         </div>
         <div class="p-2.5 flex-1 flex flex-col min-h-0">
+            <div class="id-card-back-scroll">
             <div class="mb-1.5">
                 <div class="text-[9px] font-bold text-[#FA9800] uppercase tracking-wide mb-1 border-b border-slate-200 pb-0.5">Details</div>
                 <div class="space-y-0.5 text-[9px] text-slate-800">
-                    <div class="flex"><span class="w-14 text-slate-500 shrink-0">Name:</span><span class="font-medium truncate"><?php echo htmlspecialchars($emp['full_name'] ?? '—'); ?></span></div>
-                    <div class="flex"><span class="w-14 text-slate-500 shrink-0">ID No:</span><span class="font-mono truncate"><?php echo htmlspecialchars($emp['employee_id'] ?? '—'); ?></span></div>
-                    <div class="flex"><span class="w-14 text-slate-500 shrink-0">Position:</span><span class="truncate"><?php echo htmlspecialchars($emp['position'] ?? '—'); ?></span></div>
-                    <div class="flex"><span class="w-14 text-slate-500 shrink-0">Dept:</span><span class="truncate"><?php echo htmlspecialchars($emp['department'] ?? '—'); ?></span></div>
+                    <div class="flex"><span class="w-14 text-slate-500 shrink-0">Name:</span><span class="font-medium truncate min-w-0"><?php echo htmlspecialchars($emp['full_name'] ?? '—'); ?></span></div>
+                    <div class="flex"><span class="w-14 text-slate-500 shrink-0">ID No:</span><span class="font-mono truncate min-w-0"><?php echo htmlspecialchars($emp['employee_id'] ?? '—'); ?></span></div>
+                    <div class="flex"><span class="w-14 text-slate-500 shrink-0">Position:</span><span class="truncate min-w-0"><?php echo htmlspecialchars($emp['position'] ?? '—'); ?></span></div>
+                    <div class="flex"><span class="w-14 text-slate-500 shrink-0">Dept:</span><span class="truncate min-w-0"><?php echo htmlspecialchars($emp['department'] ?? '—'); ?></span></div>
                     <div class="flex"><span class="w-14 text-slate-500 shrink-0">Hired:</span><span><?php echo !empty($emp['date_hired']) ? date('M d, Y', strtotime($emp['date_hired'])) : '—'; ?></span></div>
-                    <div class="flex"><span class="w-14 text-slate-500 shrink-0">Phone:</span><span class="truncate"><?php echo htmlspecialchars($emp['phone'] ?? '—'); ?></span></div>
-                    <div class="flex"><span class="w-14 text-slate-500 shrink-0">Email:</span><span class="truncate break-all"><?php echo htmlspecialchars($emp['email'] ?? '—'); ?></span></div>
-                    <div class="flex"><span class="w-14 text-slate-500 shrink-0">Address:</span><span class="truncate break-words"><?php echo htmlspecialchars($emp['address'] ?? '—'); ?></span></div>
+                    <div class="flex"><span class="w-14 text-slate-500 shrink-0">Phone:</span><span class="truncate min-w-0"><?php echo htmlspecialchars($emp['phone'] ?? '—'); ?></span></div>
+                    <div class="flex"><span class="w-14 text-slate-500 shrink-0">Email:</span><span class="truncate break-all min-w-0"><?php echo htmlspecialchars($emp['email'] ?? '—'); ?></span></div>
+                    <div class="flex gap-1 min-w-0"><span class="w-14 text-slate-500 shrink-0">Primary:</span><span class="min-w-0 break-words"><?php echo htmlspecialchars($emp['address'] ?? '—'); ?></span></div>
+                    <?php if (!empty($emp['secondary_workplace'])): ?>
+                    <div class="flex gap-1 min-w-0"><span class="w-14 text-slate-500 shrink-0">Secondary:</span><span class="min-w-0 break-words"><?php echo htmlspecialchars($emp['secondary_workplace']); ?></span></div>
+                    <?php endif; ?>
                 </div>
             </div>
             <div class="mb-1.5">
                 <div class="text-[9px] font-bold text-[#FA9800] uppercase tracking-wide mb-1 border-b border-slate-200 pb-0.5">Government Info</div>
                 <div class="space-y-0.5 text-[9px] text-slate-800">
-                    <div class="flex"><span class="w-14 text-slate-500 shrink-0">SSS:</span><span class="truncate"><?php echo htmlspecialchars($emp['sss'] ?? '—'); ?></span></div>
-                    <div class="flex"><span class="w-14 text-slate-500 shrink-0">PhilHealth:</span><span class="truncate"><?php echo htmlspecialchars($emp['philhealth'] ?? '—'); ?></span></div>
-                    <div class="flex"><span class="w-14 text-slate-500 shrink-0">Pag-IBIG:</span><span class="truncate"><?php echo htmlspecialchars($emp['pagibig'] ?? '—'); ?></span></div>
-                    <div class="flex"><span class="w-14 text-slate-500 shrink-0">TIN:</span><span class="truncate"><?php echo htmlspecialchars($emp['tin'] ?? '—'); ?></span></div>
+                    <div class="flex"><span class="w-14 text-slate-500 shrink-0">SSS:</span><span class="truncate min-w-0"><?php echo htmlspecialchars($emp['sss'] ?? '—'); ?></span></div>
+                    <div class="flex"><span class="w-14 text-slate-500 shrink-0">PhilHealth:</span><span class="truncate min-w-0"><?php echo htmlspecialchars($emp['philhealth'] ?? '—'); ?></span></div>
+                    <div class="flex"><span class="w-14 text-slate-500 shrink-0">Pag-IBIG:</span><span class="truncate min-w-0"><?php echo htmlspecialchars($emp['pagibig'] ?? '—'); ?></span></div>
+                    <div class="flex"><span class="w-14 text-slate-500 shrink-0">TIN:</span><span class="truncate min-w-0"><?php echo htmlspecialchars($emp['tin'] ?? '—'); ?></span></div>
                 </div>
             </div>
-            <div class="mt-auto pt-2 border-t border-slate-200">
+            </div>
+            <div class="shrink-0 pt-2 border-t border-slate-200">
                 <p class="text-[7px] text-slate-600 leading-tight text-center">
                     This ID card is the property of <?php echo htmlspecialchars($companyName); ?>. If found, please return to the company office. Unauthorized use is strictly prohibited.
                 </p>

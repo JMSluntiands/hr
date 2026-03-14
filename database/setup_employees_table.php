@@ -23,6 +23,7 @@ $sql = "CREATE TABLE IF NOT EXISTS `employees` (
   `date_hired` date NOT NULL,
   `status` enum('Active','Inactive') NOT NULL DEFAULT 'Active',
   `address` text DEFAULT NULL,
+  `secondary_workplace` text DEFAULT NULL,
   `birthdate` date DEFAULT NULL,
   `gender` enum('Male','Female') DEFAULT NULL,
   `sss` varchar(50) DEFAULT NULL,

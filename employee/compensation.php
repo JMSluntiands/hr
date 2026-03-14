@@ -432,7 +432,7 @@ if ($employeeDbId && $conn) {
                         <!-- Gross Income (based on new salary) -->
                         <?php if ($currentSalary): 
                             $monthlyGross = $currentSalary;
-                            $dailyGross = $monthlyGross / 22; // Assuming 22 working days per month
+                            $dailyGross = $monthlyGross / 26;
                             $annualGross = $monthlyGross * 12;
                         ?>
                         <div class="mt-6 pt-6 border-t border-slate-100">
@@ -446,7 +446,7 @@ if ($employeeDbId && $conn) {
                                 <div class="bg-slate-50 p-4 rounded-lg">
                                     <label class="block text-sm font-medium text-slate-600 mb-1">Daily Gross Income</label>
                                     <p class="text-slate-800 text-xl font-bold">₱<?php echo number_format($dailyGross, 2); ?></p>
-                                    <p class="text-xs text-slate-500 mt-1">Based on 22 working days</p>
+                                    <p class="text-xs text-slate-500 mt-1">Monthly ÷ 26</p>
                                 </div>
                                 <div class="bg-slate-50 p-4 rounded-lg">
                                     <label class="block text-sm font-medium text-slate-600 mb-1">Annual Gross Income</label>

@@ -10,6 +10,12 @@ if (!isset($_SESSION['user_id'])) {
 $adminName = $_SESSION['name'] ?? 'Admin User';
 $role      = $_SESSION['role'] ?? 'admin';
 
+$staffUpdated = false;
+if (!empty($_SESSION['staff_updated'])) {
+    $staffUpdated = true;
+    unset($_SESSION['staff_updated']);
+}
+
 // Include database connection
 include '../database/db.php';
 
@@ -76,6 +82,19 @@ if ($conn) {
 
     <!-- Main Content -->
     <main class="min-h-screen overflow-y-auto p-4 pt-16 md:pt-8 md:ml-64 md:p-8">
+        <!-- Success message after update -->
+        <?php if ($staffUpdated): ?>
+        <div id="staffUpdatedAlert" class="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 flex items-center gap-3 text-emerald-800 shadow-sm">
+            <svg class="w-5 h-5 flex-shrink-0 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p class="text-sm font-medium">Employee updated successfully.</p>
+            <button type="button" onclick="document.getElementById('staffUpdatedAlert').remove()" class="ml-auto p-1 rounded-lg hover:bg-emerald-100 transition-colors" aria-label="Dismiss">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+        </div>
+        <?php endif; ?>
+
         <!-- Header -->
         <div class="flex items-center justify-between mb-6">
             <div>

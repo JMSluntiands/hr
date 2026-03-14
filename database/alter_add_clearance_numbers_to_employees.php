@@ -9,18 +9,27 @@ if (!$conn) {
     die("Database connection failed!");
 }
 
-$sql = "ALTER TABLE `employees`
-        ADD COLUMN `nbi_clearance` varchar(50) DEFAULT NULL AFTER `tin`,
-        ADD COLUMN `police_clearance` varchar(50) DEFAULT NULL AFTER `nbi_clearance`";
-
-if ($conn->query($sql) === TRUE) {
-    echo "✅ NBI and Police clearance columns added to employees table.<br>";
-} else {
-    if (strpos($conn->error, 'Duplicate column name') !== false) {
-        echo "ℹ️ Columns already exist on employees table.<br>";
+$altered = false;
+foreach (
+    [
+        "ADD COLUMN `nbi_clearance` varchar(50) DEFAULT NULL AFTER `tin`",
+        "ADD COLUMN `police_clearance` varchar(50) DEFAULT NULL AFTER `nbi_clearance`"
+    ] as $addColumn
+) {
+    $sql = "ALTER TABLE `employees` " . $addColumn;
+    if ($conn->query($sql) === TRUE) {
+        echo "✅ Column added.<br>";
+        $altered = true;
     } else {
-        echo "❌ Error altering employees table: " . $conn->error;
+        if (strpos($conn->error, 'Duplicate column name') !== false) {
+            echo "ℹ️ Column already exists.<br>";
+        } else {
+            echo "❌ Error: " . $conn->error . "<br>";
+        }
     }
+}
+if ($altered) {
+    echo "✅ NBI and Police clearance columns are now on employees table.<br>";
 }
 
 echo "<a href=\"../admin/staff-add.php\">Go to Add Employee Page</a>";

@@ -158,25 +158,26 @@ if ($conn) {
         }
     </script>
 </head>
-<body class="font-inter bg-[#f1f5f9] min-h-screen">
+<body class="font-inter bg-gradient-to-b from-slate-100 to-slate-50 min-h-screen">
     <?php include __DIR__ . '/include/sidebar-admin.php'; ?>
 
     <!-- Main Content -->
-    <main class="min-h-screen overflow-y-auto p-4 pt-16 md:pt-8 md:ml-64 md:p-8">
+    <main class="min-h-screen overflow-y-auto pt-16 md:pt-8 md:ml-64 px-4 md:px-8 pb-10">
+        <div class="max-w-5xl mx-auto space-y-6">
         <!-- Header -->
-        <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center justify-between mb-2">
             <div>
-                <h1 class="text-2xl font-semibold text-slate-800">View Employee</h1>
-                <p class="text-sm text-slate-500 mt-1">Employee details and information</p>
+                <h1 class="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">View Employee</h1>
+                <p class="text-sm text-slate-500 mt-1">Full employee profile and records</p>
             </div>
             <div class="flex items-center gap-3">
-                <a href="staff-edit.php?id=<?php echo $employeeId; ?>" class="inline-flex items-center gap-2 px-4 py-2 bg-[#d97706] text-white rounded-lg hover:bg-[#b45309] font-medium text-sm">
+                <a href="staff-edit.php?id=<?php echo $employeeId; ?>" class="inline-flex items-center gap-2 px-4 py-2 bg-[#d97706] text-white rounded-lg hover:bg-[#b45309] font-medium text-sm shadow-sm">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
                     Edit Employee
                 </a>
-                <a href="staff" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 font-medium text-sm">
+                <a href="staff" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 font-medium text-sm border border-slate-200">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                     </svg>
@@ -185,78 +186,116 @@ if ($conn) {
             </div>
         </div>
 
-        <!-- Employee Details -->
-        <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-6 mb-6">
-            <div class="flex items-start gap-6 mb-6">
-                <div class="w-24 h-24 rounded-full overflow-hidden bg-slate-200 flex items-center justify-center flex-shrink-0">
-                    <?php 
-                    $photo = !empty($employee['profile_picture']) && file_exists(__DIR__ . '/../uploads/' . $employee['profile_picture']) ? $employee['profile_picture'] : null;
-                    if ($photo): ?>
-                        <img src="../uploads/<?php echo htmlspecialchars($photo); ?>" alt="" class="w-full h-full object-cover">
-                    <?php else: ?>
-                        <span class="text-3xl font-semibold text-slate-500"><?php echo strtoupper(substr($employee['full_name'] ?? '?', 0, 1)); ?></span>
-                    <?php endif; ?>
-                </div>
-                <div class="flex-1">
-                    <h2 class="text-2xl font-semibold text-slate-800 mb-1"><?php echo htmlspecialchars($employee['full_name'] ?? ''); ?></h2>
-                    <p class="text-sm text-slate-500 mb-2"><?php echo htmlspecialchars($employee['employee_id'] ?? ''); ?></p>
-                    <div class="flex items-center gap-4 text-sm">
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?php echo ($employee['status'] ?? 'Active') === 'Active' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'; ?>">
-                            <?php echo htmlspecialchars($employee['status'] ?? 'Active'); ?>
-                        </span>
+        <!-- Hero Card: core identity -->
+        <div class="bg-white rounded-2xl shadow-md border border-slate-200 overflow-hidden">
+            <div class="bg-gradient-to-r from-amber-500 to-amber-600 h-20 md:h-24"></div>
+            <div class="px-6 md:px-8 pb-6 -mt-10 md:-mt-12 relative">
+                <div class="flex flex-col md:flex-row md:items-end gap-6">
+                    <div class="flex items-center gap-4 md:gap-5">
+                        <div class="w-24 h-24 md:w-28 md:h-28 rounded-2xl overflow-hidden bg-white border-4 border-white shadow-lg flex items-center justify-center flex-shrink-0">
+                            <?php 
+                            $photo = !empty($employee['profile_picture']) && file_exists(__DIR__ . '/../uploads/' . $employee['profile_picture']) ? $employee['profile_picture'] : null;
+                            if ($photo): ?>
+                                <img src="../uploads/<?php echo htmlspecialchars($photo); ?>" alt="" class="w-full h-full object-cover">
+                            <?php else: ?>
+                                <span class="text-3xl md:text-4xl font-bold text-amber-600"><?php echo strtoupper(substr($employee['full_name'] ?? '?', 0, 1)); ?></span>
+                            <?php endif; ?>
+                        </div>
+                        <div class="text-left">
+                            <h2 class="text-xl md:text-2xl font-bold text-slate-800 mb-1"><?php echo htmlspecialchars($employee['full_name'] ?? ''); ?></h2>
+                            <p class="text-xs md:text-sm text-slate-500 font-mono mb-2"><?php echo htmlspecialchars($employee['employee_id'] ?? ''); ?></p>
+                            <div class="flex flex-wrap items-center gap-2 text-xs md:text-sm">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full font-medium <?php echo ($employee['status'] ?? 'Active') === 'Active' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'; ?>">
+                                    <?php echo htmlspecialchars($employee['status'] ?? 'Active'); ?>
+                                </span>
+                                <?php if (!empty($employee['position'])): ?>
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
+                                        <?php echo htmlspecialchars($employee['position']); ?>
+                                        <?php if (!empty($employee['department'])): ?>
+                                            <span class="mx-1 text-slate-400">·</span><?php echo htmlspecialchars($employee['department']); ?>
+                                        <?php endif; ?>
+                                    </span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
+        </div>
 
+        <!-- Personal & employment info card -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             <!-- Personal Information -->
-            <div class="border-t border-slate-200 pt-6 mb-6">
-                <h3 class="text-lg font-semibold text-slate-800 mb-4">Personal Information</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="p-6 md:p-8 bg-gradient-to-b from-slate-50 to-white border-b border-slate-100">
+                <div class="flex items-center gap-3 mb-6">
+                    <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                    </span>
                     <div>
-                        <p class="text-sm text-slate-500 mb-1">Email Address</p>
-                        <p class="font-medium text-slate-800"><?php echo htmlspecialchars($employee['email'] ?? 'N/A'); ?></p>
+                        <h3 class="text-lg font-semibold text-slate-800">Personal Information</h3>
+                        <p class="text-sm text-slate-500">Contact details and work locations</p>
                     </div>
-                    <div>
-                        <p class="text-sm text-slate-500 mb-1">Phone Number</p>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="p-4 rounded-xl bg-white border border-slate-100">
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Email</p>
+                        <p class="font-medium text-slate-800 truncate" title="<?php echo htmlspecialchars($employee['email'] ?? ''); ?>"><?php echo htmlspecialchars($employee['email'] ?? 'N/A'); ?></p>
+                    </div>
+                    <div class="p-4 rounded-xl bg-white border border-slate-100">
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Phone</p>
                         <p class="font-medium text-slate-800"><?php echo htmlspecialchars($employee['phone'] ?? 'N/A'); ?></p>
                     </div>
-                    <div>
-                        <p class="text-sm text-slate-500 mb-1">Birthdate</p>
+                    <div class="p-4 rounded-xl bg-white border border-slate-100">
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Birthdate</p>
                         <p class="font-medium text-slate-800"><?php echo !empty($employee['birthdate']) ? date('M d, Y', strtotime($employee['birthdate'])) : 'N/A'; ?></p>
                     </div>
-                    <div>
-                        <p class="text-sm text-slate-500 mb-1">Gender</p>
+                    <div class="p-4 rounded-xl bg-white border border-slate-100">
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Gender</p>
                         <p class="font-medium text-slate-800"><?php echo htmlspecialchars($employee['gender'] ?? 'N/A'); ?></p>
                     </div>
-                    <div class="md:col-span-2">
-                        <p class="text-sm text-slate-500 mb-1">Address</p>
+                    <div class="p-4 rounded-xl bg-white border border-slate-100 sm:col-span-2">
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Primary Workplace</p>
                         <p class="font-medium text-slate-800"><?php echo htmlspecialchars($employee['address'] ?? 'N/A'); ?></p>
                     </div>
-                    <div>
-                        <p class="text-sm text-slate-500 mb-1">Emergency Contact Person</p>
-                        <p class="font-medium text-slate-800"><?php echo htmlspecialchars($employee['emergency_contact_name'] ?? 'N/A'); ?></p>
+                    <div class="p-4 rounded-xl bg-white border border-slate-100 sm:col-span-2">
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Secondary Workplace</p>
+                        <p class="font-medium text-slate-800"><?php echo htmlspecialchars($employee['secondary_workplace'] ?? 'N/A'); ?></p>
                     </div>
-                    <div>
-                        <p class="text-sm text-slate-500 mb-1">Emergency Contact Number</p>
-                        <p class="font-medium text-slate-800"><?php echo htmlspecialchars($employee['emergency_contact_phone'] ?? 'N/A'); ?></p>
+                    <div class="p-4 rounded-xl bg-amber-50/60 border border-amber-100 sm:col-span-2 lg:col-span-3">
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Emergency Contact</p>
+                        <p class="font-medium text-slate-800"><?php echo htmlspecialchars($employee['emergency_contact_name'] ?? 'N/A'); ?></p>
+                        <p class="text-xs text-slate-500 mt-0.5">
+                            <?php echo htmlspecialchars($employee['emergency_contact_relationship'] ?? ''); ?>
+                            <?php if (!empty($employee['emergency_contact_phone'])): ?>
+                                · <?php echo htmlspecialchars($employee['emergency_contact_phone']); ?>
+                            <?php endif; ?>
+                        </p>
                     </div>
                 </div>
             </div>
 
             <!-- Employment Information -->
-            <div class="border-t border-slate-200 pt-6 mb-6">
-                <h3 class="text-lg font-semibold text-slate-800 mb-4">Employment Information</h3>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="p-6 md:p-8 border-t border-slate-100">
+                <div class="flex items-center gap-3 mb-6">
+                    <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z\"/></svg>
+                    </span>
                     <div>
-                        <p class="text-sm text-slate-500 mb-1">Position</p>
+                        <h3 class="text-lg font-semibold text-slate-800">Employment</h3>
+                        <p class="text-sm text-slate-500">Role, department and status</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="p-4 rounded-xl bg-slate-50 border border-slate-100">
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Position</p>
                         <p class="font-medium text-slate-800"><?php echo htmlspecialchars($employee['position'] ?? 'N/A'); ?></p>
                     </div>
-                    <div>
-                        <p class="text-sm text-slate-500 mb-1">Department</p>
+                    <div class="p-4 rounded-xl bg-slate-50 border border-slate-100">
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Department</p>
                         <p class="font-medium text-slate-800"><?php echo htmlspecialchars($employee['department'] ?? 'N/A'); ?></p>
                     </div>
-                    <div>
-                        <p class="text-sm text-slate-500 mb-1">Employment Type</p>
+                    <div class="p-4 rounded-xl bg-slate-50 border border-slate-100">
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Employment Type</p>
                         <p class="font-medium text-slate-800">
                             <?php
                             if ($employmentTypeName) {
@@ -269,36 +308,52 @@ if ($conn) {
                             ?>
                         </p>
                     </div>
-                    <div>
-                        <p class="text-sm text-slate-500 mb-1">Date Hired</p>
+                    <div class="p-4 rounded-xl bg-slate-50 border border-slate-100">
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Date Hired</p>
                         <p class="font-medium text-slate-800"><?php echo !empty($employee['date_hired']) ? date('M d, Y', strtotime($employee['date_hired'])) : 'N/A'; ?></p>
                     </div>
-                    <div>
-                        <p class="text-sm text-slate-500 mb-1">Created At</p>
+                    <div class="p-4 rounded-xl bg-slate-50 border border-slate-100">
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Created At</p>
                         <p class="font-medium text-slate-800"><?php echo !empty($employee['created_at']) ? date('M d, Y H:i', strtotime($employee['created_at'])) : 'N/A'; ?></p>
                     </div>
                 </div>
             </div>
 
             <!-- Government Information -->
-            <div class="border-t border-slate-200 pt-6 mb-6">
-                <h3 class="text-lg font-semibold text-slate-800 mb-4">Government Information</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="p-6 md:p-8 border-t border-slate-100 bg-slate-50/40">
+                <div class="flex items-center gap-3 mb-6">
+                    <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z\"/></svg>
+                    </span>
                     <div>
-                        <p class="text-sm text-slate-500 mb-1">SSS Number</p>
-                        <p class="font-medium text-slate-800"><?php echo htmlspecialchars($employee['sss'] ?? 'N/A'); ?></p>
+                        <h3 class="text-lg font-semibold text-slate-800">Government IDs</h3>
+                        <p class="text-sm text-slate-500">SSS, PhilHealth, Pag-IBIG, TIN & clearances</p>
                     </div>
-                    <div>
-                        <p class="text-sm text-slate-500 mb-1">PhilHealth Number</p>
-                        <p class="font-medium text-slate-800"><?php echo htmlspecialchars($employee['philhealth'] ?? 'N/A'); ?></p>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="p-4 rounded-xl bg-white border border-slate-100">
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">SSS</p>
+                        <p class="font-medium text-slate-800 font-mono text-sm"><?php echo htmlspecialchars($employee['sss'] ?? '—'); ?></p>
                     </div>
-                    <div>
-                        <p class="text-sm text-slate-500 mb-1">Pag-IBIG (HDMF) Number</p>
-                        <p class="font-medium text-slate-800"><?php echo htmlspecialchars($employee['pagibig'] ?? 'N/A'); ?></p>
+                    <div class="p-4 rounded-xl bg-white border border-slate-100">
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">PhilHealth</p>
+                        <p class="font-medium text-slate-800 font-mono text-sm"><?php echo htmlspecialchars($employee['philhealth'] ?? '—'); ?></p>
                     </div>
-                    <div>
-                        <p class="text-sm text-slate-500 mb-1">TIN Number</p>
-                        <p class="font-medium text-slate-800"><?php echo htmlspecialchars($employee['tin'] ?? 'N/A'); ?></p>
+                    <div class="p-4 rounded-xl bg-white border border-slate-100">
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Pag-IBIG</p>
+                        <p class="font-medium text-slate-800 font-mono text-sm"><?php echo htmlspecialchars($employee['pagibig'] ?? '—'); ?></p>
+                    </div>
+                    <div class="p-4 rounded-xl bg-white border border-slate-100">
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">TIN</p>
+                        <p class="font-medium text-slate-800 font-mono text-sm"><?php echo htmlspecialchars($employee['tin'] ?? '—'); ?></p>
+                    </div>
+                    <div class="p-4 rounded-xl bg-white border border-slate-100">
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">NBI Clearance</p>
+                        <p class="font-medium text-slate-800 text-sm"><?php echo htmlspecialchars($employee['nbi_clearance'] ?? '—'); ?></p>
+                    </div>
+                    <div class="p-4 rounded-xl bg-white border border-slate-100">
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Police Clearance</p>
+                        <p class="font-medium text-slate-800 text-sm"><?php echo htmlspecialchars($employee['police_clearance'] ?? '—'); ?></p>
                     </div>
                 </div>
             </div>
@@ -347,7 +402,7 @@ if ($conn) {
                         <!-- Gross Income based on New Salary -->
                         <?php if ($currentSalary): 
                             $monthlyGross = $currentSalary;
-                            $dailyGross = $monthlyGross / 22; // Assuming 22 working days per month
+                            $dailyGross = $monthlyGross / 26;
                             $annualGross = $monthlyGross * 12;
                         ?>
                         <div class="md:col-span-2 border-slate-200">
@@ -361,7 +416,7 @@ if ($conn) {
                                 <div class="bg-slate-50 p-4 rounded-lg">
                                     <p class="text-sm font-medium text-slate-600 mb-1">Daily Gross Income</p>
                                     <p class="text-slate-800 text-xl font-bold">₱<?php echo number_format($dailyGross, 2); ?></p>
-                                    <p class="text-xs text-slate-500 mt-1">Based on 22 working days</p>
+                                    <p class="text-xs text-slate-500 mt-1">Monthly ÷ 26</p>
                                 </div>
                                 <div class="bg-slate-50 p-4 rounded-lg">
                                     <p class="text-sm font-medium text-slate-600 mb-1">Annual Gross Income</p>

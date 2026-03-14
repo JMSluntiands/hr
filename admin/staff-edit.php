@@ -112,8 +112,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $dateHired = $_POST['date_hired'] ?? '';
     $status = $_POST['status'] ?? 'Active';
     $address = trim($_POST['address'] ?? '');
+    $secondaryWorkplace = trim($_POST['secondary_workplace'] ?? '');
     $emergencyContactName = trim($_POST['emergency_contact_name'] ?? '');
     $emergencyContactPhone = trim($_POST['emergency_contact_phone'] ?? '');
+    $emergencyContactRelationship = trim($_POST['emergency_contact_relationship'] ?? '');
     if (!empty($emergencyContactPhone) && !preg_match('/^09/', $emergencyContactPhone)) {
         $emergencyContactPhone = '09' . $emergencyContactPhone;
     }
@@ -125,9 +127,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $tin = trim($_POST['tin'] ?? '');
     $nbiClearance = trim($_POST['nbi_clearance'] ?? '');
     $policeClearance = trim($_POST['police_clearance'] ?? '');
-    $employmentTypeId = isset($_POST['employment_type']) ? (int)$_POST['employment_type'] : 0;
-    $basicSalaryMonthlyInput = trim((string)($_POST['basic_salary_monthly'] ?? ''));
+    // Preserve existing employment_type_id when form sends empty/0 so it doesn't get cleared
+    $postedEmploymentType = isset($_POST['employment_type']) ? (string)$_POST['employment_type'] : '';
+    $employmentTypeId = ($postedEmploymentType !== '' && (int)$postedEmploymentType > 0)
+        ? (int)$postedEmploymentType
+        : (int)($employee['employment_type_id'] ?? 0);
+    $basicSalaryDailyInput = trim((string)($_POST['basic_salary_daily'] ?? ''));
+    $basicSalaryDaily = 0.00;
     $basicSalaryMonthly = 0.00;
+    $basicSalaryAnnual = 0.00;
     $allowanceInternetInput = trim((string)($_POST['allowance_internet'] ?? '0'));
     $allowanceMealInput = trim((string)($_POST['allowance_meal'] ?? '0'));
     $allowancePositionInput = trim((string)($_POST['allowance_position'] ?? '0'));
@@ -173,13 +181,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    if ($basicSalaryMonthlyInput !== '') {
-        if (!is_numeric($basicSalaryMonthlyInput)) {
-            $errors[] = 'Compensation monthly must be a valid number';
+    if ($basicSalaryDailyInput !== '') {
+        if (!is_numeric($basicSalaryDailyInput)) {
+            $errors[] = 'Daily compensation must be a valid number';
         } else {
-            $basicSalaryMonthly = (float)$basicSalaryMonthlyInput;
-            if ($basicSalaryMonthly < 0) {
-                $errors[] = 'Compensation monthly cannot be negative';
+            $basicSalaryDaily = (float)$basicSalaryDailyInput;
+            if ($basicSalaryDaily < 0) {
+                $errors[] = 'Daily compensation cannot be negative';
+            } else {
+                $basicSalaryMonthly = round($basicSalaryDaily * 26, 2);
+                $basicSalaryAnnual = round($basicSalaryMonthly * 12, 2);
             }
         }
     }
@@ -275,11 +286,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // UPDATE existing employee
             $conn->begin_transaction();
             try {
-                $stmt = $conn->prepare("UPDATE employees SET full_name=?, email=?, phone=?, position=?, department=?, employment_type_id=?, date_hired=?, status=?, address=?, emergency_contact_name=?, emergency_contact_phone=?, birthdate=?, gender=?, sss=?, philhealth=?, pagibig=?, tin=?, nbi_clearance=?, police_clearance=? WHERE id=?");
+                $stmt = $conn->prepare("UPDATE employees SET full_name=?, email=?, phone=?, position=?, department=?, employment_type_id=?, date_hired=?, status=?, address=?, secondary_workplace=?, emergency_contact_name=?, emergency_contact_phone=?, emergency_contact_relationship=?, birthdate=?, gender=?, sss=?, philhealth=?, pagibig=?, tin=?, nbi_clearance=?, police_clearance=? WHERE id=?");
                 if (!$stmt) {
                     throw new Exception('Database prepare error: ' . $conn->error);
                 }
-                $stmt->bind_param("sssssisssssssssssssi", $fullName, $email, $phone, $position, $department, $employmentTypeId, $dateHired, $status, $address, $emergencyContactName, $emergencyContactPhone, $birthdate, $gender, $sss, $philhealth, $pagibig, $tin, $nbiClearance, $policeClearance, $employeeId);
+                $stmt->bind_param("sssssisssssssssssssssi", $fullName, $email, $phone, $position, $department, $employmentTypeId, $dateHired, $status, $address, $secondaryWorkplace, $emergencyContactName, $emergencyContactPhone, $emergencyContactRelationship, $birthdate, $gender, $sss, $philhealth, $pagibig, $tin, $nbiClearance, $policeClearance, $employeeId);
                 if (!$stmt->execute()) {
                     throw new Exception('Error updating employee: ' . $stmt->error);
                 }
@@ -337,8 +348,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
 
                 $previousSalary = (float)($employeeCompensation['basic_salary_monthly'] ?? 0);
-                $basicSalaryDaily = round($basicSalaryMonthly / 22, 2);
-                $basicSalaryAnnual = round($basicSalaryMonthly * 12, 2);
+                // basicSalaryDaily, basicSalaryMonthly, basicSalaryAnnual already set from POST validation above
                 $compEffectiveDate = !empty($dateHired) ? $dateHired : date('Y-m-d');
 
                 // Upsert compensation row
@@ -390,23 +400,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 $conn->commit();
                 logActivity($conn, 'Edit Employee', 'Employee', $employeeId, "Updated employee: $fullName");
-                $success = 'Employee updated successfully.';
-                $employee = array_merge($employee, [
-                    'full_name' => $fullName, 'email' => $email, 'phone' => $phone, 'position' => $position,
-                    'department' => $department, 'employment_type_id' => $employmentTypeId,
-                    'date_hired' => $dateHired, 'status' => $status, 'address' => $address,
-                    'emergency_contact_name' => $emergencyContactName, 'emergency_contact_phone' => $emergencyContactPhone,
-                    'birthdate' => $birthdate, 'gender' => $gender, 'sss' => $sss, 'philhealth' => $philhealth, 'pagibig' => $pagibig, 'tin' => $tin
-                ]);
-                $employeeCompensation = [
-                    'basic_salary_monthly' => $basicSalaryMonthly,
-                    'basic_salary_daily' => $basicSalaryDaily,
-                    'basic_salary_annually' => $basicSalaryAnnual,
-                    'allowance_internet' => $allowanceInternet,
-                    'allowance_meal' => $allowanceMeal,
-                    'allowance_position' => $allowancePosition,
-                    'allowance_transportation' => $allowanceTransportation
-                ];
+                $_SESSION['staff_updated'] = 1;
+                header('Location: staff.php');
+                exit;
             } catch (Exception $e) {
                 $conn->rollback();
                 $error = $e->getMessage();
@@ -424,11 +420,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->close();
             $conn->begin_transaction();
             try {
-                $stmt = $conn->prepare("INSERT INTO employees (employee_id, full_name, email, phone, position, department, date_hired, status, address, emergency_contact_name, emergency_contact_phone, birthdate, gender, sss, philhealth, pagibig, tin, nbi_clearance, police_clearance, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
+                $stmt = $conn->prepare("INSERT INTO employees (employee_id, full_name, email, phone, position, department, date_hired, status, address, secondary_workplace, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, birthdate, gender, sss, philhealth, pagibig, tin, nbi_clearance, police_clearance, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
                 if (!$stmt) {
                     throw new Exception('Database prepare error: ' . $conn->error);
                 }
-                $stmt->bind_param("sssssssssssssssssss", $newEmployeeIdStr, $fullName, $email, $phone, $position, $department, $dateHired, $status, $address, $emergencyContactName, $emergencyContactPhone, $birthdate, $gender, $sss, $philhealth, $pagibig, $tin, $nbiClearance, $policeClearance);
+                $stmt->bind_param("sssssssssssssssssssss", $newEmployeeIdStr, $fullName, $email, $phone, $position, $department, $dateHired, $status, $address, $secondaryWorkplace, $emergencyContactName, $emergencyContactPhone, $emergencyContactRelationship, $birthdate, $gender, $sss, $philhealth, $pagibig, $tin, $nbiClearance, $policeClearance);
                 if (!$stmt->execute()) {
                     throw new Exception('Error adding employee: ' . $stmt->error);
                 }
@@ -566,15 +562,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </select>
                         </div>
                         <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-slate-700 mb-2">Address</label>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Primary Workplace</label>
                             <textarea name="address" id="address" rows="2"
-                                      class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]"><?php echo htmlspecialchars($_POST['address'] ?? ($employee['address'] ?? '')); ?></textarea>
+                                      class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]"
+                                      placeholder="Primary work location / address"><?php echo htmlspecialchars($_POST['address'] ?? ($employee['address'] ?? '')); ?></textarea>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Secondary Workplace</label>
+                            <textarea name="secondary_workplace" id="secondary_workplace" rows="2"
+                                      class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]"
+                                      placeholder="Optional second work location"><?php echo htmlspecialchars($_POST['secondary_workplace'] ?? ($employee['secondary_workplace'] ?? '')); ?></textarea>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-2">Emergency Contact Person</label>
                             <input type="text" name="emergency_contact_name" id="emergency_contact_name"
                                    value="<?php echo htmlspecialchars($_POST['emergency_contact_name'] ?? ($employee['emergency_contact_name'] ?? '')); ?>"
                                    class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]" placeholder="Full name">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Relationship</label>
+                            <select name="emergency_contact_relationship" id="emergency_contact_relationship" class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706] bg-white">
+                                <option value="">Select</option>
+                                <option value="Spouse" <?php echo ((isset($_POST['emergency_contact_relationship']) && $_POST['emergency_contact_relationship'] === 'Spouse') || (!isset($_POST['emergency_contact_relationship']) && ($employee['emergency_contact_relationship'] ?? '') === 'Spouse')) ? 'selected' : ''; ?>>Spouse</option>
+                                <option value="Parent" <?php echo ((isset($_POST['emergency_contact_relationship']) && $_POST['emergency_contact_relationship'] === 'Parent') || (!isset($_POST['emergency_contact_relationship']) && ($employee['emergency_contact_relationship'] ?? '') === 'Parent')) ? 'selected' : ''; ?>>Parent</option>
+                                <option value="Sibling" <?php echo ((isset($_POST['emergency_contact_relationship']) && $_POST['emergency_contact_relationship'] === 'Sibling') || (!isset($_POST['emergency_contact_relationship']) && ($employee['emergency_contact_relationship'] ?? '') === 'Sibling')) ? 'selected' : ''; ?>>Sibling</option>
+                                <option value="Child" <?php echo ((isset($_POST['emergency_contact_relationship']) && $_POST['emergency_contact_relationship'] === 'Child') || (!isset($_POST['emergency_contact_relationship']) && ($employee['emergency_contact_relationship'] ?? '') === 'Child')) ? 'selected' : ''; ?>>Child</option>
+                                <option value="Friend" <?php echo ((isset($_POST['emergency_contact_relationship']) && $_POST['emergency_contact_relationship'] === 'Friend') || (!isset($_POST['emergency_contact_relationship']) && ($employee['emergency_contact_relationship'] ?? '') === 'Friend')) ? 'selected' : ''; ?>>Friend</option>
+                                <option value="Other" <?php echo ((isset($_POST['emergency_contact_relationship']) && $_POST['emergency_contact_relationship'] === 'Other') || (!isset($_POST['emergency_contact_relationship']) && ($employee['emergency_contact_relationship'] ?? '') === 'Other')) ? 'selected' : ''; ?>>Other</option>
+                            </select>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-2">Emergency Contact Number</label>
@@ -622,7 +637,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <select name="employment_type" id="employment_type" required class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]">
                                 <option value="">Select Employment Type</option>
                                 <?php
-                                $currentEmploymentTypeId = isset($_POST['employment_type'])
+                                $currentEmploymentTypeId = (isset($_POST['employment_type']) && (string)$_POST['employment_type'] !== '')
                                     ? (int)$_POST['employment_type']
                                     : (int)($employee['employment_type_id'] ?? 0);
                                 foreach ($employmentTypeOptions as $type):
@@ -689,16 +704,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <p class="text-xs text-slate-500 mt-1">12 digits (format: XXX-XXX-XXX-XXX)</p>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-2">NBI Clearance Number</label>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">NBI Clearance</label>
                             <input type="text" name="nbi_clearance" id="nbi_clearance" 
                                    value="<?php echo htmlspecialchars($_POST['nbi_clearance'] ?? ($employee['nbi_clearance'] ?? '')); ?>"
-                                   class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]">
+                                   placeholder="Clearance number or reference"
+                                   class="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-shadow">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-2">Police Clearance Number</label>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Police Clearance</label>
                             <input type="text" name="police_clearance" id="police_clearance" 
                                    value="<?php echo htmlspecialchars($_POST['police_clearance'] ?? ($employee['police_clearance'] ?? '')); ?>"
-                                   class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]">
+                                   placeholder="Clearance number or reference"
+                                   class="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-shadow">
                         </div>
                     </div>
                 </div>
@@ -708,9 +725,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <h2 class="text-lg font-semibold text-slate-800 mb-4">Compensation Information</h2>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-2">Compensation Monthly</label>
-                            <input type="number" name="basic_salary_monthly" id="basic_salary_monthly"
-                                   value="<?php echo htmlspecialchars($_POST['basic_salary_monthly'] ?? ($employeeCompensation['basic_salary_monthly'] ?? 0)); ?>"
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Daily Compensation</label>
+                            <input type="number" name="basic_salary_daily" id="basic_salary_daily"
+                                   value="<?php echo htmlspecialchars($_POST['basic_salary_daily'] ?? ($employeeCompensation['basic_salary_daily'] ?? 0)); ?>"
                                    min="0" step="0.01" placeholder="0.00"
                                    class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]">
                         </div>
@@ -743,9 +760,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                    class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-2">Daily Gross (Auto)</label>
-                            <input type="text" id="basic_salary_daily_preview" readonly
-                                   value="<?php echo number_format((float)($employeeCompensation['basic_salary_daily'] ?? 0), 2, '.', ''); ?>"
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Monthly Gross (Auto)</label>
+                            <input type="text" id="basic_salary_monthly_preview" readonly
+                                   value="<?php echo number_format((float)($employeeCompensation['basic_salary_monthly'] ?? 0), 2, '.', ''); ?>"
                                    class="w-full px-4 py-2 border border-slate-200 rounded-lg bg-slate-50 text-slate-700 cursor-not-allowed">
                         </div>
                         <div>
@@ -755,7 +772,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                    class="w-full px-4 py-2 border border-slate-200 rounded-lg bg-slate-50 text-slate-700 cursor-not-allowed">
                         </div>
                     </div>
-                    <p class="text-xs text-slate-500 mt-2">Auto-compute formula: Daily Gross = Monthly / 22, Annual Gross = Monthly x 12. Allowances are saved separately. Kapag nagbago ang monthly, automatic maglalagay ng salary adjustment record.</p>
+                    <p class="text-xs text-slate-500 mt-2">Auto-compute: Monthly = Daily × 26, Annual = Monthly × 12. Allowances are saved separately. Kapag nagbago ang daily, automatic maglalagay ng salary adjustment record.</p>
                 </div>
 
                 <div class="flex justify-end gap-3 pt-4 border-t border-slate-200">
@@ -770,29 +787,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </main>
 
+    <!-- Loading overlay when submitting -->
+    <div id="submitLoadingOverlay" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/60 backdrop-blur-sm">
+        <div class="flex flex-col items-center gap-4 text-white">
+            <svg class="w-12 h-12 animate-spin text-amber-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p class="text-sm font-medium">Saving changes...</p>
+        </div>
+    </div>
+
     <script>
         // Form validation and phone number handling
         document.addEventListener('DOMContentLoaded', function() {
             const form = document.getElementById('employeeForm');
             const phoneInput = document.getElementById('phone');
-            const monthlyCompInput = document.getElementById('basic_salary_monthly');
-            const dailyGrossPreview = document.getElementById('basic_salary_daily_preview');
+            const dailyCompInput = document.getElementById('basic_salary_daily');
+            const monthlyGrossPreview = document.getElementById('basic_salary_monthly_preview');
             const annualGrossPreview = document.getElementById('basic_salary_annual_preview');
 
             function updateCompensationPreview() {
-                if (!monthlyCompInput || !dailyGrossPreview || !annualGrossPreview) return;
-                const monthly = parseFloat(monthlyCompInput.value);
-                const safeMonthly = Number.isFinite(monthly) && monthly >= 0 ? monthly : 0;
-                dailyGrossPreview.value = (safeMonthly / 22).toFixed(2);
-                annualGrossPreview.value = (safeMonthly * 12).toFixed(2);
+                if (!dailyCompInput || !monthlyGrossPreview || !annualGrossPreview) return;
+                const daily = parseFloat(dailyCompInput.value);
+                const safeDaily = Number.isFinite(daily) && daily >= 0 ? daily : 0;
+                const monthly = safeDaily * 26;
+                const annual = monthly * 12;
+                monthlyGrossPreview.value = monthly.toFixed(2);
+                annualGrossPreview.value = annual.toFixed(2);
             }
 
-            if (monthlyCompInput) {
-                monthlyCompInput.addEventListener('input', updateCompensationPreview);
+            if (dailyCompInput) {
+                dailyCompInput.addEventListener('input', updateCompensationPreview);
                 updateCompensationPreview();
             }
             
-            // Ensure phone number is properly formatted on submit
+            // Ensure phone number is properly formatted on submit + show loading
             if (form) {
                 form.addEventListener('submit', function(e) {
                     // Remove any non-numeric characters
@@ -815,6 +845,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     
                     // Temporarily disable original input to avoid duplication
                     phoneInput.disabled = true;
+                    
+                    // Show loading overlay while redirecting
+                    var overlay = document.getElementById('submitLoadingOverlay');
+                    if (overlay) {
+                        overlay.classList.remove('hidden');
+                        overlay.classList.add('flex');
+                    }
                 });
             }
             

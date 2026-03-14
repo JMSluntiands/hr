@@ -287,172 +287,205 @@ foreach ($documents as $d) {
     <div id="employee-sidebar-backdrop" class="fixed inset-0 z-20 bg-black/40 hidden md:hidden"></div>
 
     <!-- Main Content (only this area scrolls) -->
-    <main class="min-h-screen space-y-6 overflow-y-auto md:ml-64 pt-24 md:pt-8 px-4 md:px-8 pb-8">
-        <div id="main-inner">
-        <!-- Header (view only - same as admin) -->
-        <div class="flex items-center justify-between mb-6">
+    <main class="min-h-screen overflow-y-auto md:ml-64 pt-24 md:pt-8 px-4 md:px-8 pb-12 bg-gradient-to-b from-slate-100 to-slate-50">
+        <div id="main-inner" class="max-w-5xl mx-auto space-y-6">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-2">
             <div>
-                <h1 class="text-2xl font-semibold text-slate-800">My Profile</h1>
-                <p class="text-sm text-slate-500 mt-1">View your employee details and information</p>
+                <h1 class="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">My Profile</h1>
+                <p class="text-sm text-slate-500 mt-1">Your details and information at a glance</p>
             </div>
         </div>
 
         <?php if (!$employee): ?>
-        <div class="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg">No employee record found for your account. Please contact HR.</div>
+        <div class="bg-amber-50 border border-amber-200 text-amber-800 px-5 py-4 rounded-xl shadow-sm">No employee record found for your account. Please contact HR.</div>
         <?php else: ?>
 
-        <!-- Employee Details (same layout as admin staff-view) -->
-        <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-6 mb-6 mt-4 md:mt-6">
-            <div class="flex flex-col md:flex-row md:items-start gap-6 mb-6">
-                <div class="flex flex-col md:flex-row items-center gap-6 flex-shrink-0">
-                    <div class="flex flex-col items-center gap-3">
-                    <div id="profilePhotoPreview" class="w-24 h-24 rounded-full overflow-hidden bg-slate-200 flex items-center justify-center">
-                        <?php
-                        $photo = !empty($employee['profile_picture']) && file_exists(__DIR__ . '/../uploads/' . $employee['profile_picture']) ? $employee['profile_picture'] : null;
-                        if ($photo): ?>
-                            <img id="profilePhotoImg" src="../uploads/<?php echo htmlspecialchars($photo); ?>" alt="" class="w-full h-full object-cover">
-                            <span id="profilePhotoInitial" class="text-3xl font-semibold text-slate-500 hidden"><?php echo strtoupper(substr($employee['full_name'] ?? '?', 0, 1)); ?></span>
-                        <?php else: ?>
-                            <img id="profilePhotoImg" src="" alt="" class="w-full h-full object-cover hidden">
-                            <span id="profilePhotoInitial" class="text-3xl font-semibold text-slate-500"><?php echo strtoupper(substr($employee['full_name'] ?? '?', 0, 1)); ?></span>
+        <!-- Hero Card: Photo + Name + Quick Info -->
+        <div class="bg-white rounded-2xl shadow-md border border-slate-200 overflow-hidden">
+            <div class="bg-gradient-to-r from-amber-500 to-amber-600 h-24 md:h-28"></div>
+            <div class="px-6 md:px-8 pb-6 -mt-12 md:-mt-14 relative">
+                <div class="flex flex-col md:flex-row md:items-end gap-6">
+                    <div class="flex flex-col items-center md:items-start gap-4">
+                        <div id="profilePhotoPreview" class="w-28 h-28 md:w-32 md:h-32 rounded-2xl overflow-hidden bg-white border-4 border-white shadow-lg flex items-center justify-center flex-shrink-0">
+                            <?php
+                            $photo = !empty($employee['profile_picture']) && file_exists(__DIR__ . '/../uploads/' . $employee['profile_picture']) ? $employee['profile_picture'] : null;
+                            if ($photo): ?>
+                                <img id="profilePhotoImg" src="../uploads/<?php echo htmlspecialchars($photo); ?>" alt="" class="w-full h-full object-cover">
+                                <span id="profilePhotoInitial" class="text-4xl font-bold text-amber-600 hidden"><?php echo strtoupper(substr($employee['full_name'] ?? '?', 0, 1)); ?></span>
+                            <?php else: ?>
+                                <img id="profilePhotoImg" src="" alt="" class="w-full h-full object-cover hidden">
+                                <span id="profilePhotoInitial" class="text-4xl font-bold text-amber-600"><?php echo strtoupper(substr($employee['full_name'] ?? '?', 0, 1)); ?></span>
+                            <?php endif; ?>
+                        </div>
+                        <form id="profilePhotoForm" enctype="multipart/form-data" class="flex flex-col items-center gap-1">
+                            <input type="file" name="profile_picture" id="profilePhotoInput" accept="image/jpeg,image/jpg,image/png" class="hidden">
+                            <button type="button" id="profilePhotoBtn" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-lg shadow-sm transition-all">Upload photo</button>
+                            <p class="text-xs text-slate-500">JPG or PNG, max 2MB</p>
+                        </form>
+                        <div id="profilePhotoMessage" class="hidden text-sm text-center max-w-[200px]"></div>
+                    </div>
+                    <div class="flex-1 text-center md:text-left md:pb-1">
+                        <h2 class="text-xl md:text-2xl font-bold text-slate-800 mb-1"><?php echo htmlspecialchars($employee['full_name'] ?? ''); ?></h2>
+                        <p class="text-sm text-slate-500 font-mono mb-3"><?php echo htmlspecialchars($employee['employee_id'] ?? ''); ?></p>
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold <?php echo ($employee['status'] ?? 'Active') === 'Active' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'; ?>">
+                            <?php echo htmlspecialchars($employee['status'] ?? 'Active'); ?>
+                        </span>
+                        <?php if ($position): ?>
+                        <p class="text-slate-600 font-medium mt-3"><?php echo htmlspecialchars($position); ?> · <?php echo htmlspecialchars($department); ?></p>
                         <?php endif; ?>
                     </div>
-                    <form id="profilePhotoForm" enctype="multipart/form-data" class="flex flex-col items-center gap-1">
-                        <input type="file" name="profile_picture" id="profilePhotoInput" accept="image/jpeg,image/jpg,image/png" class="hidden">
-                        <button type="button" id="profilePhotoBtn" class="px-3 py-1.5 bg-[#d97706] hover:bg-[#b45309] text-white text-sm font-medium rounded-lg transition-colors">Upload photo</button>
-                        <p class="text-xs text-slate-500">JPG or PNG, max 2MB</p>
-                    </form>
-                    <div id="profilePhotoMessage" class="hidden text-sm text-center max-w-[200px]"></div>
-                    </div>
-                    <div class="flex flex-col items-center gap-3">
-                    <p class="text-sm font-medium text-slate-700">Signature</p>
-                    <div id="signaturePreview" class="w-40 h-16 border border-slate-200 rounded-lg bg-white flex items-center justify-center overflow-hidden">
-                        <?php
-                        $sigPath = !empty($employeeData['signature']) && file_exists(__DIR__ . '/../uploads/' . $employeeData['signature']) ? $employeeData['signature'] : null;
-                        if ($sigPath): ?>
+                </div>
+                <div class="mt-6 pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center gap-4">
+                    <?php $sigPath = !empty($employeeData['signature']) && file_exists(__DIR__ . '/../uploads/' . $employeeData['signature']) ? $employeeData['signature'] : null; ?>
+                    <p class="text-xs font-medium text-slate-500 uppercase tracking-wide">Signature</p>
+                    <div id="signaturePreview" class="w-40 h-16 border border-slate-200 rounded-lg bg-white flex items-center justify-center overflow-hidden shadow-sm">
+                        <?php if ($sigPath): ?>
                             <img id="signatureImg" src="../uploads/<?php echo htmlspecialchars($sigPath); ?>" alt="Signature" class="max-w-full max-h-full object-contain">
+                            <span id="signaturePlaceholder" class="text-slate-400 text-xs hidden">No signature</span>
                         <?php else: ?>
                             <img id="signatureImg" src="" alt="" class="max-w-full max-h-full object-contain hidden">
                             <span id="signaturePlaceholder" class="text-slate-400 text-xs">No signature</span>
                         <?php endif; ?>
                     </div>
                     <input type="file" name="signature" id="signatureInput" accept="image/jpeg,image/jpg,image/png" class="hidden">
-                    <button type="button" id="signatureUploadBtn" class="px-3 py-1.5 bg-[#d97706] hover:bg-[#b45309] text-white text-sm font-medium rounded-lg transition-colors">Upload signature</button>
-                    <p class="text-xs text-slate-500 text-center">JPG or PNG, max 1MB</p>
-                    <div id="signatureMessage" class="hidden text-sm text-center max-w-[200px]"></div>
-                    </div>
-                </div>
-                <div class="flex-1 text-center md:text-left">
-                    <h2 class="text-2xl font-semibold text-slate-800 mb-1"><?php echo htmlspecialchars($employee['full_name'] ?? ''); ?></h2>
-                    <p class="text-sm text-slate-500 mb-2"><?php echo htmlspecialchars($employee['employee_id'] ?? ''); ?></p>
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?php echo ($employee['status'] ?? 'Active') === 'Active' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'; ?>">
-                        <?php echo htmlspecialchars($employee['status'] ?? 'Active'); ?>
-                    </span>
+                    <button type="button" id="signatureUploadBtn" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-lg transition-colors">Upload signature</button>
+                    <p class="text-xs text-slate-500">JPG or PNG, max 1MB</p>
+                    <div id="signatureMessage" class="hidden text-sm text-center"></div>
                 </div>
             </div>
+        </div>
 
-            <!-- Personal Information -->
-            <div class="border-t border-slate-200 pt-6 mb-6">
-                <h3 class="text-lg font-semibold text-slate-800 mb-4">Personal Information</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Personal Information -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="p-6 md:p-8 bg-gradient-to-b from-slate-50 to-white border-b border-slate-100">
+                <div class="flex items-center gap-3 mb-6">
+                    <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                    </span>
                     <div>
-                        <p class="text-sm text-slate-500 mb-1">Email Address</p>
-                        <p class="font-medium text-slate-800"><?php echo htmlspecialchars($employee['email'] ?? 'N/A'); ?></p>
+                        <h3 class="text-lg font-semibold text-slate-800">Personal Information</h3>
+                        <p class="text-sm text-slate-500">Contact details and work locations</p>
                     </div>
-                    <div>
-                        <p class="text-sm text-slate-500 mb-1">Phone Number</p>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="p-4 rounded-xl bg-white border border-slate-100 hover:border-amber-200 transition-colors">
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Email</p>
+                        <p class="font-medium text-slate-800 truncate" title="<?php echo htmlspecialchars($employee['email'] ?? ''); ?>"><?php echo htmlspecialchars($employee['email'] ?? 'N/A'); ?></p>
+                    </div>
+                    <div class="p-4 rounded-xl bg-white border border-slate-100 hover:border-amber-200 transition-colors">
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Phone</p>
                         <p class="font-medium text-slate-800"><?php echo htmlspecialchars($employee['phone'] ?? 'N/A'); ?></p>
                     </div>
-                    <div>
-                        <p class="text-sm text-slate-500 mb-1">Birthdate</p>
+                    <div class="p-4 rounded-xl bg-white border border-slate-100 hover:border-amber-200 transition-colors">
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Birthdate</p>
                         <p class="font-medium text-slate-800"><?php echo !empty($employee['birthdate']) ? date('M d, Y', strtotime($employee['birthdate'])) : 'N/A'; ?></p>
                     </div>
-                    <div>
-                        <p class="text-sm text-slate-500 mb-1">Gender</p>
+                    <div class="p-4 rounded-xl bg-white border border-slate-100 hover:border-amber-200 transition-colors">
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Gender</p>
                         <p class="font-medium text-slate-800"><?php echo htmlspecialchars($employee['gender'] ?? 'N/A'); ?></p>
                     </div>
-                    <div class="md:col-span-2">
-                        <p class="text-sm text-slate-500 mb-1">Address</p>
+                    <div class="p-4 rounded-xl bg-white border border-slate-100 hover:border-amber-200 transition-colors sm:col-span-2">
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Primary Workplace</p>
                         <p class="font-medium text-slate-800"><?php echo htmlspecialchars($employee['address'] ?? 'N/A'); ?></p>
                     </div>
-                    <div>
-                        <p class="text-sm text-slate-500 mb-1">Emergency Contact Person</p>
-                        <p class="font-medium text-slate-800"><?php echo htmlspecialchars($employee['emergency_contact_name'] ?? 'N/A'); ?></p>
+                    <div class="p-4 rounded-xl bg-white border border-slate-100 hover:border-amber-200 transition-colors sm:col-span-2">
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Secondary Workplace</p>
+                        <p class="font-medium text-slate-800"><?php echo htmlspecialchars($employee['secondary_workplace'] ?? 'N/A'); ?></p>
                     </div>
-                    <div>
-                        <p class="text-sm text-slate-500 mb-1">Emergency Contact Number</p>
-                        <p class="font-medium text-slate-800"><?php echo htmlspecialchars($employee['emergency_contact_phone'] ?? 'N/A'); ?></p>
+                    <div class="p-4 rounded-xl bg-amber-50/50 border border-amber-100">
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Emergency Contact</p>
+                        <p class="font-medium text-slate-800"><?php echo htmlspecialchars($employee['emergency_contact_name'] ?? 'N/A'); ?></p>
+                        <p class="text-xs text-slate-500 mt-0.5"><?php echo htmlspecialchars($employee['emergency_contact_relationship'] ?? ''); ?> · <?php echo htmlspecialchars($employee['emergency_contact_phone'] ?? ''); ?></p>
                     </div>
                 </div>
             </div>
 
             <!-- Employment Information -->
-            <div class="border-t border-slate-200 pt-6 mb-6">
-                <h3 class="text-lg font-semibold text-slate-800 mb-4">Employment Information</h3>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="p-6 md:p-8 border-t border-slate-100">
+                <div class="flex items-center gap-3 mb-6">
+                    <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                    </span>
                     <div>
-                        <p class="text-sm text-slate-500 mb-1">Position</p>
+                        <h3 class="text-lg font-semibold text-slate-800">Employment</h3>
+                        <p class="text-sm text-slate-500">Position, department &amp; type</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="p-4 rounded-xl bg-slate-50 border border-slate-100">
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Position</p>
                         <p class="font-medium text-slate-800"><?php echo htmlspecialchars($employee['position'] ?? 'N/A'); ?></p>
                     </div>
-                    <div>
-                        <p class="text-sm text-slate-500 mb-1">Department</p>
+                    <div class="p-4 rounded-xl bg-slate-50 border border-slate-100">
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Department</p>
                         <p class="font-medium text-slate-800"><?php echo htmlspecialchars($employee['department'] ?? 'N/A'); ?></p>
                     </div>
-                    <div>
-                        <p class="text-sm text-slate-500 mb-1">Employment Type</p>
-                        <p class="font-medium text-slate-800">
-                            <?php
-                            if ($employmentTypeName) {
-                                echo htmlspecialchars($employmentTypeName);
-                            } elseif (!empty($compensation['employment_type'])) {
-                                echo htmlspecialchars($compensation['employment_type']);
-                            } else {
-                                echo 'N/A';
-                            }
-                            ?>
-                        </p>
+                    <div class="p-4 rounded-xl bg-slate-50 border border-slate-100">
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Employment Type</p>
+                        <p class="font-medium text-slate-800"><?php echo $employmentTypeName ? htmlspecialchars($employmentTypeName) : (!empty($compensation['employment_type']) ? htmlspecialchars($compensation['employment_type']) : 'N/A'); ?></p>
                     </div>
-                    <div>
-                        <p class="text-sm text-slate-500 mb-1">Date Hired</p>
+                    <div class="p-4 rounded-xl bg-slate-50 border border-slate-100">
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Date Hired</p>
                         <p class="font-medium text-slate-800"><?php echo !empty($employee['date_hired']) ? date('M d, Y', strtotime($employee['date_hired'])) : 'N/A'; ?></p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-slate-500 mb-1">Created At</p>
-                        <p class="font-medium text-slate-800"><?php echo !empty($employee['created_at']) ? date('M d, Y H:i', strtotime($employee['created_at'])) : 'N/A'; ?></p>
                     </div>
                 </div>
             </div>
 
             <!-- Government Information -->
-            <div class="border-t border-slate-200 pt-6 mb-6">
-                <h3 class="text-lg font-semibold text-slate-800 mb-4">Government Information</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="p-6 md:p-8 border-t border-slate-100 bg-slate-50/30">
+                <div class="flex items-center gap-3 mb-6">
+                    <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    </span>
                     <div>
-                        <p class="text-sm text-slate-500 mb-1">SSS Number</p>
-                        <p class="font-medium text-slate-800"><?php echo htmlspecialchars($employee['sss'] ?? 'N/A'); ?></p>
+                        <h3 class="text-lg font-semibold text-slate-800">Government IDs</h3>
+                        <p class="text-sm text-slate-500">SSS, PhilHealth, Pag-IBIG, TIN, clearances</p>
                     </div>
-                    <div>
-                        <p class="text-sm text-slate-500 mb-1">PhilHealth Number</p>
-                        <p class="font-medium text-slate-800"><?php echo htmlspecialchars($employee['philhealth'] ?? 'N/A'); ?></p>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="p-4 rounded-xl bg-white border border-slate-100">
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">SSS</p>
+                        <p class="font-medium text-slate-800 font-mono text-sm"><?php echo htmlspecialchars($employee['sss'] ?? '—'); ?></p>
                     </div>
-                    <div>
-                        <p class="text-sm text-slate-500 mb-1">Pag-IBIG (HDMF) Number</p>
-                        <p class="font-medium text-slate-800"><?php echo htmlspecialchars($employee['pagibig'] ?? 'N/A'); ?></p>
+                    <div class="p-4 rounded-xl bg-white border border-slate-100">
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">PhilHealth</p>
+                        <p class="font-medium text-slate-800 font-mono text-sm"><?php echo htmlspecialchars($employee['philhealth'] ?? '—'); ?></p>
                     </div>
-                    <div>
-                        <p class="text-sm text-slate-500 mb-1">TIN Number</p>
-                        <p class="font-medium text-slate-800"><?php echo htmlspecialchars($employee['tin'] ?? 'N/A'); ?></p>
+                    <div class="p-4 rounded-xl bg-white border border-slate-100">
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Pag-IBIG</p>
+                        <p class="font-medium text-slate-800 font-mono text-sm"><?php echo htmlspecialchars($employee['pagibig'] ?? '—'); ?></p>
+                    </div>
+                    <div class="p-4 rounded-xl bg-white border border-slate-100">
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">TIN</p>
+                        <p class="font-medium text-slate-800 font-mono text-sm"><?php echo htmlspecialchars($employee['tin'] ?? '—'); ?></p>
+                    </div>
+                    <div class="p-4 rounded-xl bg-white border border-slate-100">
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">NBI Clearance</p>
+                        <p class="font-medium text-slate-800 text-sm"><?php echo htmlspecialchars($employee['nbi_clearance'] ?? '—'); ?></p>
+                    </div>
+                    <div class="p-4 rounded-xl bg-white border border-slate-100">
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Police Clearance</p>
+                        <p class="font-medium text-slate-800 text-sm"><?php echo htmlspecialchars($employee['police_clearance'] ?? '—'); ?></p>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- Compensation Details (view only) -->
-        <div class="bg-white rounded-xl shadow-sm border border-slate-100 mb-6">
-            <div class="px-6 py-4 border-b border-slate-100">
-                <h3 class="text-lg font-semibold text-slate-800">Compensation Details</h3>
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="p-6 md:p-8 border-b border-slate-100 bg-gradient-to-b from-amber-50/50 to-white">
+                <div class="flex items-center gap-3 mb-6">
+                    <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </span>
+                    <div>
+                        <h3 class="text-lg font-semibold text-slate-800">Compensation</h3>
+                        <p class="text-sm text-slate-500">Salary, allowances &amp; bank details</p>
+                    </div>
+                </div>
             </div>
-            <div class="p-6">
+            <div class="px-6 md:px-8 pb-6">
                 <?php
                 $currentSalary = null;
                 if ($latestAdjustment) {
@@ -487,22 +520,22 @@ foreach ($documents as $d) {
                         <?php endif; ?>
                         <?php if ($currentSalary && $compensation):
                             $monthlyGross = $currentSalary;
-                            $dailyGross = $monthlyGross / 22;
+                            $dailyGross = $monthlyGross / 26;
                             $annualGross = $monthlyGross * 12;
                         ?>
                         <div class="md:col-span-2 border-slate-200 mt-4">
                             <h4 class="text-md font-semibold text-slate-700 mb-4">Gross Income (Based on Current Salary)</h4>
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div class="bg-slate-50 p-4 rounded-lg">
-                                    <p class="text-sm font-medium text-slate-600 mb-1">Monthly Gross Income</p>
+                                <div class="bg-amber-50 border border-amber-100 p-5 rounded-xl">
+                                    <p class="text-xs font-medium text-amber-700 uppercase tracking-wide mb-1">Monthly Gross</p>
                                     <p class="text-slate-800 text-xl font-bold">₱<?php echo number_format($monthlyGross, 2); ?></p>
                                 </div>
-                                <div class="bg-slate-50 p-4 rounded-lg">
-                                    <p class="text-sm font-medium text-slate-600 mb-1">Daily Gross Income</p>
+                                <div class="bg-amber-50 border border-amber-100 p-5 rounded-xl">
+                                    <p class="text-xs font-medium text-amber-700 uppercase tracking-wide mb-1">Daily Gross</p>
                                     <p class="text-slate-800 text-xl font-bold">₱<?php echo number_format($dailyGross, 2); ?></p>
                                 </div>
-                                <div class="bg-slate-50 p-4 rounded-lg">
-                                    <p class="text-sm font-medium text-slate-600 mb-1">Annual Gross Income</p>
+                                <div class="bg-amber-50 border border-amber-100 p-5 rounded-xl">
+                                    <p class="text-xs font-medium text-amber-700 uppercase tracking-wide mb-1">Annual Gross</p>
                                     <p class="text-slate-800 text-xl font-bold">₱<?php echo number_format($annualGross, 2); ?></p>
                                 </div>
                             </div>
@@ -563,14 +596,21 @@ foreach ($documents as $d) {
         </div>
 
         <!-- Upload Documents (employee uploads; admin validates in Request Document) -->
-        <div class="bg-white rounded-xl shadow-sm border border-slate-100 mb-6">
-            <div class="px-6 py-4 border-b border-slate-200">
-                <h3 class="text-lg font-semibold text-slate-800">Upload Documents</h3>
-                <p class="text-sm text-slate-500 mt-1">Upload HRIS 201 documents. Admin will validate each upload.</p>
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="p-6 md:p-8 border-b border-slate-100 bg-gradient-to-b from-slate-50 to-white">
+                <div class="flex items-center gap-3">
+                    <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    </span>
+                    <div>
+                        <h3 class="text-lg font-semibold text-slate-800">Upload Documents</h3>
+                        <p class="text-sm text-slate-500">HRIS 201 documents — admin will validate each upload.</p>
+                    </div>
+                </div>
             </div>
-            <div class="p-6 overflow-x-auto">
+            <div class="p-6 md:p-8 overflow-x-auto">
                 <table class="min-w-full text-sm">
-                    <thead class="bg-slate-50">
+                    <thead class="bg-slate-100">
                         <tr>
                             <th class="w-10 text-center px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">Done</th>
                             <th class="text-left px-4 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">Document Type</th>
@@ -640,12 +680,19 @@ foreach ($documents as $d) {
         </div>
 
         <!-- Employee Documents (uploaded files - view only) -->
-        <div class="bg-white rounded-xl shadow-sm border border-slate-100">
-            <div class="px-6 py-4 border-b border-slate-200">
-                <h3 class="text-lg font-semibold text-slate-800">Your Uploaded Documents</h3>
-                <p class="text-sm text-slate-500 mt-1">Documents you uploaded; status updated after admin validation</p>
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="p-6 md:p-8 border-b border-slate-100">
+                <div class="flex items-center gap-3">
+                    <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                    </span>
+                    <div>
+                        <h3 class="text-lg font-semibold text-slate-800">Your Uploaded Documents</h3>
+                        <p class="text-sm text-slate-500">Status updated after admin validation</p>
+                    </div>
+                </div>
             </div>
-            <div class="p-6">
+            <div class="p-6 md:p-8">
                 <?php if (empty($documents)): ?>
                     <div class="text-center py-8 text-slate-500">
                         <svg class="w-16 h-16 mx-auto mb-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
