@@ -21,6 +21,11 @@ if (!$employeeId) {
     exit;
 }
 
+$staffDocumentAdded = !empty($_SESSION['staff_document_added']);
+if ($staffDocumentAdded) {
+    unset($_SESSION['staff_document_added']);
+}
+
 // Fetch employee data
 $employee = null;
 $documents = [];
@@ -185,6 +190,13 @@ if ($conn) {
                 </a>
             </div>
         </div>
+
+        <?php if ($staffDocumentAdded): ?>
+        <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 flex items-center gap-3 text-emerald-800 text-sm mb-4">
+            <svg class="w-5 h-5 flex-shrink-0 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            <span class="font-medium">Document added successfully.</span>
+        </div>
+        <?php endif; ?>
 
         <!-- Hero Card: core identity -->
         <div class="bg-white rounded-2xl shadow-md border border-slate-200 overflow-hidden">
@@ -551,11 +563,15 @@ if ($conn) {
 
         <!-- Documents Section -->
         <div class="bg-white rounded-xl shadow-sm border border-slate-100">
-            <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+            <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between flex-wrap gap-3">
                 <div>
                     <h3 class="text-lg font-semibold text-slate-800">Employee Documents</h3>
                     <p class="text-sm text-slate-500 mt-1">Checklist and files uploaded by employee</p>
                 </div>
+                <a href="staff-add-document.php?id=<?php echo (int)$employeeId; ?>" class="inline-flex items-center gap-2 px-4 py-2 bg-[#d97706] text-white rounded-lg hover:bg-[#b45309] font-medium text-sm">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                    Add Document
+                </a>
             </div>
             <div class="p-6 space-y-6">
                 <?php

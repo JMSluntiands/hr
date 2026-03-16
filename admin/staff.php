@@ -211,12 +211,17 @@ if ($conn) {
     <!-- Documents Modal -->
     <div id="documentsModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4">
         <div class="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-            <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+            <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between flex-wrap gap-2">
                 <div>
                     <h3 class="text-lg font-semibold text-slate-800">Employee Documents</h3>
                     <p class="text-sm text-slate-500" id="documentsEmployeeName"></p>
                 </div>
-                <button type="button" id="closeDocumentsModal" class="p-2 rounded-lg hover:bg-slate-100 transition-colors">
+                <div class="flex items-center gap-2">
+                    <a id="addDocumentLink" href="#" class="inline-flex items-center gap-2 px-3 py-2 bg-[#d97706] text-white rounded-lg hover:bg-[#b45309] font-medium text-sm text-center no-underline">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                        Add Document
+                    </a>
+                    <button type="button" id="closeDocumentsModal" class="p-2 rounded-lg hover:bg-slate-100 transition-colors">
                     <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
@@ -287,6 +292,8 @@ if ($conn) {
                 const employeeId = this.dataset.id;
                 const employeeName = this.dataset.name;
                 documentsEmployeeName.textContent = employeeName;
+                var addDocLink = document.getElementById('addDocumentLink');
+                if (addDocLink) addDocLink.href = 'staff-add-document.php?id=' + employeeId;
                 documentsContent.innerHTML = '<div class="text-center text-slate-500 py-8">Loading documents...</div>';
                 documentsModal.classList.remove('hidden');
                 documentsModal.classList.add('flex');
