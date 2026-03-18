@@ -13,6 +13,7 @@ $role      = $_SESSION['role'] ?? 'admin';
 // Include database connection
 include '../database/db.php';
 include 'include/activity-logger.php';
+include __DIR__ . '/../controller/login/mail_helper.php';
 
 $success = '';
 $error = '';
@@ -258,8 +259,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $newEmployeeId = $conn->insert_id;
             $stmt->close();
             
-            // Also create a login account for the employee
-            $defaultPassword = md5('PASSWORD'); // Default password
+            // Also create a login account for the employee with a random temporary password
+            $plainPassword = bin2hex(random_bytes(4)); // 8-character hex password
+            $defaultPassword = md5($plainPassword);
             $employeeRole = 'employee';
             
             $loginStmt = $conn->prepare("INSERT INTO user_login (email, password, role) VALUES (?, ?, ?)");
@@ -273,6 +275,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new Exception('Error creating user login: ' . $loginStmt->error);
             }
             $loginStmt->close();
+
+            // Email the temporary password to the employee via PHPMailer/SMTP
+            sendTemporaryPasswordEmail($email, $fullName, $plainPassword);
 
             // Ensure compensation table exists and save initial compensation values
             $createCompTableSql = "CREATE TABLE IF NOT EXISTS `employee_compensation` (
@@ -338,7 +343,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Log activity
             logActivity($conn, 'Add Employee', 'Employee', $newEmployeeId, "Added employee: $fullName (ID: $employeeId)");
             
-            $success = 'Employee added successfully! Employee ID: ' . $employeeId . '. Login account created with default password: PASSWORD';
+            $success = 'Employee added successfully! Employee ID: ' . $employeeId . '. Login account created and a temporary password has been emailed to the employee.';
             // Clear form data after successful submission
             $_POST = [];
             
