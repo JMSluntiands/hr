@@ -11,6 +11,7 @@ include '../database/db.php';
 include 'include/employee_data.php';
 require_once __DIR__ . '/../inventory/database/setup_inventory_items_table.php';
 require_once __DIR__ . '/../inventory/database/setup_inventory_item_allocations_table.php';
+require_once __DIR__ . '/../inventory/database/mysqli-stmt-fetch.php';
 require_once __DIR__ . '/../inventory/include/inventory-activity-logger.php';
 
 $allocatedItems = [];
@@ -70,7 +71,7 @@ if ($conn && $employeeDbId) {
                 ii.item_id,
                 ii.item_name,
                 ii.description,
-                ii.type,
+                ii.`type` AS type,
                 ii.item_condition,
                 ia.date_received,
                 ia.employee_appeal,
@@ -85,10 +86,7 @@ if ($conn && $employeeDbId) {
         if ($stmt) {
             $stmt->bind_param('i', $employeeDbId);
             $stmt->execute();
-            $result = $stmt->get_result();
-            while ($row = $result->fetch_assoc()) {
-                $allocatedItems[] = $row;
-            }
+            $allocatedItems = inventory_stmt_fetch_all_assoc($stmt);
             $stmt->close();
         }
     } else {

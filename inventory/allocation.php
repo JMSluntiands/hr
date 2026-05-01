@@ -15,6 +15,7 @@ if (strtolower((string)($_SESSION['role'] ?? '')) !== 'admin') {
 include __DIR__ . '/../database/db.php';
 require_once __DIR__ . '/database/setup_inventory_items_table.php';
 require_once __DIR__ . '/database/setup_inventory_item_allocations_table.php';
+require_once __DIR__ . '/database/mysqli-stmt-fetch.php';
 require_once __DIR__ . '/include/inventory-activity-logger.php';
 
 $adminName = $_SESSION['name'] ?? 'Admin User';
@@ -38,7 +39,7 @@ function getAllocationRows(mysqli $conn, int $employeeId = 0): array
             ii.item_id,
             ii.item_name,
             ii.description,
-            ii.type,
+            ii.`type` AS type,
             ii.item_condition
         FROM inventory_item_allocations ia
         JOIN employees e ON e.id = ia.employee_id
@@ -56,12 +57,7 @@ function getAllocationRows(mysqli $conn, int $employeeId = 0): array
         $stmt = $conn->prepare($sql);
         $stmt->bind_param('i', $employeeId);
         $stmt->execute();
-        $result = $stmt->get_result();
-        if ($result) {
-            while ($row = $result->fetch_assoc()) {
-                $rows[] = $row;
-            }
-        }
+        $rows = inventory_stmt_fetch_all_assoc($stmt);
         $stmt->close();
         return $rows;
     }
@@ -140,8 +136,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ');
         $checkStmt->bind_param('i', $inventoryItemId);
         $checkStmt->execute();
-        $checkResult = $checkStmt->get_result();
-        $alreadyAllocated = $checkResult && $checkResult->num_rows > 0;
+        $checkStmt->store_result();
+        $alreadyAllocated = $checkStmt->num_rows > 0;
+        $checkStmt->free_result();
         $checkStmt->close();
 
         if ($alreadyAllocated) {
@@ -188,8 +185,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ');
         $checkStmt->bind_param('i', $allocationId);
         $checkStmt->execute();
-        $checkResult = $checkStmt->get_result();
-        $existing = $checkResult ? $checkResult->fetch_assoc() : null;
+        $existing = inventory_stmt_fetch_one_assoc($checkStmt);
         $checkStmt->close();
 
         if (!$existing) {

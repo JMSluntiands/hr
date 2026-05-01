@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . '/../database/mysqli-stmt-fetch.php';
+
 if (!function_exists('inventoryCanLogActivity')) {
     function inventoryCanLogActivity($conn): bool
     {
@@ -76,8 +78,7 @@ if (!function_exists('inventoryGetItemCodeByItemDbId')) {
         }
         $stmt->bind_param('i', $itemDbId);
         $stmt->execute();
-        $result = $stmt->get_result();
-        $row = $result ? $result->fetch_assoc() : null;
+        $row = inventory_stmt_fetch_one_assoc($stmt);
         $stmt->close();
 
         return trim((string)($row['item_id'] ?? ''));
@@ -103,8 +104,7 @@ if (!function_exists('inventoryGetItemCodeByAllocationId')) {
         }
         $stmt->bind_param('i', $allocationId);
         $stmt->execute();
-        $result = $stmt->get_result();
-        $row = $result ? $result->fetch_assoc() : null;
+        $row = inventory_stmt_fetch_one_assoc($stmt);
         $stmt->close();
 
         return trim((string)($row['item_id'] ?? ''));

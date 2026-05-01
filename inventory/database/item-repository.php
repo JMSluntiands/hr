@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/item-config.php';
 require_once __DIR__ . '/setup_inventory_items_table.php';
+require_once __DIR__ . '/mysqli-stmt-fetch.php';
 
 function generateInventoryItemId(mysqli $conn, string $prefix): string
 {
@@ -13,12 +14,8 @@ function generateInventoryItemId(mysqli $conn, string $prefix): string
     $like = $prefix . '%';
     $stmt->bind_param('s', $like);
     $stmt->execute();
-    $result = $stmt->get_result();
-
-    $lastItemId = '';
-    if ($result && $row = $result->fetch_assoc()) {
-        $lastItemId = (string)$row['item_id'];
-    }
+    $row = inventory_stmt_fetch_one_assoc($stmt);
+    $lastItemId = $row ? (string)($row['item_id'] ?? '') : '';
     $stmt->close();
 
     $nextNumber = 1;
@@ -77,9 +74,9 @@ function updateInventoryItem(mysqli $conn, int $id, array $data): bool
     }
     $stmtGet->bind_param('i', $id);
     $stmtGet->execute();
-    $result = $stmtGet->get_result();
-    if ($result && $row = $result->fetch_assoc()) {
-        $currentItemId = (string)$row['item_id'];
+    $row = inventory_stmt_fetch_one_assoc($stmtGet);
+    if ($row) {
+        $currentItemId = (string)($row['item_id'] ?? '');
     }
     $stmtGet->close();
 
@@ -157,11 +154,7 @@ function getInventoryItemById(mysqli $conn, int $id): ?array
     }
     $stmt->bind_param('i', $id);
     $stmt->execute();
-    $result = $stmt->get_result();
-    $item = null;
-    if ($result && $row = $result->fetch_assoc()) {
-        $item = $row;
-    }
+    $item = inventory_stmt_fetch_one_assoc($stmt);
     $stmt->close();
     return $item;
 }
