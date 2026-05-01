@@ -1,6 +1,33 @@
 <?php
 session_start();
 
+$diagMode = isset($_GET['diag']) && $_GET['diag'] === '1';
+if ($diagMode) {
+    ini_set('display_errors', '1');
+    ini_set('display_startup_errors', '1');
+    error_reporting(E_ALL);
+    register_shutdown_function(function (): void {
+        $lastError = error_get_last();
+        if (!$lastError) {
+            return;
+        }
+        $fatalTypes = [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR];
+        if (!in_array((int)$lastError['type'], $fatalTypes, true)) {
+            return;
+        }
+        if (!headers_sent()) {
+            http_response_code(500);
+            header('Content-Type: text/html; charset=utf-8');
+        }
+        echo '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Item Diagnostics</title></head><body style="font-family:sans-serif;padding:2rem;">'
+            . '<h1>Fatal error detected</h1>'
+            . '<p><strong>Message:</strong> ' . htmlspecialchars((string)($lastError['message'] ?? '')) . '</p>'
+            . '<p><strong>File:</strong> ' . htmlspecialchars((string)($lastError['file'] ?? '')) . '</p>'
+            . '<p><strong>Line:</strong> ' . htmlspecialchars((string)($lastError['line'] ?? '')) . '</p>'
+            . '</body></html>';
+    });
+}
+
 if (!isset($_SESSION['user_id'])) {
     header('Location: ../index.php');
     exit;
