@@ -12,7 +12,24 @@ if (strtolower((string)($_SESSION['role'] ?? '')) !== 'admin') {
     exit;
 }
 
-include __DIR__ . '/../database/db.php';
+$conn = null;
+$dbBootstrap = __DIR__ . '/../database/db.php';
+if (is_readable($dbBootstrap)) {
+    include $dbBootstrap;
+}
+if (!isset($conn) || !($conn instanceof mysqli)) {
+    http_response_code(503);
+    header('Content-Type: text/html; charset=utf-8');
+    $missingFile = !is_readable($dbBootstrap);
+    $hint = $missingFile
+        ? '<p><strong>Missing <code>database/db.php</code> on this server.</strong> It is not in Git (ignored for security). Upload a copy: rename <code>database/db.example.php</code> to <code>database/db.php</code> and enter your host MySQL credentials.</p>'
+        : '<p>The app could not connect to MySQL. In <code>database/db.php</code>, set the correct host, database name, user, and password for this server (they differ from XAMPP defaults).</p>';
+    echo '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Service unavailable</title></head><body style="font-family:sans-serif;padding:2rem;">'
+        . '<h1>Database unavailable</h1>'
+        . $hint
+        . '</body></html>';
+    exit;
+}
 require_once __DIR__ . '/database/item-repository.php';
 require_once __DIR__ . '/database/setup_inventory_item_allocations_table.php';
 require_once __DIR__ . '/include/inventory-activity-logger.php';
@@ -126,8 +143,16 @@ function uploadInventoryItemImage(?array $file, string &$errorMessage)
         return false;
     }
 
-    $finfo = new finfo(FILEINFO_MIME_TYPE);
-    $mimeType = (string)$finfo->file($tmpPath);
+    $mimeType = '';
+    if (class_exists('finfo')) {
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $mimeType = (string)$finfo->file($tmpPath);
+    } else {
+        $imgInfo = @getimagesize($tmpPath);
+        if (is_array($imgInfo) && !empty($imgInfo['mime'])) {
+            $mimeType = (string)$imgInfo['mime'];
+        }
+    }
     $allowedMimeTypes = [
         'image/jpeg' => 'jpg',
         'image/png' => 'png',
