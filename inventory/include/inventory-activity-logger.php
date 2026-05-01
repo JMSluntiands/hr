@@ -40,28 +40,35 @@ if (!function_exists('inventoryLogActivity')) {
             return false;
         }
 
-        $userId = (int)$_SESSION['user_id'];
-        $userName = (string)($_SESSION['name'] ?? 'Unknown');
-        $ipAddress = $_SERVER['REMOTE_ADDR'] ?? null;
-        $entityType = trim($entityType);
-        if ($entityType === '') {
-            $entityType = 'Item';
-        }
+        try {
+            $userId = (int)$_SESSION['user_id'];
+            $userName = (string)($_SESSION['name'] ?? 'Unknown');
+            $ipAddress = $_SERVER['REMOTE_ADDR'] ?? null;
+            $entityType = trim($entityType);
+            if ($entityType === '') {
+                $entityType = 'Item';
+            }
 
-        $stmt = $conn->prepare("
-            INSERT INTO inventory_activity_logs (user_id, user_name, action, entity_type, entity_id, item_code, description, change_details, ip_address)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ");
-        if (!$stmt) {
+            $stmt = $conn->prepare("
+                INSERT INTO inventory_activity_logs (user_id, user_name, action, entity_type, entity_id, item_code, description, change_details, ip_address)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ");
+            if (!$stmt) {
+                return false;
+            }
+            $changeDetailsVal = $changeDetails !== null && $changeDetails !== '' ? $changeDetails : null;
+            $itemCodeVal = $itemCode !== null && $itemCode !== '' ? $itemCode : null;
+            // PHP 8.1+ mysqli: binding NULL with type "i" throws; use "s" so SQL NULL is accepted for nullable entity_id.
+            $entityIdParam = $entityId === null ? null : (string)(int)$entityId;
+            $stmt->bind_param('issssssss', $userId, $userName, $action, $entityType, $entityIdParam, $itemCodeVal, $description, $changeDetailsVal, $ipAddress);
+            $result = $stmt->execute();
+            $stmt->close();
+
+            return (bool)$result;
+        } catch (Throwable $e) {
+            error_log('inventoryLogActivity failed: ' . $e->getMessage());
             return false;
         }
-        $changeDetailsVal = $changeDetails !== null && $changeDetails !== '' ? $changeDetails : null;
-        $itemCodeVal = $itemCode !== null && $itemCode !== '' ? $itemCode : null;
-        $stmt->bind_param('isssissss', $userId, $userName, $action, $entityType, $entityId, $itemCodeVal, $description, $changeDetailsVal, $ipAddress);
-        $result = $stmt->execute();
-        $stmt->close();
-
-        return (bool)$result;
     }
 }
 
@@ -80,6 +87,10 @@ if (!function_exists('inventoryGetItemCodeByItemDbId')) {
         $stmt->execute();
         $row = inventory_stmt_fetch_one_assoc($stmt);
         $stmt->close();
+
+        if (!$row) {
+            return '';
+        }
 
         return trim((string)($row['item_id'] ?? ''));
     }
@@ -106,6 +117,10 @@ if (!function_exists('inventoryGetItemCodeByAllocationId')) {
         $stmt->execute();
         $row = inventory_stmt_fetch_one_assoc($stmt);
         $stmt->close();
+
+        if (!$row) {
+            return '';
+        }
 
         return trim((string)($row['item_id'] ?? ''));
     }

@@ -1,7 +1,7 @@
 <?php
 session_start();
 
-$diagMode = isset($_GET['diag']) && $_GET['diag'] === '1';
+$diagMode = isset($_REQUEST['diag']) && (string)$_REQUEST['diag'] === '1';
 if ($diagMode) {
     ini_set('display_errors', '1');
     ini_set('display_startup_errors', '1');
@@ -519,6 +519,7 @@ if ($editItemId > 0) {
                 <input type="hidden" name="action" id="formAction" value="<?php echo $editItem ? 'update' : 'create'; ?>">
                 <input type="hidden" name="id" id="rowId" value="<?php echo $editItem ? (int)$editItem['id'] : ''; ?>">
                 <input type="hidden" name="current_image_path" id="currentImagePath" value="<?php echo htmlspecialchars((string)($editItem['item_image_path'] ?? '')); ?>">
+                <?php if ($diagMode): ?><input type="hidden" name="diag" value="1"><?php endif; ?>
 
                 <div>
                     <label class="block text-sm text-slate-600 mb-1">Item Name</label>
@@ -702,6 +703,7 @@ if ($editItemId > 0) {
                                         <form method="POST" onsubmit="return confirm('Delete this item?');">
                                             <input type="hidden" name="action" value="delete">
                                             <input type="hidden" name="id" value="<?php echo (int)$item['id']; ?>">
+                                            <?php if ($diagMode): ?><input type="hidden" name="diag" value="1"><?php endif; ?>
                                             <button type="submit" class="action-btn action-btn-red" title="Delete">
                                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                                                     <path d="M3 6h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -844,6 +846,7 @@ if ($editItemId > 0) {
                 <input type="hidden" name="return_tab" value="list">
                 <input type="hidden" name="id" id="editRowId" value="">
                 <input type="hidden" name="current_image_path" id="editCurrentImagePath" value="">
+                <?php if ($diagMode): ?><input type="hidden" name="diag" value="1"><?php endif; ?>
 
                 <div>
                     <label class="block text-sm text-slate-600 mb-1">Item Name</label>
