@@ -33,17 +33,19 @@ if ($conn && $employeeDbId) {
             exit;
         }
 
+        $remarksDb = $remarks === '' ? null : $remarks;
+
         $updateStmt = $conn->prepare("
             UPDATE inventory_item_allocations
             SET
                 employee_appeal = ?,
-                employee_appeal_remarks = NULLIF(?, ''),
+                employee_appeal_remarks = ?,
                 employee_appeal_at = NOW(),
                 admin_viewed_at = NULL
             WHERE id = ? AND employee_id = ? AND date_return IS NULL
         ");
         if ($updateStmt) {
-            $updateStmt->bind_param('ssii', $appeal, $remarks, $allocationId, $employeeDbId);
+            $updateStmt->bind_param('ssii', $appeal, $remarksDb, $allocationId, $employeeDbId);
             $ok = $updateStmt->execute();
             $affected = $updateStmt->affected_rows;
             $updateStmt->close();

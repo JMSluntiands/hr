@@ -4,6 +4,13 @@ require_once __DIR__ . '/item-config.php';
 require_once __DIR__ . '/setup_inventory_items_table.php';
 require_once __DIR__ . '/mysqli-stmt-fetch.php';
 
+/** Empty string → null for nullable DB columns (avoids NULLIF(?, '') collation mix on some MySQL setups). */
+function inventory_empty_string_to_null(?string $value): ?string
+{
+    $trimmed = trim((string)($value ?? ''));
+    return $trimmed === '' ? null : $trimmed;
+}
+
 function generateInventoryItemId(mysqli $conn, string $prefix): string
 {
     $sql = "SELECT item_id FROM inventory_items WHERE item_id LIKE ? ORDER BY id DESC LIMIT 1";
@@ -35,9 +42,12 @@ function createInventoryItem(mysqli $conn, array $data): bool
     }
 
     $itemId = generateInventoryItemId($conn, $prefixes[$data['item_name']]);
+    $itemImagePath = inventory_empty_string_to_null($data['item_image_path'] ?? null);
+    $dateArrived = inventory_empty_string_to_null($data['date_arrived'] ?? null);
+
     $stmt = $conn->prepare("
         INSERT INTO inventory_items (item_id, item_name, description, `type`, item_condition, remarks, item_image_path, date_arrived)
-        VALUES (?, ?, ?, ?, ?, ?, NULLIF(?, ''), NULLIF(?, ''))
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     ");
     if (!$stmt) {
         error_log('createInventoryItem prepare failed: ' . $conn->error);
@@ -51,8 +61,8 @@ function createInventoryItem(mysqli $conn, array $data): bool
         $data['type'],
         $data['item_condition'],
         $data['remarks'],
-        $data['item_image_path'],
-        $data['date_arrived']
+        $itemImagePath,
+        $dateArrived
     );
     $ok = $stmt->execute();
     $stmt->close();
@@ -85,9 +95,12 @@ function updateInventoryItem(mysqli $conn, int $id, array $data): bool
         ? $currentItemId
         : generateInventoryItemId($conn, $expectedPrefix);
 
+    $itemImagePath = inventory_empty_string_to_null($data['item_image_path'] ?? null);
+    $dateArrived = inventory_empty_string_to_null($data['date_arrived'] ?? null);
+
     $stmt = $conn->prepare("
         UPDATE inventory_items
-        SET item_id = ?, item_name = ?, description = ?, `type` = ?, item_condition = ?, remarks = ?, item_image_path = NULLIF(?, ''), date_arrived = NULLIF(?, '')
+        SET item_id = ?, item_name = ?, description = ?, `type` = ?, item_condition = ?, remarks = ?, item_image_path = ?, date_arrived = ?
         WHERE id = ?
     ");
     if (!$stmt) {
@@ -102,8 +115,8 @@ function updateInventoryItem(mysqli $conn, int $id, array $data): bool
         $data['type'],
         $data['item_condition'],
         $data['remarks'],
-        $data['item_image_path'],
-        $data['date_arrived'],
+        $itemImagePath,
+        $dateArrived,
         $id
     );
     $ok = $stmt->execute();

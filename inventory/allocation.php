@@ -199,12 +199,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
+        $returnRemarksDb = $returnRemarks === '' ? null : $returnRemarks;
+
         $updateStmt = $conn->prepare('
             UPDATE inventory_item_allocations
-            SET date_return = ?, return_remarks = NULLIF(?, \'\')
+            SET date_return = ?, return_remarks = ?
             WHERE id = ? AND date_return IS NULL
         ');
-        $updateStmt->bind_param('ssi', $dateReturn, $returnRemarks, $allocationId);
+        $updateStmt->bind_param('ssi', $dateReturn, $returnRemarksDb, $allocationId);
         $ok = $updateStmt->execute();
         $affected = $updateStmt->affected_rows;
         $updateStmt->close();
