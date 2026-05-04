@@ -324,6 +324,20 @@ if ($conn) {
                         <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Date Hired</p>
                         <p class="font-medium text-slate-800"><?php echo !empty($employee['date_hired']) ? date('M d, Y', strtotime($employee['date_hired'])) : 'N/A'; ?></p>
                     </div>
+                    <?php if (($employee['status'] ?? '') === 'Inactive'): ?>
+                    <div class="p-4 rounded-xl bg-slate-50 border border-slate-100">
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Date inactive</p>
+                        <p class="font-medium text-slate-800"><?php echo !empty($employee['date_inactive']) ? date('M d, Y', strtotime($employee['date_inactive'])) : 'N/A'; ?></p>
+                    </div>
+                    <div class="p-4 rounded-xl bg-slate-50 border border-slate-100">
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Resignation letter</p>
+                        <?php if (!empty($employee['resignation_letter_path']) && file_exists(__DIR__ . '/../uploads/' . $employee['resignation_letter_path'])): ?>
+                            <a href="../uploads/<?php echo htmlspecialchars($employee['resignation_letter_path']); ?>" target="_blank" rel="noopener" class="font-medium text-amber-700 hover:underline">View file</a>
+                        <?php else: ?>
+                            <p class="font-medium text-slate-600">No file on record</p>
+                        <?php endif; ?>
+                    </div>
+                    <?php endif; ?>
                     <div class="p-4 rounded-xl bg-slate-50 border border-slate-100">
                         <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Created At</p>
                         <p class="font-medium text-slate-800"><?php echo !empty($employee['created_at']) ? date('M d, Y H:i', strtotime($employee['created_at'])) : 'N/A'; ?></p>

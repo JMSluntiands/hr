@@ -48,6 +48,18 @@ if ($conn) {
     }
 }
 
+// Ensure inactive / resignation columns exist (run database/add_employee_inactive_resignation.sql if preferred)
+if ($conn) {
+    $dc = $conn->query("SHOW COLUMNS FROM employees LIKE 'date_inactive'");
+    if ($dc && $dc->num_rows === 0) {
+        @$conn->query("ALTER TABLE employees ADD COLUMN date_inactive date DEFAULT NULL");
+    }
+    $rc = $conn->query("SHOW COLUMNS FROM employees LIKE 'resignation_letter_path'");
+    if ($rc && $rc->num_rows === 0) {
+        @$conn->query("ALTER TABLE employees ADD COLUMN resignation_letter_path varchar(500) DEFAULT NULL");
+    }
+}
+
 // Get employee ID from URL or from POST (when form is submitted)
 $employeeId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id']) && (int)$_POST['id'] > 0) {
@@ -112,6 +124,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $department = trim($_POST['department'] ?? '');
     $dateHired = $_POST['date_hired'] ?? '';
     $status = $_POST['status'] ?? 'Active';
+    $dateInactive = trim($_POST['date_inactive'] ?? '');
     $address = trim($_POST['address'] ?? '');
     $secondaryWorkplace = trim($_POST['secondary_workplace'] ?? '');
     $emergencyContactName = trim($_POST['emergency_contact_name'] ?? '');
@@ -280,6 +293,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->close();
         }
     }
+
+    $existingResignationPath = trim((string)($employee['resignation_letter_path'] ?? ''));
+    if ($status === 'Inactive') {
+        if ($dateInactive === '') {
+            $errors[] = 'Date inactive is required when status is Inactive.';
+        } elseif (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateInactive)) {
+            $errors[] = 'Invalid date inactive.';
+        }
+        $hasNewResignation = isset($_FILES['resignation_letter']) && $_FILES['resignation_letter']['error'] === UPLOAD_ERR_OK;
+        $hasExistingResignation = $existingResignationPath !== '';
+        if (!$hasNewResignation && !$hasExistingResignation) {
+            $errors[] = 'Please attach the resignation letter (PDF, JPG, or PNG, max 5MB).';
+        }
+        if ($hasNewResignation) {
+            $rlFile = $_FILES['resignation_letter'];
+            $rlExt = strtolower(pathinfo($rlFile['name'], PATHINFO_EXTENSION));
+            $allowedRl = ['pdf', 'jpg', 'jpeg', 'png'];
+            if (!in_array($rlExt, $allowedRl, true)) {
+                $errors[] = 'Resignation letter must be PDF, JPG, JPEG, or PNG.';
+            }
+            if ($rlFile['size'] > 5 * 1024 * 1024) {
+                $errors[] = 'Resignation letter must be 5MB or smaller.';
+            }
+        } elseif (isset($_FILES['resignation_letter']) && $_FILES['resignation_letter']['error'] !== UPLOAD_ERR_OK && $_FILES['resignation_letter']['error'] !== UPLOAD_ERR_NO_FILE) {
+            $errors[] = 'Error uploading resignation letter.';
+        }
+    }
     
     // If no errors, update or insert
     if (empty($errors)) {
@@ -287,11 +327,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // UPDATE existing employee
             $conn->begin_transaction();
             try {
-                $stmt = $conn->prepare("UPDATE employees SET full_name=?, email=?, phone=?, position=?, department=?, employment_type_id=?, date_hired=?, status=?, address=?, secondary_workplace=?, emergency_contact_name=?, emergency_contact_phone=?, emergency_contact_relationship=?, birthdate=?, gender=?, sss=?, philhealth=?, pagibig=?, tin=?, nbi_clearance=?, police_clearance=? WHERE id=?");
+                $dateInactiveForDb = null;
+                $resignationPathForDb = null;
+                if ($status === 'Inactive') {
+                    $dateInactiveForDb = $dateInactive;
+                    if (isset($_FILES['resignation_letter']) && $_FILES['resignation_letter']['error'] === UPLOAD_ERR_OK) {
+                        $rlFile = $_FILES['resignation_letter'];
+                        $rlExt = strtolower(pathinfo($rlFile['name'], PATHINFO_EXTENSION));
+                        $uploadDir = __DIR__ . '/../uploads/employee_documents/';
+                        if (!is_dir($uploadDir)) {
+                            mkdir($uploadDir, 0755, true);
+                        }
+                        $filename = $employeeId . '_resignation_' . time() . '.' . $rlExt;
+                        $fullPath = $uploadDir . $filename;
+                        if (!move_uploaded_file($rlFile['tmp_name'], $fullPath)) {
+                            throw new Exception('Failed to save resignation letter.');
+                        }
+                        $resignationPathForDb = 'employee_documents/' . $filename;
+                    } else {
+                        $resignationPathForDb = $existingResignationPath !== '' ? $existingResignationPath : null;
+                    }
+                }
+
+                $stmt = $conn->prepare("UPDATE employees SET full_name=?, email=?, phone=?, position=?, department=?, employment_type_id=?, date_hired=?, status=?, date_inactive=?, resignation_letter_path=?, address=?, secondary_workplace=?, emergency_contact_name=?, emergency_contact_phone=?, emergency_contact_relationship=?, birthdate=?, gender=?, sss=?, philhealth=?, pagibig=?, tin=?, nbi_clearance=?, police_clearance=? WHERE id=?");
                 if (!$stmt) {
                     throw new Exception('Database prepare error: ' . $conn->error);
                 }
-                $stmt->bind_param("sssssisssssssssssssssi", $fullName, $email, $phone, $position, $department, $employmentTypeId, $dateHired, $status, $address, $secondaryWorkplace, $emergencyContactName, $emergencyContactPhone, $emergencyContactRelationship, $birthdate, $gender, $sss, $philhealth, $pagibig, $tin, $nbiClearance, $policeClearance, $employeeId);
+                $bindTypes = 'sssssi' . str_repeat('s', 17) . 'i';
+                $stmt->bind_param($bindTypes, $fullName, $email, $phone, $position, $department, $employmentTypeId, $dateHired, $status, $dateInactiveForDb, $resignationPathForDb, $address, $secondaryWorkplace, $emergencyContactName, $emergencyContactPhone, $emergencyContactRelationship, $birthdate, $gender, $sss, $philhealth, $pagibig, $tin, $nbiClearance, $policeClearance, $employeeId);
                 if (!$stmt->execute()) {
                     throw new Exception('Error updating employee: ' . $stmt->error);
                 }
@@ -518,7 +581,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <!-- Form -->
         <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
-            <form method="POST" action="" class="space-y-6" id="employeeForm" novalidate>
+            <form method="POST" action="" enctype="multipart/form-data" class="space-y-6" id="employeeForm" novalidate>
                 <?php if (!empty($employee['id'])): ?>
                 <input type="hidden" name="id" value="<?php echo (int)$employee['id']; ?>">
                 <?php endif; ?>
@@ -670,6 +733,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <option value="Active" <?php echo ($selStatus === 'Active') ? 'selected' : ''; ?>>Active</option>
                                 <option value="Inactive" <?php echo ($selStatus === 'Inactive') ? 'selected' : ''; ?>>Inactive</option>
                             </select>
+                        </div>
+                        <?php
+                        $hasResignationOnFile = !empty(trim((string)($employee['resignation_letter_path'] ?? '')));
+                        $postDateInactive = $_POST['date_inactive'] ?? ($employee['date_inactive'] ?? '');
+                        ?>
+                        <div id="inactiveEmploymentFields" class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 pt-2 border-t border-dashed border-slate-200 mt-2 <?php echo ($selStatus === 'Inactive') ? '' : 'hidden'; ?>">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">Date inactive <span class="text-red-500">*</span></label>
+                                <input type="date" name="date_inactive" id="date_inactive"
+                                       value="<?php echo htmlspecialchars($postDateInactive); ?>"
+                                       class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]">
+                                <p class="text-xs text-slate-500 mt-1">Required when status is Inactive.</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">Resignation letter <span class="text-red-500">*</span></label>
+                                <input type="file" name="resignation_letter" id="resignation_letter" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                                       class="block w-full text-sm text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-amber-50 file:text-amber-800 hover:file:bg-amber-100">
+                                <p class="text-xs text-slate-500 mt-1">PDF or image, max 5MB. <?php echo $hasResignationOnFile ? 'Leave empty to keep the current file on record.' : 'Upload required for Inactive.'; ?></p>
+                                <?php if ($hasResignationOnFile): ?>
+                                <p class="text-xs mt-2">
+                                    <a href="../uploads/<?php echo htmlspecialchars($employee['resignation_letter_path']); ?>" target="_blank" rel="noopener" class="text-amber-700 font-medium hover:underline">View current resignation letter</a>
+                                </p>
+                                <?php endif; ?>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -830,8 +917,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             
             // Ensure phone number is properly formatted on submit + show loading
+            const statusSelect = document.getElementById('status');
+            const inactiveFields = document.getElementById('inactiveEmploymentFields');
+            const dateInactiveInput = document.getElementById('date_inactive');
+            const resignationInput = document.getElementById('resignation_letter');
+            const hasExistingResignation = <?php echo $hasResignationOnFile ? 'true' : 'false'; ?>;
+
+            function syncInactiveFields() {
+                if (!statusSelect || !inactiveFields) return;
+                if (statusSelect.value === 'Inactive') {
+                    inactiveFields.classList.remove('hidden');
+                } else {
+                    inactiveFields.classList.add('hidden');
+                }
+            }
+            if (statusSelect) {
+                statusSelect.addEventListener('change', syncInactiveFields);
+                syncInactiveFields();
+            }
+
             if (form) {
                 form.addEventListener('submit', function(e) {
+                    if (statusSelect && statusSelect.value === 'Inactive') {
+                        if (dateInactiveInput && !dateInactiveInput.value) {
+                            e.preventDefault();
+                            alert('Please set the date inactive.');
+                            dateInactiveInput.focus();
+                            return false;
+                        }
+                        if (resignationInput && !resignationInput.files.length && !hasExistingResignation) {
+                            e.preventDefault();
+                            alert('Please attach the resignation letter.');
+                            resignationInput.focus();
+                            return false;
+                        }
+                    }
                     // Remove any non-numeric characters
                     phoneInput.value = phoneInput.value.replace(/[^0-9]/g, '');
                     
