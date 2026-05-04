@@ -207,6 +207,7 @@ function uploadInventoryItemImage(?array $file, string &$errorMessage)
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    try {
     $action = $_POST['action'] ?? '';
     $itemName = trim((string)($_POST['item_name'] ?? ''));
     $description = trim((string)($_POST['description'] ?? ''));
@@ -352,6 +353,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             inventoryLogActivity($conn, inventoryActionWithItemCode('Update Item Failed', $itemCode), 'Item', $rowId, 'Failed to update inventory item record #' . $rowId . '.', null, $itemCode);
             header('Location: item.php?status=error&message=Unable+to+update+item');
         }
+        exit;
+    }
+    } catch (Throwable $e) {
+        error_log('inventory/item.php POST fatal: ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine());
+        if ($diagMode) {
+            http_response_code(500);
+            header('Content-Type: text/html; charset=utf-8');
+            echo '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Item Diagnostics</title></head><body style="font-family:sans-serif;padding:2rem;">'
+                . '<h1>POST exception detected</h1>'
+                . '<p><strong>Message:</strong> ' . htmlspecialchars($e->getMessage()) . '</p>'
+                . '<p><strong>File:</strong> ' . htmlspecialchars($e->getFile()) . '</p>'
+                . '<p><strong>Line:</strong> ' . htmlspecialchars((string)$e->getLine()) . '</p>'
+                . '</body></html>';
+            exit;
+        }
+        header('Location: item.php?status=error&message=Server+error+while+saving+item');
         exit;
     }
 }
