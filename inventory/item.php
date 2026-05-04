@@ -139,7 +139,9 @@ function ensureInventoryItemUploadDirectory(): string
 {
     $uploadDir = __DIR__ . '/uploads/items';
     if (!is_dir($uploadDir)) {
-        mkdir($uploadDir, 0755, true);
+        if (!@mkdir($uploadDir, 0755, true) && !is_dir($uploadDir)) {
+            error_log('ensureInventoryItemUploadDirectory: cannot create ' . $uploadDir);
+        }
     }
     return $uploadDir;
 }
@@ -168,8 +170,13 @@ function uploadInventoryItemImage(?array $file, string &$errorMessage)
 
     $mimeType = '';
     if (class_exists('finfo')) {
-        $finfo = new finfo(FILEINFO_MIME_TYPE);
-        $mimeType = (string)$finfo->file($tmpPath);
+        try {
+            $finfo = new finfo(FILEINFO_MIME_TYPE);
+            $mimeType = (string)$finfo->file($tmpPath);
+        } catch (Throwable $e) {
+            error_log('uploadInventoryItemImage finfo: ' . $e->getMessage());
+            $mimeType = '';
+        }
     } else {
         $imgInfo = @getimagesize($tmpPath);
         if (is_array($imgInfo) && !empty($imgInfo['mime'])) {
@@ -357,6 +364,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     } catch (Throwable $e) {
         error_log('inventory/item.php POST fatal: ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine());
+        $_SESSION['inventory_item_post_error'] = $e->getMessage() . ' — ' . basename($e->getFile()) . ':' . $e->getLine();
         if ($diagMode) {
             http_response_code(500);
             header('Content-Type: text/html; charset=utf-8');
@@ -368,7 +376,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 . '</body></html>';
             exit;
         }
-        header('Location: item.php?status=error&message=Server+error+while+saving+item');
+        header('Location: item.php?tab=add&status=error&message=Server+error+while+saving+item');
         exit;
     }
 }
@@ -526,6 +534,14 @@ if ($editItemId > 0) {
         <?php elseif ($status === 'error'): ?>
             <div class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 px-4 py-3 text-sm">
                 <?php echo htmlspecialchars($message !== '' ? $message : 'Something went wrong.'); ?>
+                <?php
+                if (!empty($_SESSION['inventory_item_post_error'])) {
+                    echo '<div class="mt-3 text-xs text-red-900 font-mono whitespace-pre-wrap border-t border-red-200 pt-2">';
+                    echo htmlspecialchars((string)$_SESSION['inventory_item_post_error']);
+                    echo '</div>';
+                    unset($_SESSION['inventory_item_post_error']);
+                }
+                ?>
             </div>
         <?php endif; ?>
 
