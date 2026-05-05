@@ -662,8 +662,10 @@ foreach ($documents as $d) {
                                     <button type="button" class="upload-doc-btn px-3 py-1.5 rounded-lg bg-[#d97706] hover:bg-[#b45309] text-white text-xs font-medium transition-colors" data-doc-type="<?php echo htmlspecialchars($docType); ?>" title="Upload">Upload</button>
                                     <?php if ($hasFile): ?>
                                     <a href="document-view.php?id=<?php echo (int)$doc['id']; ?>" target="_blank" class="px-3 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-medium transition-colors" title="View">View</a>
+                                    <a href="document-download.php?id=<?php echo (int)$doc['id']; ?>" class="px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-800 text-white text-xs font-medium transition-colors" title="Download">Download</a>
                                     <?php else: ?>
                                     <span class="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-400 text-xs cursor-not-allowed">View</span>
+                                    <span class="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-400 text-xs cursor-not-allowed">Download</span>
                                     <?php endif; ?>
                                 </div>
                             </td>
