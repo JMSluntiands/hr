@@ -102,8 +102,8 @@ $stmt = $conn->prepare(
         submitted_by_user_id, company_name, employee_name, location_area,
         incident_date, incident_time, incident_type, incident_details,
         witness_name, anyone_injured, injury_types, injury_details,
-        report_date, report_time, action_taken, attachment_path
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+        report_date, report_time, action_taken, attachment_path, review_status
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
 );
 
 if (!$stmt) {
@@ -121,8 +121,9 @@ if ($actionTaken !== '') {
     $actionTakenDb = $actionTaken;
 }
 
+$reviewStatus = 'Pending';
 $stmt->bind_param(
-    'i' . str_repeat('s', 15),
+    'i' . str_repeat('s', 16),
     $userId,
     $companyName,
     $employeeName,
@@ -138,11 +139,12 @@ $stmt->bind_param(
     $reportDate,
     $reportTime,
     $actionTakenDb,
-    $attachmentPath
+    $attachmentPath,
+    $reviewStatus
 );
 
 if ($stmt->execute()) {
-    $_SESSION['incident_report_flash'] = 'Incident report saved.';
+    $_SESSION['incident_report_flash'] = 'Incident report submitted for admin review.';
 } else {
     $_SESSION['incident_report_flash'] = 'Could not save report.';
 }

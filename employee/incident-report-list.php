@@ -173,7 +173,7 @@ if ($tableReady) {
             <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
                 <div>
                     <h1 class="text-2xl font-semibold text-slate-800">List of incident reports</h1>
-                    <p class="text-sm text-slate-500 mt-1">Your submitted reports. Use filters to narrow results.</p>
+                    <p class="text-sm text-slate-500 mt-1">Your submitted reports and their review status.</p>
                 </div>
                 <a href="incident-report-add.php" class="inline-flex items-center rounded-xl bg-[#FA9800] px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-amber-600/20 hover:bg-amber-600">Add incident</a>
             </div>
@@ -232,6 +232,7 @@ if ($tableReady) {
                                     <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Incident date</th>
                                     <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Type</th>
                                     <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Employee (form)</th>
+                                    <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Review status</th>
                                     <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Injured?</th>
                                     <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Filed</th>
                                     <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">File</th>
@@ -239,13 +240,19 @@ if ($tableReady) {
                             </thead>
                             <tbody>
                                 <?php if (empty($reports)): ?>
-                                    <tr><td colspan="6" class="px-4 py-8 text-center text-slate-500">No reports match your filters.</td></tr>
+                                    <tr><td colspan="7" class="px-4 py-8 text-center text-slate-500">No reports match your filters.</td></tr>
                                 <?php else: ?>
                                     <?php foreach ($reports as $r): ?>
+                                        <?php $status = (string)($r['review_status'] ?? 'Pending'); ?>
                                         <tr class="border-b border-slate-100 hover:bg-slate-50">
                                             <td class="px-4 py-3 text-slate-600"><?php echo !empty($r['incident_date']) ? htmlspecialchars(date('M j, Y', strtotime($r['incident_date']))) : '—'; ?></td>
                                             <td class="px-4 py-3 text-slate-700"><?php echo htmlspecialchars($r['incident_type'] ?? '—'); ?></td>
                                             <td class="px-4 py-3 text-slate-700"><?php echo htmlspecialchars($r['employee_name'] ?? '—'); ?></td>
+                                            <td class="px-4 py-3">
+                                                <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold <?php echo $status === 'Approved' ? 'bg-emerald-100 text-emerald-700' : ($status === 'Declined' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'); ?>">
+                                                    <?php echo htmlspecialchars($status); ?>
+                                                </span>
+                                            </td>
                                             <td class="px-4 py-3"><?php echo htmlspecialchars($r['anyone_injured'] ?? 'No'); ?></td>
                                             <td class="px-4 py-3 text-slate-600"><?php echo !empty($r['created_at']) ? htmlspecialchars(date('M j, Y g:i A', strtotime($r['created_at']))) : '—'; ?></td>
                                             <td class="px-4 py-3">

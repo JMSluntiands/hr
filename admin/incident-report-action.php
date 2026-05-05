@@ -20,6 +20,32 @@ ensureIncidentReportsTable($conn);
 
 $action = $_POST['action'] ?? '';
 
+if ($action === 'approve' || $action === 'decline') {
+    $id = (int)($_POST['report_id'] ?? 0);
+    if ($id <= 0) {
+        $_SESSION['incident_report_flash'] = 'Invalid review request.';
+        header('Location: incident-report-submitted');
+        exit;
+    }
+    $nextStatus = $action === 'approve' ? 'Approved' : 'Declined';
+    $adminUserId = (int)$_SESSION['user_id'];
+    $stmt = $conn->prepare('UPDATE incident_reports SET review_status = ?, reviewed_by_user_id = ?, reviewed_at = NOW() WHERE id = ? LIMIT 1');
+    if (!$stmt) {
+        $_SESSION['incident_report_flash'] = 'Database error.';
+        header('Location: incident-report-submitted');
+        exit;
+    }
+    $stmt->bind_param('sii', $nextStatus, $adminUserId, $id);
+    if ($stmt->execute() && $stmt->affected_rows > 0) {
+        $_SESSION['incident_report_flash'] = 'Incident status updated to ' . $nextStatus . '.';
+    } else {
+        $_SESSION['incident_report_flash'] = 'Incident not found or already updated.';
+    }
+    $stmt->close();
+    header('Location: incident-report-submitted');
+    exit;
+}
+
 if ($action === 'delete') {
     $id = (int)($_POST['report_id'] ?? 0);
     if ($id <= 0) {
@@ -146,16 +172,19 @@ if ($action === 'create') {
             submitted_by_user_id, company_name, employee_name, location_area,
             incident_date, incident_time, incident_type, incident_details,
             witness_name, anyone_injured, injury_types, injury_details,
-            report_date, report_time, action_taken, attachment_path
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+            report_date, report_time, action_taken, attachment_path, review_status, reviewed_by_user_id, reviewed_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())'
     );
     if (!$stmt) {
         $_SESSION['incident_report_flash'] = 'Database error.';
         header('Location: ' . $redirect);
         exit;
     }
+    $reviewStatus = 'Approved';
+    $reviewedByUserId = $userId;
+
     $stmt->bind_param(
-        'i' . str_repeat('s', 15),
+        'i' . str_repeat('s', 16) . 'i',
         $userId,
         $companyName,
         $employeeName,
@@ -171,7 +200,9 @@ if ($action === 'create') {
         $reportDate,
         $reportTime,
         $actionTakenDb,
-        $attachmentPath
+        $attachmentPath,
+        $reviewStatus,
+        $reviewedByUserId
     );
     if ($stmt->execute()) {
         $_SESSION['incident_report_flash'] = 'Incident report saved.';

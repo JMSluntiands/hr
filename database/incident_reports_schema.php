@@ -32,7 +32,36 @@ function ensureIncidentReportsTable(mysqli $conn): bool
         KEY `idx_submitter` (`submitted_by_user_id`),
         KEY `idx_incident_date` (`incident_date`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
-    return (bool) $conn->query($sql);
+    if (!(bool) $conn->query($sql)) {
+        return false;
+    }
+    return incidentReportEnsureApprovalColumns($conn);
+}
+
+function incidentReportEnsureApprovalColumns(mysqli $conn): bool
+{
+    $columns = [];
+    $res = $conn->query("SHOW COLUMNS FROM `incident_reports`");
+    if ($res) {
+        while ($row = $res->fetch_assoc()) {
+            $name = (string)($row['Field'] ?? '');
+            if ($name !== '') {
+                $columns[$name] = true;
+            }
+        }
+    }
+
+    $ok = true;
+    if (!isset($columns['review_status'])) {
+        $ok = $ok && (bool)$conn->query("ALTER TABLE `incident_reports` ADD COLUMN `review_status` ENUM('Pending','Approved','Declined') NOT NULL DEFAULT 'Pending' AFTER `attachment_path`");
+    }
+    if (!isset($columns['reviewed_by_user_id'])) {
+        $ok = $ok && (bool)$conn->query("ALTER TABLE `incident_reports` ADD COLUMN `reviewed_by_user_id` INT(11) DEFAULT NULL AFTER `review_status`");
+    }
+    if (!isset($columns['reviewed_at'])) {
+        $ok = $ok && (bool)$conn->query("ALTER TABLE `incident_reports` ADD COLUMN `reviewed_at` DATETIME DEFAULT NULL AFTER `reviewed_by_user_id`");
+    }
+    return $ok;
 }
 
 function incidentReportAllowedTypes(): array

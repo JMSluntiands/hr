@@ -17,8 +17,9 @@ $isReqBank     = ($currentPage === 'request-bank');
 $isRequest     = ($isReqLeaves || $isReqDoc || $isReqBank);
 $isActivityLog = ($currentPage === 'activity-log');
 $isProgressiveDiscipline = ($currentPage === 'progressive-discipline');
-$isIncidentReport = in_array($currentPage, ['incident-report', 'incident-report-add', 'incident-report-list', 'incident-report-edit'], true);
+$isIncidentReport = in_array($currentPage, ['incident-report', 'incident-report-add', 'incident-report-list', 'incident-report-edit', 'incident-report-submitted'], true);
 $isIncidentReportAdd = ($currentPage === 'incident-report-add');
+$isIncidentReportSubmitted = ($currentPage === 'incident-report-submitted');
 $isIncidentReportList = ($currentPage === 'incident-report-list');
 $isCompensation = ($currentPage === 'compensation');
 $isAccounts    = ($currentPage === 'accounts');
@@ -214,6 +215,7 @@ require_once dirname(__DIR__, 2) . '/include/sidebar-scrollbar-once.php';
                 </button>
                 <div id="incident-report-dropdown" class="mb-2 ml-10 space-y-1<?php echo $incidentOpen; ?>" role="region" aria-label="Incident report submenu">
                     <a href="incident-report-add" class="block rounded-lg px-3 py-1.5 text-xs font-medium text-white/90 transition-colors hover:bg-white/10<?php echo $isIncidentReportAdd ? ' ' . $activeClass : ''; ?>">Add incident</a>
+                    <a href="incident-report-submitted" class="block rounded-lg px-3 py-1.5 text-xs font-medium text-white/90 transition-colors hover:bg-white/10<?php echo $isIncidentReportSubmitted ? ' ' . $activeClass : ''; ?>">Incident Submitted by Employee</a>
                     <a href="incident-report-list" class="block rounded-lg px-3 py-1.5 text-xs font-medium text-white/90 transition-colors hover:bg-white/10<?php echo $isIncidentReportList ? ' ' . $activeClass : ''; ?>">List of incident</a>
                 </div>
             </div>
