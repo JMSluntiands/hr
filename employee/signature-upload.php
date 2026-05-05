@@ -42,18 +42,18 @@ if (!isset($_FILES['signature']) || $_FILES['signature']['error'] !== UPLOAD_ERR
 }
 
 $file = $_FILES['signature'];
-$allowed = ['image/jpeg', 'image/jpg', 'image/png'];
+$allowed = ['image/png'];
 $finfo = new finfo(FILEINFO_MIME_TYPE);
 $mime = $finfo->file($file['tmp_name']);
 if (!in_array($mime, $allowed)) {
-    echo json_encode(['status' => 'error', 'message' => 'Invalid file type. Use JPG or PNG.']);
+    echo json_encode(['status' => 'error', 'message' => 'Invalid file type. Please upload a PNG file only.']);
     exit;
 }
 
-$ext = $mime === 'image/png' ? 'png' : 'jpg';
-$maxSize = 1 * 1024 * 1024; // 1MB for signature
+$ext = 'png';
+$maxSize = 2 * 1024 * 1024; // 2MB for signature
 if ($file['size'] > $maxSize) {
-    echo json_encode(['status' => 'error', 'message' => 'File too large. Max 1MB.']);
+    echo json_encode(['status' => 'error', 'message' => 'File too large. Max 2MB.']);
     exit;
 }
 

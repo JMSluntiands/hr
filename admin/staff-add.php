@@ -48,6 +48,14 @@ if ($conn) {
     }
 }
 
+// Ensure emergency contact address column exists.
+if ($conn) {
+    $checkEmergencyAddress = $conn->query("SHOW COLUMNS FROM employees LIKE 'emergency_contact_address'");
+    if ($checkEmergencyAddress && $checkEmergencyAddress->num_rows === 0) {
+        @$conn->query("ALTER TABLE employees ADD COLUMN emergency_contact_address text DEFAULT NULL AFTER emergency_contact_relationship");
+    }
+}
+
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Get form data
@@ -67,6 +75,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $emergencyContactName = trim($_POST['emergency_contact_name'] ?? '');
     $emergencyContactPhone = trim($_POST['emergency_contact_phone'] ?? '');
     $emergencyContactRelationship = trim($_POST['emergency_contact_relationship'] ?? '');
+    $emergencySameAsPrimary = isset($_POST['emergency_same_as_primary']) && (string)$_POST['emergency_same_as_primary'] === '1';
+    $emergencyContactAddressInput = trim($_POST['emergency_contact_address'] ?? '');
+    $emergencyContactAddress = $emergencySameAsPrimary ? $address : $emergencyContactAddressInput;
     if (!empty($emergencyContactPhone) && !preg_match('/^09/', $emergencyContactPhone)) {
         $emergencyContactPhone = '09' . $emergencyContactPhone;
     }
@@ -230,16 +241,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $employeeSignatureValid = false;
     if ($sigFile && isset($sigFile['error']) && $sigFile['error'] !== UPLOAD_ERR_NO_FILE) {
         if ($sigFile['error'] !== UPLOAD_ERR_OK) {
-            $errors[] = 'Signature file could not be uploaded. Use a JPG or PNG under 1MB.';
+            $errors[] = 'Signature file could not be uploaded. Use a PNG file under 2MB.';
         } elseif (!class_exists('finfo')) {
             $errors[] = 'Server cannot verify signature file type (fileinfo).';
         } else {
             $sigFinfo = new finfo(FILEINFO_MIME_TYPE);
             $sigMime = $sigFinfo->file($sigFile['tmp_name']);
-            if (!in_array($sigMime, ['image/jpeg', 'image/jpg', 'image/png'], true)) {
-                $errors[] = 'Signature must be a JPG or PNG image.';
-            } elseif ($sigFile['size'] > 1024 * 1024) {
-                $errors[] = 'Signature image must be 1MB or smaller.';
+            if (!in_array($sigMime, ['image/png'], true)) {
+                $errors[] = 'Signature must be a PNG image.';
+            } elseif ($sigFile['size'] > 2 * 1024 * 1024) {
+                $errors[] = 'Signature image must be 2MB or smaller.';
             } else {
                 $employeeSignatureValid = true;
             }
@@ -268,13 +279,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         try {
             // Insert into employees table
-            $stmt = $conn->prepare("INSERT INTO employees (employee_id, full_name, email, phone, position, department, employment_type_id, date_hired, status, address, secondary_workplace, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, birthdate, gender, sss, philhealth, pagibig, tin, nbi_clearance, police_clearance, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
+            $stmt = $conn->prepare("INSERT INTO employees (employee_id, full_name, email, phone, position, department, employment_type_id, date_hired, status, address, secondary_workplace, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, emergency_contact_address, birthdate, gender, sss, philhealth, pagibig, tin, nbi_clearance, police_clearance, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
             
             if (!$stmt) {
                 throw new Exception('Database prepare error: ' . $conn->error);
             }
-            $bindTypes = 'ssssssi' . str_repeat('s', 15); // 22 params: 6s + 1i + 15s
-            $stmt->bind_param($bindTypes, $employeeId, $fullName, $email, $phone, $position, $department, $employmentTypeId, $dateHired, $status, $address, $secondaryWorkplace, $emergencyContactName, $emergencyContactPhone, $emergencyContactRelationship, $birthdate, $gender, $sss, $philhealth, $pagibig, $tin, $nbiClearance, $policeClearance);
+            $bindTypes = 'ssssssi' . str_repeat('s', 16); // 23 params: 6s + 1i + 16s
+            $stmt->bind_param($bindTypes, $employeeId, $fullName, $email, $phone, $position, $department, $employmentTypeId, $dateHired, $status, $address, $secondaryWorkplace, $emergencyContactName, $emergencyContactPhone, $emergencyContactRelationship, $emergencyContactAddress, $birthdate, $gender, $sss, $philhealth, $pagibig, $tin, $nbiClearance, $policeClearance);
             
             if (!$stmt->execute()) {
                 throw new Exception('Error adding employee: ' . $stmt->error);
@@ -291,7 +302,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                     $sigFinfoMove = new finfo(FILEINFO_MIME_TYPE);
                     $mimeSig = $sigFinfoMove->file($sigFile['tmp_name']);
-                    $extSig = ($mimeSig === 'image/png') ? 'png' : 'jpg';
+                    $extSig = 'png';
                     $filenameSig = $newEmployeeId . '_sig_' . time() . '.' . $extSig;
                     $filePathSig = $uploadDir . $filenameSig;
                     $relativePathSig = 'signatures/' . $filenameSig;
@@ -553,9 +564,9 @@ if ($conn) {
                         </div>
                         <div class="md:col-span-3">
                             <label class="block text-sm font-medium text-slate-700 mb-1.5">Signature (optional)</label>
-                            <input type="file" name="employee_signature" id="employee_signature" accept="image/jpeg,image/jpg,image/png"
+                            <input type="file" name="employee_signature" id="employee_signature" accept="image/png"
                                    class="block w-full max-w-md text-sm text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-amber-50 file:text-amber-800 hover:file:bg-amber-100">
-                            <p class="text-xs text-slate-500 mt-1.5">JPG or PNG, max 1MB. Used on forms and profile like the employee self-upload.</p>
+                            <p class="text-xs text-slate-500 mt-1.5">PNG only, max 2MB. Used on forms and profile like the employee self-upload.</p>
                         </div>
                         <!-- Workplaces -->
                         <div class="md:col-span-3 p-4 rounded-lg bg-slate-50 border border-slate-100">
@@ -609,6 +620,18 @@ if ($conn) {
                                                oninput="this.value = this.value.replace(/[^0-9]/g, ''); if(this.value.length > 9) this.value = this.value.slice(0, 9);">
                                     </div>
                                     <p class="text-xs text-slate-500 mt-1.5">09 + 9 digits (optional)</p>
+                                </div>
+                                <div class="md:col-span-3">
+                                    <label class="inline-flex items-center gap-2 text-sm text-slate-700 mb-2">
+                                        <input type="checkbox" id="emergencySameAsPrimary" name="emergency_same_as_primary" value="1" <?php echo (isset($_POST['emergency_same_as_primary']) && (string)$_POST['emergency_same_as_primary'] === '1') ? 'checked' : ''; ?> class="rounded border-slate-300 text-amber-600 focus:ring-amber-500/30">
+                                        <span>Same as primary address</span>
+                                    </label>
+                                    <div id="emergencyAddressWrap" class="mt-1">
+                                        <label class="block text-sm font-medium text-slate-700 mb-1.5">Emergency Contact Address</label>
+                                        <textarea name="emergency_contact_address" id="emergency_contact_address" rows="2"
+                                                  class="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-shadow resize-none"
+                                                  placeholder="Enter emergency contact address"><?php echo htmlspecialchars($_POST['emergency_contact_address'] ?? ''); ?></textarea>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -825,6 +848,25 @@ if ($conn) {
             const dailyCompInput = document.getElementById('basic_salary_daily');
             const monthlyGrossPreview = document.getElementById('basic_salary_monthly_preview');
             const annualGrossPreview = document.getElementById('basic_salary_annual_preview');
+            const primaryAddressInput = document.getElementById('address');
+            const emergencySameAsPrimary = document.getElementById('emergencySameAsPrimary');
+            const emergencyAddressWrap = document.getElementById('emergencyAddressWrap');
+            const emergencyAddressInput = document.getElementById('emergency_contact_address');
+
+            function syncEmergencyAddressMode() {
+                if (!emergencySameAsPrimary || !emergencyAddressWrap || !emergencyAddressInput) return;
+                if (emergencySameAsPrimary.checked) {
+                    emergencyAddressWrap.classList.add('hidden');
+                    emergencyAddressInput.value = '';
+                } else {
+                    emergencyAddressWrap.classList.remove('hidden');
+                }
+            }
+
+            if (emergencySameAsPrimary) {
+                emergencySameAsPrimary.addEventListener('change', syncEmergencyAddressMode);
+                syncEmergencyAddressMode();
+            }
 
             function updateCompensationPreview() {
                 if (!dailyCompInput || !monthlyGrossPreview || !annualGrossPreview) return;
@@ -861,6 +903,10 @@ if ($conn) {
                     fullPhoneInput.name = 'phone';
                     fullPhoneInput.value = '09' + phoneInput.value;
                     form.appendChild(fullPhoneInput);
+
+                    if (emergencySameAsPrimary && emergencySameAsPrimary.checked && emergencyAddressInput && primaryAddressInput) {
+                        emergencyAddressInput.value = primaryAddressInput.value.trim();
+                    }
                     
                     // Temporarily disable original input to avoid duplication
                     phoneInput.disabled = true;

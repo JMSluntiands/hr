@@ -58,6 +58,10 @@ if ($conn) {
     if ($rc && $rc->num_rows === 0) {
         @$conn->query("ALTER TABLE employees ADD COLUMN resignation_letter_path varchar(500) DEFAULT NULL");
     }
+    $ecac = $conn->query("SHOW COLUMNS FROM employees LIKE 'emergency_contact_address'");
+    if ($ecac && $ecac->num_rows === 0) {
+        @$conn->query("ALTER TABLE employees ADD COLUMN emergency_contact_address text DEFAULT NULL AFTER emergency_contact_relationship");
+    }
 }
 
 // Get employee ID from URL or from POST (when form is submitted)
@@ -130,6 +134,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $emergencyContactName = trim($_POST['emergency_contact_name'] ?? '');
     $emergencyContactPhone = trim($_POST['emergency_contact_phone'] ?? '');
     $emergencyContactRelationship = trim($_POST['emergency_contact_relationship'] ?? '');
+    $emergencySameAsPrimary = isset($_POST['emergency_same_as_primary']) && (string)$_POST['emergency_same_as_primary'] === '1';
+    $emergencyContactAddressInput = trim($_POST['emergency_contact_address'] ?? '');
+    $emergencyContactAddress = $emergencySameAsPrimary ? $address : $emergencyContactAddressInput;
     if (!empty($emergencyContactPhone) && !preg_match('/^09/', $emergencyContactPhone)) {
         $emergencyContactPhone = '09' . $emergencyContactPhone;
     }
@@ -349,12 +356,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                 }
 
-                $stmt = $conn->prepare("UPDATE employees SET full_name=?, email=?, phone=?, position=?, department=?, employment_type_id=?, date_hired=?, status=?, date_inactive=?, resignation_letter_path=?, address=?, secondary_workplace=?, emergency_contact_name=?, emergency_contact_phone=?, emergency_contact_relationship=?, birthdate=?, gender=?, sss=?, philhealth=?, pagibig=?, tin=?, nbi_clearance=?, police_clearance=? WHERE id=?");
+                $stmt = $conn->prepare("UPDATE employees SET full_name=?, email=?, phone=?, position=?, department=?, employment_type_id=?, date_hired=?, status=?, date_inactive=?, resignation_letter_path=?, address=?, secondary_workplace=?, emergency_contact_name=?, emergency_contact_phone=?, emergency_contact_relationship=?, emergency_contact_address=?, birthdate=?, gender=?, sss=?, philhealth=?, pagibig=?, tin=?, nbi_clearance=?, police_clearance=? WHERE id=?");
                 if (!$stmt) {
                     throw new Exception('Database prepare error: ' . $conn->error);
                 }
-                $bindTypes = 'sssssi' . str_repeat('s', 17) . 'i';
-                $stmt->bind_param($bindTypes, $fullName, $email, $phone, $position, $department, $employmentTypeId, $dateHired, $status, $dateInactiveForDb, $resignationPathForDb, $address, $secondaryWorkplace, $emergencyContactName, $emergencyContactPhone, $emergencyContactRelationship, $birthdate, $gender, $sss, $philhealth, $pagibig, $tin, $nbiClearance, $policeClearance, $employeeId);
+                $bindTypes = 'sssssi' . str_repeat('s', 18) . 'i';
+                $stmt->bind_param($bindTypes, $fullName, $email, $phone, $position, $department, $employmentTypeId, $dateHired, $status, $dateInactiveForDb, $resignationPathForDb, $address, $secondaryWorkplace, $emergencyContactName, $emergencyContactPhone, $emergencyContactRelationship, $emergencyContactAddress, $birthdate, $gender, $sss, $philhealth, $pagibig, $tin, $nbiClearance, $policeClearance, $employeeId);
                 if (!$stmt->execute()) {
                     throw new Exception('Error updating employee: ' . $stmt->error);
                 }
@@ -484,11 +491,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->close();
             $conn->begin_transaction();
             try {
-                $stmt = $conn->prepare("INSERT INTO employees (employee_id, full_name, email, phone, position, department, date_hired, status, address, secondary_workplace, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, birthdate, gender, sss, philhealth, pagibig, tin, nbi_clearance, police_clearance, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
+                $stmt = $conn->prepare("INSERT INTO employees (employee_id, full_name, email, phone, position, department, date_hired, status, address, secondary_workplace, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, emergency_contact_address, birthdate, gender, sss, philhealth, pagibig, tin, nbi_clearance, police_clearance, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
                 if (!$stmt) {
                     throw new Exception('Database prepare error: ' . $conn->error);
                 }
-                $stmt->bind_param("sssssssssssssssssssss", $newEmployeeIdStr, $fullName, $email, $phone, $position, $department, $dateHired, $status, $address, $secondaryWorkplace, $emergencyContactName, $emergencyContactPhone, $emergencyContactRelationship, $birthdate, $gender, $sss, $philhealth, $pagibig, $tin, $nbiClearance, $policeClearance);
+                $stmt->bind_param("ssssssssssssssssssssss", $newEmployeeIdStr, $fullName, $email, $phone, $position, $department, $dateHired, $status, $address, $secondaryWorkplace, $emergencyContactName, $emergencyContactPhone, $emergencyContactRelationship, $emergencyContactAddress, $birthdate, $gender, $sss, $philhealth, $pagibig, $tin, $nbiClearance, $policeClearance);
                 if (!$stmt->execute()) {
                     throw new Exception('Error adding employee: ' . $stmt->error);
                 }
@@ -672,6 +679,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                        oninput="this.value = this.value.replace(/[^0-9]/g, ''); if(this.value.length > 9) this.value = this.value.slice(0, 9);">
                             </div>
                             <p class="text-xs text-slate-500 mt-1">Format: 09 + 9 digits (optional)</p>
+                        </div>
+                        <?php
+                        $resolvedEmergencyAddress = trim((string)($_POST['emergency_contact_address'] ?? ($employee['emergency_contact_address'] ?? '')));
+                        $resolvedPrimaryAddress = trim((string)($_POST['address'] ?? ($employee['address'] ?? '')));
+                        $isEmergencySameAsPrimary = isset($_POST['emergency_same_as_primary'])
+                            ? ((string)$_POST['emergency_same_as_primary'] === '1')
+                            : ($resolvedEmergencyAddress !== '' && $resolvedEmergencyAddress === $resolvedPrimaryAddress);
+                        ?>
+                        <div class="md:col-span-3">
+                            <label class="inline-flex items-center gap-2 text-sm text-slate-700 mb-2">
+                                <input type="checkbox" id="emergencySameAsPrimary" name="emergency_same_as_primary" value="1" <?php echo $isEmergencySameAsPrimary ? 'checked' : ''; ?> class="rounded border-slate-300 text-amber-600 focus:ring-amber-500/30">
+                                <span>Same as primary address</span>
+                            </label>
+                            <div id="emergencyAddressWrap" class="mt-1">
+                                <label class="block text-sm font-medium text-slate-700 mb-2">Emergency Contact Address</label>
+                                <textarea name="emergency_contact_address" id="emergency_contact_address" rows="2"
+                                          class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]"
+                                          placeholder="Enter emergency contact address"><?php echo htmlspecialchars($resolvedEmergencyAddress); ?></textarea>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -900,6 +926,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             const dailyCompInput = document.getElementById('basic_salary_daily');
             const monthlyGrossPreview = document.getElementById('basic_salary_monthly_preview');
             const annualGrossPreview = document.getElementById('basic_salary_annual_preview');
+            const primaryAddressInput = document.getElementById('address');
+            const emergencySameAsPrimary = document.getElementById('emergencySameAsPrimary');
+            const emergencyAddressWrap = document.getElementById('emergencyAddressWrap');
+            const emergencyAddressInput = document.getElementById('emergency_contact_address');
 
             function updateCompensationPreview() {
                 if (!dailyCompInput || !monthlyGrossPreview || !annualGrossPreview) return;
@@ -914,6 +944,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (dailyCompInput) {
                 dailyCompInput.addEventListener('input', updateCompensationPreview);
                 updateCompensationPreview();
+            }
+
+            function syncEmergencyAddressMode() {
+                if (!emergencySameAsPrimary || !emergencyAddressWrap || !emergencyAddressInput) return;
+                if (emergencySameAsPrimary.checked) {
+                    emergencyAddressWrap.classList.add('hidden');
+                    emergencyAddressInput.value = '';
+                } else {
+                    emergencyAddressWrap.classList.remove('hidden');
+                }
+            }
+            if (emergencySameAsPrimary) {
+                emergencySameAsPrimary.addEventListener('change', syncEmergencyAddressMode);
+                syncEmergencyAddressMode();
             }
             
             // Ensure phone number is properly formatted on submit + show loading
@@ -969,6 +1013,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     fullPhoneInput.name = 'phone';
                     fullPhoneInput.value = '09' + phoneInput.value;
                     form.appendChild(fullPhoneInput);
+
+                    if (emergencySameAsPrimary && emergencySameAsPrimary.checked && emergencyAddressInput && primaryAddressInput) {
+                        emergencyAddressInput.value = primaryAddressInput.value.trim();
+                    }
                     
                     // Temporarily disable original input to avoid duplication
                     phoneInput.disabled = true;

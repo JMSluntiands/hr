@@ -343,9 +343,9 @@ foreach ($documents as $d) {
                             <span id="signaturePlaceholder" class="text-slate-400 text-xs">No signature</span>
                         <?php endif; ?>
                     </div>
-                    <input type="file" name="signature" id="signatureInput" accept="image/jpeg,image/jpg,image/png" class="hidden">
+                    <input type="file" name="signature" id="signatureInput" accept="image/png" class="hidden">
                     <button type="button" id="signatureUploadBtn" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-lg transition-colors">Upload signature</button>
-                    <p class="text-xs text-slate-500">JPG or PNG, max 1MB</p>
+                    <p class="text-xs text-slate-500">PNG only, max 2MB</p>
                     <div id="signatureMessage" class="hidden text-sm text-center"></div>
                 </div>
             </div>

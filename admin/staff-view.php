@@ -231,6 +231,21 @@ if ($conn) {
                             </div>
                         </div>
                     </div>
+                    <div class="md:ml-auto">
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">Signature</p>
+                        <div class="w-44 h-16 border border-slate-200 rounded-lg bg-white flex items-center justify-center overflow-hidden shadow-sm">
+                            <?php
+                            $adminSigPath = !empty($employee['signature']) && file_exists(__DIR__ . '/../uploads/' . $employee['signature'])
+                                ? $employee['signature']
+                                : null;
+                            ?>
+                            <?php if ($adminSigPath): ?>
+                                <img src="../uploads/<?php echo htmlspecialchars($adminSigPath); ?>" alt="Employee signature" class="max-w-full max-h-full object-contain">
+                            <?php else: ?>
+                                <span class="text-slate-400 text-xs">No signature</span>
+                            <?php endif; ?>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -282,6 +297,9 @@ if ($conn) {
                                 · <?php echo htmlspecialchars($employee['emergency_contact_phone']); ?>
                             <?php endif; ?>
                         </p>
+                        <?php if (!empty(trim((string)($employee['emergency_contact_address'] ?? '')))): ?>
+                            <p class="text-xs text-slate-500 mt-1"><?php echo htmlspecialchars((string)$employee['emergency_contact_address']); ?></p>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -427,27 +445,15 @@ if ($conn) {
                         
                         <!-- Gross Income based on New Salary -->
                         <?php if ($currentSalary): 
-                            $monthlyGross = $currentSalary;
-                            $dailyGross = $monthlyGross / 26;
-                            $annualGross = $monthlyGross * 12;
+                            $dailyGross = $currentSalary / 26;
                         ?>
                         <div class="md:col-span-2 border-slate-200">
                             <h4 class="text-md font-semibold text-slate-700 mb-4">Gross Income (Based on New Salary)</h4>
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div class="bg-slate-50 p-4 rounded-lg">
-                                    <p class="text-sm font-medium text-slate-600 mb-1">Monthly Gross Income</p>
-                                    <p class="text-slate-800 text-xl font-bold">₱<?php echo number_format($monthlyGross, 2); ?></p>
-                                    <p class="text-xs text-slate-500 mt-1">Based on current salary</p>
-                                </div>
-                                <div class="bg-slate-50 p-4 rounded-lg">
                                     <p class="text-sm font-medium text-slate-600 mb-1">Daily Gross Income</p>
                                     <p class="text-slate-800 text-xl font-bold">₱<?php echo number_format($dailyGross, 2); ?></p>
                                     <p class="text-xs text-slate-500 mt-1">Monthly ÷ 26</p>
-                                </div>
-                                <div class="bg-slate-50 p-4 rounded-lg">
-                                    <p class="text-sm font-medium text-slate-600 mb-1">Annual Gross Income</p>
-                                    <p class="text-slate-800 text-xl font-bold">₱<?php echo number_format($annualGross, 2); ?></p>
-                                    <p class="text-xs text-slate-500 mt-1">Monthly × 12 months</p>
                                 </div>
                             </div>
                         </div>
