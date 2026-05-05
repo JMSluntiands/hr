@@ -10,6 +10,10 @@ $GLOBALS['_hr_sidebar_scroll_injected'] = true;
 
 echo <<<'CSS'
 <style id="hr-sidebar-scrollbar">
+/* Employee main can paint after aside in DOM; keep sidebar above in-flow content for hit-testing */
+#employee-sidebar {
+  z-index: 50;
+}
 #admin-sidebar > nav,
 #employee-sidebar > nav,
 #inventory-sidebar > nav {
