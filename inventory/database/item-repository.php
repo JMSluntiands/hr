@@ -4,7 +4,7 @@ require_once __DIR__ . '/item-config.php';
 require_once __DIR__ . '/setup_inventory_items_table.php';
 require_once __DIR__ . '/mysqli-stmt-fetch.php';
 
-/** Empty string → null for nullable DB columns (avoids NULLIF(?, '') collation mix on some MySQL setups). */
+/** Empty string → null for nullable DB columns (bind as SQL NULL in PHP; avoids NULLIF collation errors online). */
 function inventory_empty_string_to_null(?string $value): ?string
 {
     $trimmed = trim((string)($value ?? ''));
@@ -101,12 +101,10 @@ function createInventoryItem(mysqli $conn, array $data): bool
     $itemImagePathsJson = inventory_item_image_paths_to_json($pathsList);
     $itemImagePath = inventory_empty_string_to_null($pathsList[0] ?? null);
     $dateArrived = inventory_empty_string_to_null($data['date_arrived'] ?? null);
-    $itemImagePathBind = $itemImagePath === null ? '' : $itemImagePath;
-    $itemImagePathsJsonBind = $itemImagePathsJson === null ? '' : $itemImagePathsJson;
 
     $stmt = $conn->prepare("
         INSERT INTO inventory_items (item_id, item_name, description, `type`, item_condition, remarks, item_image_path, item_image_paths, date_arrived)
-        VALUES (?, ?, ?, ?, ?, ?, NULLIF(?, ''), NULLIF(?, ''), ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
     if (!$stmt) {
         error_log('createInventoryItem prepare failed: ' . $conn->error);
@@ -120,8 +118,8 @@ function createInventoryItem(mysqli $conn, array $data): bool
         $data['type'],
         $data['item_condition'],
         $data['remarks'],
-        $itemImagePathBind,
-        $itemImagePathsJsonBind,
+        $itemImagePath,
+        $itemImagePathsJson,
         $dateArrived
     );
     $ok = $stmt->execute();
@@ -173,12 +171,10 @@ function updateInventoryItem(mysqli $conn, int $id, array $data): bool
     $itemImagePathsJson = inventory_item_image_paths_to_json($pathsList);
     $itemImagePath = inventory_empty_string_to_null($pathsList[0] ?? null);
     $dateArrived = inventory_empty_string_to_null($data['date_arrived'] ?? null);
-    $itemImagePathBind = $itemImagePath === null ? '' : $itemImagePath;
-    $itemImagePathsJsonBind = $itemImagePathsJson === null ? '' : $itemImagePathsJson;
 
     $stmt = $conn->prepare("
         UPDATE inventory_items
-        SET item_id = ?, item_name = ?, description = ?, `type` = ?, item_condition = ?, remarks = ?, item_image_path = NULLIF(?, ''), item_image_paths = NULLIF(?, ''), date_arrived = ?
+        SET item_id = ?, item_name = ?, description = ?, `type` = ?, item_condition = ?, remarks = ?, item_image_path = ?, item_image_paths = ?, date_arrived = ?
         WHERE id = ?
     ");
     if (!$stmt) {
@@ -193,8 +189,8 @@ function updateInventoryItem(mysqli $conn, int $id, array $data): bool
         $data['type'],
         $data['item_condition'],
         $data['remarks'],
-        $itemImagePathBind,
-        $itemImagePathsJsonBind,
+        $itemImagePath,
+        $itemImagePathsJson,
         $dateArrived,
         $id
     );
