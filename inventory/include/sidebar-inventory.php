@@ -28,6 +28,11 @@ if (isset($conn) && $conn instanceof mysqli) {
     }
 }
 $activeClass = 'bg-white/20';
+$itemNavOpen = $isItem ? '' : ' hidden';
+$itemNavArrow = $isItem ? ' rotate-180' : '';
+$itemNavBtnActive = $isItem ? ' ' . $activeClass : '';
+
+require_once dirname(__DIR__, 2) . '/include/sidebar-scrollbar-once.php';
 ?>
 <!-- Mobile Top Bar for Inventory -->
 <header class="md:hidden fixed inset-x-0 top-0 z-30 bg-[#FA9800] text-white flex items-center justify-between px-4 py-3 shadow">
@@ -53,8 +58,8 @@ $activeClass = 'bg-white/20';
     </button>
 </header>
 
-<aside id="inventory-sidebar" class="fixed inset-y-0 left-0 z-40 w-64 bg-[#FA9800] text-white flex flex-col transform -translate-x-full transition-transform duration-200 md:translate-x-0">
-    <div class="p-6 flex items-center gap-4 border-b border-white/20">
+<aside id="inventory-sidebar" class="fixed inset-y-0 left-0 z-40 flex max-h-[100dvh] w-64 max-w-full flex-col overflow-hidden bg-[#FA9800] text-white transform -translate-x-full transition-transform duration-200 md:translate-x-0">
+    <div class="p-6 flex shrink-0 items-center gap-4 border-b border-white/20">
         <div class="w-14 h-14 rounded-full overflow-hidden bg-white/20 flex items-center justify-center">
             <span class="text-2xl font-semibold text-white">
                 <?php echo strtoupper(substr($adminName, 0, 1)); ?>
@@ -66,17 +71,22 @@ $activeClass = 'bg-white/20';
         </div>
     </div>
 
-    <nav class="flex-1 p-4 space-y-1 text-sm">
-        <div class="flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-white<?php echo $isItem ? ' ' . $activeClass : ''; ?>">
-            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10" />
-            </svg>
-            <span>Item</span>
-        </div>
-        <div class="ml-10 space-y-1 mb-2">
-            <a href="item.php?tab=add" class="block px-3 py-1.5 rounded-lg text-xs font-medium text-white/90 hover:bg-white/10 transition-colors<?php echo $isItemAdd ? ' ' . $activeClass : ''; ?>">Add Item</a>
-            <a href="item.php?tab=list" class="block px-3 py-1.5 rounded-lg text-xs font-medium text-white/90 hover:bg-white/10 transition-colors<?php echo $isItemList ? ' ' . $activeClass : ''; ?>">List Item</a>
-            <a href="item.php?tab=history" class="block px-3 py-1.5 rounded-lg text-xs font-medium text-white/90 hover:bg-white/10 transition-colors<?php echo $isItemHistory ? ' ' . $activeClass : ''; ?>">Item History</a>
+    <nav class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-y-contain p-4 space-y-1 text-sm">
+        <div class="dropdown-container">
+            <button type="button" id="inventory-item-dropdown-btn" class="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-left font-medium text-white transition-colors hover:bg-white/10<?php echo $itemNavBtnActive; ?>" aria-expanded="<?php echo $itemNavOpen === '' ? 'true' : 'false'; ?>" aria-controls="inventory-item-dropdown">
+                <svg class="h-5 w-5 shrink-0 text-white pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10" />
+                </svg>
+                <span class="min-w-0 flex-1 pointer-events-none">Item</span>
+                <svg id="inventory-item-arrow" class="h-4 w-4 shrink-0 text-white transition-transform pointer-events-none<?php echo $itemNavArrow; ?>" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+            </button>
+            <div id="inventory-item-dropdown" class="mb-2 ml-10 space-y-1<?php echo $itemNavOpen; ?>" role="region" aria-label="Item submenu">
+                <a href="item.php?tab=add" class="block rounded-lg px-3 py-1.5 text-xs font-medium text-white/90 transition-colors hover:bg-white/10<?php echo $isItemAdd ? ' ' . $activeClass : ''; ?>">Add Item</a>
+                <a href="item.php?tab=list" class="block rounded-lg px-3 py-1.5 text-xs font-medium text-white/90 transition-colors hover:bg-white/10<?php echo $isItemList ? ' ' . $activeClass : ''; ?>">List Item</a>
+                <a href="item.php?tab=history" class="block rounded-lg px-3 py-1.5 text-xs font-medium text-white/90 transition-colors hover:bg-white/10<?php echo $isItemHistory ? ' ' . $activeClass : ''; ?>">Item History</a>
+            </div>
         </div>
 
         <a href="inventory.php" class="flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-white hover:bg-white/10 transition-colors<?php echo $isInventory ? ' ' . $activeClass : ''; ?>">
@@ -122,7 +132,7 @@ $activeClass = 'bg-white/20';
         </a>
     </nav>
 
-    <div class="p-4 border-t border-white/20">
+    <div class="shrink-0 border-t border-white/20 p-4">
         <div class="flex items-center justify-between text-xs font-medium mb-2 text-white/80">
             <span>Role</span>
             <span class="px-2 py-0.5 rounded-full bg-white/10 text-white font-medium">

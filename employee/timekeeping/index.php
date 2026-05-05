@@ -190,8 +190,9 @@ if ($view === 'overview') {
     </header>
 
     <!-- Sidebar (fixed) -->
-    <aside id="employee-sidebar" class="fixed inset-y-0 left-0 z-40 w-64 bg-[#FA9800] text-white flex flex-col transform -translate-x-full transition-transform duration-200 md:translate-x-0">
-        <div class="p-6 flex items-center gap-4 border-b border-white/20">
+    <?php require_once __DIR__ . '/../../include/sidebar-scrollbar-once.php'; ?>
+    <aside id="employee-sidebar" class="fixed inset-y-0 left-0 z-40 flex max-h-[100dvh] w-64 max-w-full flex-col overflow-hidden bg-[#FA9800] text-white transform -translate-x-full transition-transform duration-200 md:translate-x-0">
+        <div class="p-6 flex shrink-0 items-center gap-4 border-b border-white/20">
             <div class="w-14 h-14 rounded-full overflow-hidden bg-white/20 flex items-center justify-center flex-shrink-0">
                 <?php if (!empty($employeePhoto) && file_exists(__DIR__ . '/../../uploads/' . $employeePhoto)): ?>
                     <img src="../../uploads/<?php echo htmlspecialchars($employeePhoto); ?>" alt="" class="w-full h-full object-cover">
@@ -204,7 +205,7 @@ if ($view === 'overview') {
                 <div class="text-xs text-white/80">Employee</div>
             </div>
         </div>
-        <nav class="flex-1 p-4 space-y-3 text-sm">
+        <nav class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-y-contain p-4 space-y-3 text-sm">
             <div class="flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-white bg-white/10">
                 <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2zm3-8h6" />
@@ -235,7 +236,7 @@ if ($view === 'overview') {
                 <span>Payslip</span>
             </a>
         </nav>
-        <div class="p-4 border-t border-white/20">
+        <div class="shrink-0 border-t border-white/20 p-4">
             <a href="../../logout.php" class="block text-xs font-medium text-white/80 hover:text-white">Logout</a>
             <a href="../module-select.php" class="block text-xs font-medium text-white/80 hover:text-white mt-2">
                 Back to Main Menu

@@ -213,6 +213,29 @@ function uploadInventoryItemImage(?array $file, string &$errorMessage)
     return 'uploads/items/' . $newFileName;
 }
 
+/** @return list<array{name:string,type:string,tmp_name:string,error:int,size:int}> */
+function inventory_normalize_multi_upload_files(?array $fileField): array
+{
+    if (!$fileField || !isset($fileField['name'])) {
+        return [];
+    }
+    if (is_array($fileField['name'])) {
+        $out = [];
+        $n = count($fileField['name']);
+        for ($i = 0; $i < $n; $i++) {
+            $out[] = [
+                'name' => (string)($fileField['name'][$i] ?? ''),
+                'type' => (string)($fileField['type'][$i] ?? ''),
+                'tmp_name' => (string)($fileField['tmp_name'][$i] ?? ''),
+                'error' => (int)($fileField['error'][$i] ?? UPLOAD_ERR_NO_FILE),
+                'size' => (int)($fileField['size'][$i] ?? 0),
+            ];
+        }
+        return $out;
+    }
+    return [$fileField];
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
     $action = $_POST['action'] ?? '';
@@ -223,6 +246,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $remarks = trim((string)($_POST['remarks'] ?? ''));
     $dateArrived = trim((string)($_POST['date_arrived'] ?? ''));
     $currentImagePath = trim((string)($_POST['current_image_path'] ?? ''));
+    $currentImagePathsJson = trim((string)($_POST['current_image_paths'] ?? ''));
     $rowId = (int)($_POST['id'] ?? 0);
 
     if ($action === 'delete' && $rowId > 0) {
@@ -259,13 +283,59 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    $existingPaths = [];
+    if ($currentImagePathsJson !== '') {
+        $decodedPaths = json_decode($currentImagePathsJson, true);
+        if (is_array($decodedPaths)) {
+            foreach ($decodedPaths as $p) {
+                if (is_string($p) && trim($p) !== '') {
+                    $existingPaths[] = trim($p);
+                }
+            }
+        }
+    }
+    if ($existingPaths === [] && $currentImagePath !== '') {
+        $existingPaths = [$currentImagePath];
+    }
+    $existingPaths = array_values(array_unique($existingPaths));
+
     $uploadError = '';
-    $uploadedImagePath = uploadInventoryItemImage($_FILES['item_image'] ?? null, $uploadError);
-    if ($uploadedImagePath === false) {
-        header('Location: item.php?status=error&message=' . urlencode($uploadError));
+    $newPaths = [];
+    $multiFiles = inventory_normalize_multi_upload_files($_FILES['item_images'] ?? null);
+    foreach ($multiFiles as $fileEntry) {
+        if ((int)($fileEntry['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+            continue;
+        }
+        $p = uploadInventoryItemImage($fileEntry, $uploadError);
+        if ($p === false) {
+            header('Location: item.php?status=error&message=' . urlencode($uploadError));
+            exit;
+        }
+        if ($p !== null) {
+            $newPaths[] = $p;
+        }
+    }
+    if ($newPaths === [] && isset($_FILES['item_image'])) {
+        $p = uploadInventoryItemImage($_FILES['item_image'], $uploadError);
+        if ($p === false) {
+            header('Location: item.php?status=error&message=' . urlencode($uploadError));
+            exit;
+        }
+        if ($p !== null) {
+            $newPaths[] = $p;
+        }
+    }
+
+    $maxItemImages = 20;
+    if ($action === 'create') {
+        $finalPaths = $newPaths;
+    } else {
+        $finalPaths = array_values(array_unique(array_merge($existingPaths, $newPaths)));
+    }
+    if (count($finalPaths) > $maxItemImages) {
+        header('Location: item.php?status=error&message=' . urlencode('Too many images (maximum ' . $maxItemImages . ').'));
         exit;
     }
-    $itemImagePath = $uploadedImagePath !== null ? $uploadedImagePath : $currentImagePath;
 
     if ($action === 'create') {
         $ok = createInventoryItem($conn, [
@@ -274,20 +344,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'type' => $type,
             'item_condition' => $itemCondition,
             'remarks' => $remarks,
-            'item_image_path' => $itemImagePath,
+            'item_image_paths' => $finalPaths,
             'date_arrived' => $dateArrived,
         ]);
 
         if ($ok) {
             $newItemDbId = (int)$conn->insert_id;
             $newItemCode = inventoryGetItemCodeByItemDbId($conn, $newItemDbId);
+            $picNote = count($finalPaths) === 0 ? 'none' : (string)count($finalPaths) . ' image(s)';
             $createDetails = "Item name: " . $itemName . "\n"
                 . "Description: " . ($description ?: '(empty)') . "\n"
                 . "Type: " . ($type ?: '(empty)') . "\n"
                 . "Item condition: " . $itemCondition . "\n"
                 . "Remarks: " . ($remarks ?: '(empty)') . "\n"
                 . "Date arrived: " . ($dateArrived ?: '(empty)') . "\n"
-                . "Item picture: " . ($itemImagePath ? 'yes' : 'no');
+                . "Item pictures: " . $picNote;
             inventoryLogActivity($conn, inventoryActionWithItemCode('Create Item', $newItemCode), 'Item', $newItemDbId > 0 ? $newItemDbId : null, 'Created new inventory item: ' . $itemName . '.', $createDetails, $newItemCode);
             header('Location: item.php?status=created');
         } else {
@@ -307,7 +378,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'type' => $type,
             'item_condition' => $itemCondition,
             'remarks' => $remarks,
-            'item_image_path' => $itemImagePath,
+            'item_image_paths' => $finalPaths,
             'date_arrived' => $dateArrived,
         ]);
 
@@ -341,9 +412,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($oldDate !== $dateArrived) {
                     $changeDetails[] = 'Date arrived: ' . ($oldDate ?: '(empty)') . ' → ' . ($dateArrived ?: '(empty)');
                 }
-                $oldImg = trim((string)($itemBefore['item_image_path'] ?? ''));
-                if ($oldImg !== $itemImagePath) {
-                    $changeDetails[] = 'Item picture: ' . ($oldImg ? 'changed' : '(none)') . ' → ' . ($itemImagePath ? 'updated' : '(removed)');
+                $oldPaths = inventory_item_image_paths_list_from_row($itemBefore);
+                if (json_encode($oldPaths) !== json_encode($finalPaths)) {
+                    $changeDetails[] = 'Item pictures: ' . (count($oldPaths) ? count($oldPaths) . ' file(s)' : '(none)')
+                        . ' → ' . (count($finalPaths) ? count($finalPaths) . ' file(s)' : '(none)');
                 }
             }
             $changeDetailsStr = implode("\n", $changeDetails);
@@ -546,12 +618,16 @@ if ($editItemId > 0) {
         <?php endif; ?>
 
         <?php if ($activeTab === 'add'): ?>
+        <?php
+        $editItemImagePaths = $editItem ? inventory_item_image_paths_list_from_row($editItem) : [];
+        $editItemImagePathsAttr = htmlspecialchars(json_encode($editItemImagePaths, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT), ENT_QUOTES, 'UTF-8');
+        ?>
         <section class="bg-white rounded-xl shadow-sm border border-slate-100 p-6 mb-6">
             <h2 class="text-lg font-semibold text-slate-800 mb-4">Add / Edit Item</h2>
             <form id="itemForm" method="POST" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <input type="hidden" name="action" id="formAction" value="<?php echo $editItem ? 'update' : 'create'; ?>">
                 <input type="hidden" name="id" id="rowId" value="<?php echo $editItem ? (int)$editItem['id'] : ''; ?>">
-                <input type="hidden" name="current_image_path" id="currentImagePath" value="<?php echo htmlspecialchars((string)($editItem['item_image_path'] ?? '')); ?>">
+                <input type="hidden" name="current_image_paths" id="currentImagePaths" value="<?php echo $editItemImagePathsAttr; ?>">
                 <?php if ($diagMode): ?><input type="hidden" name="diag" value="1"><?php endif; ?>
 
                 <div>
@@ -603,15 +679,19 @@ if ($editItemId > 0) {
                     <input type="date" name="date_arrived" id="dateArrived" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" value="<?php echo htmlspecialchars((string)($editItem['date_arrived'] ?? '')); ?>">
                 </div>
 
-                <div>
-                    <label class="block text-sm text-slate-600 mb-1">Item Picture</label>
-                    <input type="file" name="item_image" id="itemImage" accept=".jpg,.jpeg,.png,.gif,.webp" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white">
-                    <p id="currentImageNote" class="mt-1 text-xs text-slate-500">
-                        <?php if ((string)($editItem['item_image_path'] ?? '') !== ''): ?>
-                            Current image:
-                            <a class="text-blue-600 hover:underline" target="_blank" href="<?php echo htmlspecialchars((string)$editItem['item_image_path']); ?>">View</a>
+                <div class="md:col-span-2">
+                    <label class="block text-sm text-slate-600 mb-1">Item pictures</label>
+                    <input type="file" name="item_images[]" id="itemImages" accept=".jpg,.jpeg,.png,.gif,.webp" multiple class="w-full max-w-lg border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white">
+                    <p class="mt-1 text-xs text-slate-500">JPG, PNG, GIF, or WEBP, up to 5MB each. Hold Ctrl (Windows) or Cmd (Mac) to select multiple. Maximum 20 images per item.</p>
+                    <p id="currentImageNote" class="mt-2 text-xs text-slate-600">
+                        <?php if (!empty($editItemImagePaths)): ?>
+                            <span class="text-slate-500">Current:</span>
+                            <?php foreach ($editItemImagePaths as $idx => $p): ?>
+                                <a class="text-blue-600 hover:underline ml-1" target="_blank" href="<?php echo htmlspecialchars($p); ?>"><?php echo (int)$idx + 1; ?></a>
+                            <?php endforeach; ?>
+                            <span class="text-slate-400">(new uploads are added to these)</span>
                         <?php else: ?>
-                            No current image.
+                            <span class="text-slate-500">No pictures on file yet.</span>
                         <?php endif; ?>
                     </p>
                 </div>
@@ -648,13 +728,18 @@ if ($editItemId > 0) {
                             <th>Item Condition</th>
                             <th>Remarks</th>
                             <th>Date Arrived</th>
-                            <th>Picture</th>
+                            <th>Pictures</th>
                             <th>Print Label</th>
                             <th>ACTIONS</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php foreach ($items as $item): ?>
+                            <?php
+                            $rowImgPaths = inventory_item_image_paths_list_from_row($item);
+                            $rowImgPathsJson = htmlspecialchars(json_encode($rowImgPaths, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT), ENT_QUOTES, 'UTF-8');
+                            $rowFirstImg = htmlspecialchars((string)($rowImgPaths[0] ?? ''));
+                            ?>
                             <tr>
                                 <td><?php echo htmlspecialchars($item['item_id']); ?></td>
                                 <td><?php echo htmlspecialchars($item['item_name']); ?></td>
@@ -664,8 +749,10 @@ if ($editItemId > 0) {
                                 <td><?php echo htmlspecialchars((string)$item['remarks']); ?></td>
                                 <td><?php echo htmlspecialchars((string)$item['date_arrived']); ?></td>
                                 <td>
-                                    <?php if ((string)($item['item_image_path'] ?? '') !== ''): ?>
-                                        <a class="print-label-link picture-link" target="_blank" href="<?php echo htmlspecialchars((string)$item['item_image_path']); ?>">View</a>
+                                    <?php if ($rowImgPaths !== []): ?>
+                                        <?php foreach ($rowImgPaths as $imgIdx => $imgPath): ?>
+                                            <a class="print-label-link picture-link" target="_blank" href="<?php echo htmlspecialchars($imgPath); ?>"><?php echo (int)$imgIdx + 1; ?></a><?php if ($imgIdx < count($rowImgPaths) - 1): ?><span class="text-slate-300"> </span><?php endif; ?>
+                                        <?php endforeach; ?>
                                     <?php else: ?>
                                         <span class="text-xs text-slate-400">No image</span>
                                     <?php endif; ?>
@@ -689,7 +776,8 @@ if ($editItemId > 0) {
                                             data-item_condition="<?php echo htmlspecialchars((string)($item['item_condition'] ?? '')); ?>"
                                             data-remarks="<?php echo htmlspecialchars((string)$item['remarks']); ?>"
                                             data-date_arrived="<?php echo htmlspecialchars((string)$item['date_arrived']); ?>"
-                                            data-item_image_path="<?php echo htmlspecialchars((string)($item['item_image_path'] ?? '')); ?>"
+                                            data-item_image_path="<?php echo $rowFirstImg; ?>"
+                                            data-item-image-paths="<?php echo $rowImgPathsJson; ?>"
                                             title="View"
                                         >
                                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -724,7 +812,8 @@ if ($editItemId > 0) {
                                             data-item_condition="<?php echo htmlspecialchars((string)($item['item_condition'] ?? '')); ?>"
                                             data-remarks="<?php echo htmlspecialchars((string)$item['remarks']); ?>"
                                             data-date_arrived="<?php echo htmlspecialchars((string)$item['date_arrived']); ?>"
-                                            data-item_image_path="<?php echo htmlspecialchars((string)($item['item_image_path'] ?? '')); ?>"
+                                            data-item_image_path="<?php echo $rowFirstImg; ?>"
+                                            data-item-image-paths="<?php echo $rowImgPathsJson; ?>"
                                             title="Edit"
                                         >
                                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -837,7 +926,7 @@ if ($editItemId > 0) {
                 <div><span class="text-slate-500">Condition:</span> <span id="viewCondition" class="text-slate-800"></span></div>
                 <div><span class="text-slate-500">Remarks:</span> <span id="viewRemarks" class="text-slate-800"></span></div>
                 <div><span class="text-slate-500">Date Arrived:</span> <span id="viewDateArrived" class="text-slate-800"></span></div>
-                <div><span class="text-slate-500">Picture:</span> <span id="viewPictureContainer" class="text-slate-800"></span></div>
+                <div><span class="text-slate-500">Pictures:</span> <span id="viewPictureContainer" class="text-slate-800"></span></div>
             </div>
         </div>
     </div>
@@ -878,7 +967,7 @@ if ($editItemId > 0) {
                 <input type="hidden" name="action" value="update">
                 <input type="hidden" name="return_tab" value="list">
                 <input type="hidden" name="id" id="editRowId" value="">
-                <input type="hidden" name="current_image_path" id="editCurrentImagePath" value="">
+                <input type="hidden" name="current_image_paths" id="editCurrentImagePaths" value="[]">
                 <?php if ($diagMode): ?><input type="hidden" name="diag" value="1"><?php endif; ?>
 
                 <div>
@@ -926,10 +1015,11 @@ if ($editItemId > 0) {
                     <input type="date" name="date_arrived" id="editDateArrived" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" value="">
                 </div>
 
-                <div>
-                    <label class="block text-sm text-slate-600 mb-1">Item Picture</label>
-                    <input type="file" name="item_image" id="editItemImage" accept=".jpg,.jpeg,.png,.gif,.webp" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white">
-                    <p id="editCurrentImageNote" class="mt-1 text-xs text-slate-500">No current image.</p>
+                <div class="md:col-span-2">
+                    <label class="block text-sm text-slate-600 mb-1">Add more pictures</label>
+                    <input type="file" name="item_images[]" id="editItemImages" accept=".jpg,.jpeg,.png,.gif,.webp" multiple class="w-full max-w-lg border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white">
+                    <p id="editCurrentImageNote" class="mt-1 text-xs text-slate-500">No current images.</p>
+                    <p class="mt-1 text-xs text-slate-500">New files are added to existing photos (max 20 total).</p>
                 </div>
 
                 <div class="md:col-span-2 flex gap-2 pt-2">
@@ -961,8 +1051,14 @@ if ($editItemId > 0) {
             document.getElementById('formAction').value = 'create';
             document.getElementById('rowId').value = '';
             document.getElementById('itemIdPreview').value = '';
-            document.getElementById('currentImagePath').value = '';
-            document.getElementById('currentImageNote').textContent = 'No current image.';
+            const pathsHidden = document.getElementById('currentImagePaths');
+            if (pathsHidden) {
+                pathsHidden.value = '[]';
+            }
+            const note = document.getElementById('currentImageNote');
+            if (note) {
+                note.innerHTML = '<span class="text-slate-500">No pictures on file yet.</span>';
+            }
         }
 
         const itemNameEl = document.getElementById('itemName');
@@ -1014,7 +1110,8 @@ if ($editItemId > 0) {
                 $('.editBtn').on('click', function () {
                     const btn = this;
                     $('#editRowId').val(btn.dataset.id || '');
-                    $('#editCurrentImagePath').val(btn.dataset.item_image_path || '');
+                    const pathsRaw = btn.getAttribute('data-item-image-paths') || '[]';
+                    $('#editCurrentImagePaths').val(pathsRaw);
                     $('#editItemName').val(btn.dataset.item_name || '');
                     $('#editItemIdPreview').val(btn.dataset.item_id || '');
                     $('#editDescription').val(btn.dataset.description || '');
@@ -1022,15 +1119,28 @@ if ($editItemId > 0) {
                     $('#editItemCondition').val(btn.dataset.item_condition || '');
                     $('#editRemarks').val(btn.dataset.remarks || '');
                     $('#editDateArrived').val(btn.dataset.date_arrived || '');
-                    $('#editItemImage').val('');
-                    const imgPath = (btn.dataset.item_image_path || '').trim();
+                    $('#editItemImages').val('');
+                    let paths = [];
+                    try {
+                        paths = JSON.parse(pathsRaw);
+                    } catch (e) {
+                        paths = [];
+                    }
+                    if (!Array.isArray(paths)) {
+                        paths = [];
+                    }
                     const noteEl = $('#editCurrentImageNote');
                     noteEl.empty();
-                    if (imgPath) {
-                        noteEl.append(document.createTextNode('Current image: '));
-                        noteEl.append($('<a>', { class: 'text-blue-600 hover:underline', target: '_blank', href: imgPath, text: 'View' }));
+                    if (paths.length) {
+                        noteEl.append(document.createTextNode('Current: '));
+                        paths.forEach(function (path, i) {
+                            if (i) {
+                                noteEl.append(document.createTextNode(' '));
+                            }
+                            noteEl.append($('<a>', { class: 'text-blue-600 hover:underline', target: '_blank', href: path, text: String(i + 1) }));
+                        });
                     } else {
-                        noteEl.text('No current image.');
+                        noteEl.text('No current images.');
                     }
                     $('#itemEditModal').removeClass('hidden');
                 });
@@ -1047,14 +1157,27 @@ if ($editItemId > 0) {
 
                     const pictureContainer = $('#viewPictureContainer');
                     pictureContainer.empty();
-                    if (btn.dataset.item_image_path) {
-                        const link = $('<a>', {
-                            class: 'text-blue-600 hover:underline',
-                            target: '_blank',
-                            href: btn.dataset.item_image_path,
-                            text: 'View Image'
+                    let vpaths = [];
+                    try {
+                        vpaths = JSON.parse(btn.getAttribute('data-item-image-paths') || '[]');
+                    } catch (e) {
+                        vpaths = [];
+                    }
+                    if (!Array.isArray(vpaths)) {
+                        vpaths = [];
+                    }
+                    if (vpaths.length) {
+                        vpaths.forEach(function (path, i) {
+                            if (i) {
+                                pictureContainer.append(document.createTextNode(' '));
+                            }
+                            pictureContainer.append($('<a>', {
+                                class: 'text-blue-600 hover:underline',
+                                target: '_blank',
+                                href: path,
+                                text: 'Image ' + (i + 1)
+                            }));
                         });
-                        pictureContainer.append(link);
                     } else {
                         pictureContainer.text('No image');
                     }

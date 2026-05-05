@@ -12,6 +12,7 @@ function ensureInventoryItemsTable(mysqli $conn): void
             item_condition VARCHAR(50) NULL,
             remarks TEXT NULL,
             item_image_path VARCHAR(255) NULL,
+            item_image_paths TEXT NULL,
             date_arrived DATE NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -28,5 +29,11 @@ function ensureInventoryItemsTable(mysqli $conn): void
     $checkImagePath = $conn->query("SHOW COLUMNS FROM inventory_items LIKE 'item_image_path'");
     if ($checkImagePath && $checkImagePath->num_rows === 0) {
         $conn->query("ALTER TABLE inventory_items ADD COLUMN item_image_path VARCHAR(255) NULL AFTER remarks");
+    }
+
+    // Multiple images: JSON array of paths (same relative format as item_image_path); first path mirrored in item_image_path.
+    $checkImagePaths = $conn->query("SHOW COLUMNS FROM inventory_items LIKE 'item_image_paths'");
+    if ($checkImagePaths && $checkImagePaths->num_rows === 0) {
+        $conn->query("ALTER TABLE inventory_items ADD COLUMN item_image_paths TEXT NULL AFTER item_image_path");
     }
 }

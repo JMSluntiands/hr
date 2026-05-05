@@ -10,6 +10,8 @@ $isPayslip     = ($currentPage === 'payslip');
 $isReport      = ($currentPage === 'report');
 
 $activeClass = 'bg-white/20';
+
+require_once dirname(__DIR__, 2) . '/include/sidebar-scrollbar-once.php';
 ?>
     <!-- Mobile Top Bar -->
     <header class="md:hidden fixed inset-x-0 top-0 z-30 bg-[#FA9800] text-white flex items-center justify-between px-4 py-3 shadow">
@@ -36,8 +38,8 @@ $activeClass = 'bg-white/20';
     </header>
 
     <!-- Sidebar - desktop fixed, mobile slide-over -->
-    <aside id="admin-sidebar" class="fixed inset-y-0 left-0 z-40 w-64 bg-[#FA9800] text-white flex flex-col transform -translate-x-full transition-transform duration-200 md:translate-x-0">
-        <div class="p-6 flex items-center gap-4 border-b border-white/20">
+    <aside id="admin-sidebar" class="fixed inset-y-0 left-0 z-40 flex max-h-[100dvh] w-64 max-w-full flex-col overflow-hidden bg-[#FA9800] text-white transform -translate-x-full transition-transform duration-200 md:translate-x-0">
+        <div class="p-6 flex shrink-0 items-center gap-4 border-b border-white/20">
             <div class="w-14 h-14 rounded-full overflow-hidden bg-white/20 flex items-center justify-center">
                 <span class="text-2xl font-semibold text-white">
                     <?php echo strtoupper(substr($adminName, 0, 1)); ?>
@@ -48,7 +50,7 @@ $activeClass = 'bg-white/20';
                 <div class="text-xs text-white/80">Workforce</div>
             </div>
         </div>
-        <nav class="flex-1 p-4 space-y-1 text-sm">
+        <nav class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-y-contain p-4 space-y-1 text-sm">
             <a href="index" class="flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-white hover:bg-white/10 transition-colors<?php echo $isIndex ? ' ' . $activeClass : ''; ?>">
                 <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
@@ -74,7 +76,7 @@ $activeClass = 'bg-white/20';
                 <span>Report</span>
             </a>
         </nav>
-        <div class="p-4 border-t border-white/20 mt-auto">
+        <div class="shrink-0 border-t border-white/20 p-4">
             <div class="flex items-center justify-between text-xs font-medium mb-2 text-white/80">
                 <span>Role</span>
                 <span class="px-2 py-0.5 rounded-full bg-white/10 text-white font-medium">

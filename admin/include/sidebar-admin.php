@@ -17,6 +17,9 @@ $isReqBank     = ($currentPage === 'request-bank');
 $isRequest     = ($isReqLeaves || $isReqDoc || $isReqBank);
 $isActivityLog = ($currentPage === 'activity-log');
 $isProgressiveDiscipline = ($currentPage === 'progressive-discipline');
+$isIncidentReport = in_array($currentPage, ['incident-report', 'incident-report-add', 'incident-report-list', 'incident-report-edit'], true);
+$isIncidentReportAdd = ($currentPage === 'incident-report-add');
+$isIncidentReportList = ($currentPage === 'incident-report-list');
 $isCompensation = ($currentPage === 'compensation');
 $isAccounts    = ($currentPage === 'accounts');
 $isDepartment  = ($currentPage === 'department');
@@ -27,9 +30,11 @@ $activeClass = 'bg-white/20';
 $employeesOpen = $isEmployees ? '' : ' hidden';
 $leavesOpen    = $isLeaves ? '' : ' hidden';
 $requestOpen   = $isRequest ? '' : ' hidden';
+$incidentOpen  = $isIncidentReport ? '' : ' hidden';
 $employeesArrow = $isEmployees ? ' rotate-180' : '';
 $leavesArrow    = $isLeaves ? ' rotate-180' : '';
 $requestArrow   = $isRequest ? ' rotate-180' : '';
+$incidentArrow  = $isIncidentReport ? ' rotate-180' : '';
 
 $requestLeavesPending = 0;
 $requestDocPending = 0;
@@ -57,6 +62,8 @@ if (isset($conn) && $conn) {
     }
 }
 $requestTotalPending = $requestLeavesPending + $requestDocPending + $requestBankPending;
+
+require_once dirname(__DIR__, 2) . '/include/sidebar-scrollbar-once.php';
 ?>
     <!-- Mobile Top Bar -->
     <header class="md:hidden fixed inset-x-0 top-0 z-30 bg-[#FA9800] text-white flex items-center justify-between px-4 py-3 shadow">
@@ -83,8 +90,8 @@ $requestTotalPending = $requestLeavesPending + $requestDocPending + $requestBank
     </header>
 
     <!-- Sidebar - desktop fixed, mobile slide-over -->
-    <aside id="admin-sidebar" class="fixed inset-y-0 left-0 z-40 w-64 bg-[#FA9800] text-white flex flex-col transform -translate-x-full transition-transform duration-200 md:translate-x-0">
-        <div class="p-6 flex items-center gap-4 border-b border-white/20">
+    <aside id="admin-sidebar" class="fixed inset-y-0 left-0 z-40 flex max-h-[100dvh] w-64 max-w-full flex-col overflow-hidden bg-[#FA9800] text-white transform -translate-x-full transition-transform duration-200 md:translate-x-0">
+        <div class="p-6 flex shrink-0 items-center gap-4 border-b border-white/20">
             <div class="w-14 h-14 rounded-full overflow-hidden bg-white/20 flex items-center justify-center">
                 <span class="text-2xl font-semibold text-white">
                     <?php echo strtoupper(substr($adminName, 0, 1)); ?>
@@ -95,7 +102,7 @@ $requestTotalPending = $requestLeavesPending + $requestDocPending + $requestBank
                 <div class="text-xs text-white/80">Administrator</div>
             </div>
         </div>
-        <nav class="flex-1 p-4 space-y-1 text-sm">
+        <nav class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-y-contain p-4 space-y-1 text-sm">
             <a href="index" class="flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-white hover:bg-white/10 transition-colors<?php echo $isIndex ? ' ' . $activeClass : ''; ?>">
                 <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
@@ -195,6 +202,21 @@ $requestTotalPending = $requestLeavesPending + $requestDocPending + $requestBank
                 </svg>
                 <span>Progressive Discipline</span>
             </a>
+            <div class="dropdown-container">
+                <button type="button" id="incident-report-dropdown-btn" class="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-left font-medium text-white transition-colors hover:bg-white/10<?php echo $isIncidentReport ? ' ' . $activeClass : ''; ?>" aria-expanded="<?php echo $incidentOpen === '' ? 'true' : 'false'; ?>" aria-controls="incident-report-dropdown">
+                    <svg class="h-5 w-5 shrink-0 text-white pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span class="min-w-0 flex-1 pointer-events-none">Incident Report</span>
+                    <svg id="incident-report-arrow" class="h-4 w-4 shrink-0 text-white transition-transform pointer-events-none<?php echo $incidentArrow; ?>" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </button>
+                <div id="incident-report-dropdown" class="mb-2 ml-10 space-y-1<?php echo $incidentOpen; ?>" role="region" aria-label="Incident report submenu">
+                    <a href="incident-report-add" class="block rounded-lg px-3 py-1.5 text-xs font-medium text-white/90 transition-colors hover:bg-white/10<?php echo $isIncidentReportAdd ? ' ' . $activeClass : ''; ?>">Add incident</a>
+                    <a href="incident-report-list" class="block rounded-lg px-3 py-1.5 text-xs font-medium text-white/90 transition-colors hover:bg-white/10<?php echo $isIncidentReportList ? ' ' . $activeClass : ''; ?>">List of incident</a>
+                </div>
+            </div>
             <a href="announcement" class="flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-white hover:bg-white/10 transition-colors">
                 <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
@@ -229,7 +251,7 @@ $requestTotalPending = $requestLeavesPending + $requestDocPending + $requestBank
                 <span>Accounts</span>
             </a>
         </nav>
-        <div class="p-4 border-t border-white/20 mt-auto">
+        <div class="shrink-0 border-t border-white/20 p-4">
             <div class="flex items-center justify-between text-xs font-medium mb-2 text-white/80">
                 <span>Role</span>
                 <span class="px-2 py-0.5 rounded-full bg-white/10 text-white font-medium">

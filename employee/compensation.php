@@ -210,8 +210,9 @@ if ($employeeDbId && $conn) {
     </header>
 
     <!-- Sidebar (fixed / mobile slide-over) -->
-    <aside id="employee-sidebar" class="fixed inset-y-0 left-0 z-40 w-64 bg-[#FA9800] text-white flex flex-col transform -translate-x-full transition-transform duration-200 md:translate-x-0">
-        <div class="p-6 flex items-center gap-4 border-b border-white/20">
+    <?php require_once __DIR__ . '/../include/sidebar-scrollbar-once.php'; ?>
+    <aside id="employee-sidebar" class="fixed inset-y-0 left-0 z-40 flex max-h-[100dvh] w-64 max-w-full flex-col overflow-hidden bg-[#FA9800] text-white transform -translate-x-full transition-transform duration-200 md:translate-x-0">
+        <div class="p-6 flex shrink-0 items-center gap-4 border-b border-white/20">
             <div class="w-14 h-14 rounded-full overflow-hidden bg-white/20 flex items-center justify-center flex-shrink-0">
                 <?php if (!empty($employeePhoto) && file_exists(__DIR__ . '/../uploads/' . $employeePhoto)): ?>
                     <img src="../uploads/<?php echo htmlspecialchars($employeePhoto); ?>" alt="" class="w-full h-full object-cover">
@@ -224,7 +225,7 @@ if ($employeeDbId && $conn) {
                 <div class="text-xs text-white/80">Employee</div>
             </div>
         </div>
-        <nav class="flex-1 p-4 space-y-2">
+        <nav class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-y-contain p-4 space-y-2">
             <!-- Dashboard -->
             <a href="index.php"
                data-url="index.php"
@@ -286,6 +287,7 @@ if ($employeeDbId && $conn) {
                 </svg>
                 <span>Progressive Discipline</span>
             </a>
+            <?php include __DIR__ . '/include/sidebar-incident-nav.php'; ?>
             <!-- Settings -->
             <a href="settings.php"
                data-url="settings.php"
@@ -297,7 +299,7 @@ if ($employeeDbId && $conn) {
                 <span>Settings</span>
             </a>
         </nav>
-        <div class="p-4 border-t border-white/20">
+        <div class="shrink-0 border-t border-white/20 p-4">
             <a href="../logout.php" class="block text-xs font-medium text-white/80 hover:text-white">Logout</a>
         </div>
     </aside>
@@ -626,7 +628,8 @@ if ($employeeDbId && $conn) {
                 if (!url) return;
                 e.preventDefault();
 
-                if (url === 'profile.php' || url === 'compensation.php' || url === 'timeoff.php' || url === 'settings.php' || url === 'progressive-discipline.php' || url === 'inventory.php') {
+                const pathOnly = (url || '').split('#')[0];
+                if (url === 'profile.php' || url === 'compensation.php' || url === 'timeoff.php' || url === 'settings.php' || url === 'progressive-discipline.php' || url === 'inventory.php' || ['incident-report.php', 'incident-report-add.php', 'incident-report-list.php'].indexOf(pathOnly) !== -1) {
                     window.location.href = url;
                     return;
                 }

@@ -15,18 +15,26 @@ include '../database/db.php';
 
 $emp = null;
 if ($conn) {
-    $stmt = $conn->prepare("SELECT id, employee_id, full_name, email, phone, position, department, date_hired, address, secondary_workplace, profile_picture, sss, philhealth, pagibig, tin FROM employees WHERE id = ? LIMIT 1");
-    $stmt->bind_param('i', $id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $emp = $result->fetch_assoc();
-    $stmt->close();
+    // SELECT * avoids fatal errors when optional columns (e.g. profile_picture) were never migrated
+    $stmt = $conn->prepare('SELECT * FROM employees WHERE id = ? LIMIT 1');
+    if ($stmt) {
+        $stmt->bind_param('i', $id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $emp = $result->fetch_assoc();
+        $stmt->close();
+    }
 }
 
 if (!$emp) {
     header('Location: id-creation.php');
     exit;
 }
+
+$ecName = trim((string)($emp['emergency_contact_name'] ?? ''));
+$ecRelationship = trim((string)($emp['emergency_contact_relationship'] ?? ''));
+$ecPhone = trim((string)($emp['emergency_contact_phone'] ?? ''));
+$hasEmergencyContact = $ecName !== '' || $ecRelationship !== '' || $ecPhone !== '';
 
 $photoPath = '';
 if (!empty($emp['profile_picture']) && file_exists(__DIR__ . '/../uploads/' . $emp['profile_picture'])) {
@@ -158,12 +166,15 @@ $companyName = 'Luntiands';
                 </div>
             </div>
             <div class="mb-1.5">
-                <div class="text-[9px] font-bold text-[#FA9800] uppercase tracking-wide mb-1 border-b border-slate-200 pb-0.5">Government Info</div>
+                <div class="text-[9px] font-bold text-[#FA9800] uppercase tracking-wide mb-1 border-b border-slate-200 pb-0.5">Emergency Contact</div>
                 <div class="space-y-0.5 text-[9px] text-slate-800">
-                    <div class="flex"><span class="w-14 text-slate-500 shrink-0">SSS:</span><span class="truncate min-w-0"><?php echo htmlspecialchars($emp['sss'] ?? '—'); ?></span></div>
-                    <div class="flex"><span class="w-14 text-slate-500 shrink-0">PhilHealth:</span><span class="truncate min-w-0"><?php echo htmlspecialchars($emp['philhealth'] ?? '—'); ?></span></div>
-                    <div class="flex"><span class="w-14 text-slate-500 shrink-0">Pag-IBIG:</span><span class="truncate min-w-0"><?php echo htmlspecialchars($emp['pagibig'] ?? '—'); ?></span></div>
-                    <div class="flex"><span class="w-14 text-slate-500 shrink-0">TIN:</span><span class="truncate min-w-0"><?php echo htmlspecialchars($emp['tin'] ?? '—'); ?></span></div>
+                    <?php if ($hasEmergencyContact): ?>
+                    <div class="flex gap-1 min-w-0"><span class="w-14 text-slate-500 shrink-0">Name:</span><span class="min-w-0 break-words font-medium"><?php echo htmlspecialchars($ecName !== '' ? $ecName : '—'); ?></span></div>
+                    <div class="flex"><span class="w-14 text-slate-500 shrink-0">Relation:</span><span class="truncate min-w-0"><?php echo htmlspecialchars($ecRelationship !== '' ? $ecRelationship : '—'); ?></span></div>
+                    <div class="flex"><span class="w-14 text-slate-500 shrink-0">Phone:</span><span class="truncate min-w-0"><?php echo htmlspecialchars($ecPhone !== '' ? $ecPhone : '—'); ?></span></div>
+                    <?php else: ?>
+                    <p class="text-[9px] text-slate-500">No emergency contact on file.</p>
+                    <?php endif; ?>
                 </div>
             </div>
             </div>

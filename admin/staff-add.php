@@ -224,6 +224,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->close();
         }
     }
+
+    // Optional signature image (same rules as employee profile upload)
+    $sigFile = isset($_FILES['employee_signature']) ? $_FILES['employee_signature'] : null;
+    $employeeSignatureValid = false;
+    if ($sigFile && isset($sigFile['error']) && $sigFile['error'] !== UPLOAD_ERR_NO_FILE) {
+        if ($sigFile['error'] !== UPLOAD_ERR_OK) {
+            $errors[] = 'Signature file could not be uploaded. Use a JPG or PNG under 1MB.';
+        } elseif (!class_exists('finfo')) {
+            $errors[] = 'Server cannot verify signature file type (fileinfo).';
+        } else {
+            $sigFinfo = new finfo(FILEINFO_MIME_TYPE);
+            $sigMime = $sigFinfo->file($sigFile['tmp_name']);
+            if (!in_array($sigMime, ['image/jpeg', 'image/jpg', 'image/png'], true)) {
+                $errors[] = 'Signature must be a JPG or PNG image.';
+            } elseif ($sigFile['size'] > 1024 * 1024) {
+                $errors[] = 'Signature image must be 1MB or smaller.';
+            } else {
+                $employeeSignatureValid = true;
+            }
+        }
+    }
     
     // If no errors, insert into database
     if (empty($errors)) {
@@ -240,6 +261,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         $stmt->close();
         
+        $signatureSkippedDueToMissingColumn = false;
+
         // Start transaction for data consistency
         $conn->begin_transaction();
         
@@ -258,6 +281,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             $newEmployeeId = $conn->insert_id;
             $stmt->close();
+
+            if (!empty($employeeSignatureValid) && $sigFile && $sigFile['error'] === UPLOAD_ERR_OK) {
+                $colSig = $conn->query("SHOW COLUMNS FROM employees LIKE 'signature'");
+                if ($colSig && $colSig->num_rows > 0) {
+                    $uploadDir = __DIR__ . '/../uploads/signatures/';
+                    if (!is_dir($uploadDir) && !@mkdir($uploadDir, 0755, true)) {
+                        throw new Exception('Could not create signatures upload directory.');
+                    }
+                    $sigFinfoMove = new finfo(FILEINFO_MIME_TYPE);
+                    $mimeSig = $sigFinfoMove->file($sigFile['tmp_name']);
+                    $extSig = ($mimeSig === 'image/png') ? 'png' : 'jpg';
+                    $filenameSig = $newEmployeeId . '_sig_' . time() . '.' . $extSig;
+                    $filePathSig = $uploadDir . $filenameSig;
+                    $relativePathSig = 'signatures/' . $filenameSig;
+                    if (!move_uploaded_file($sigFile['tmp_name'], $filePathSig)) {
+                        throw new Exception('Failed to save signature image.');
+                    }
+                    $updSig = $conn->prepare('UPDATE employees SET signature = ? WHERE id = ?');
+                    if (!$updSig) {
+                        @unlink($filePathSig);
+                        throw new Exception('Database error saving signature: ' . $conn->error);
+                    }
+                    $updSig->bind_param('si', $relativePathSig, $newEmployeeId);
+                    if (!$updSig->execute()) {
+                        @unlink($filePathSig);
+                        $errSig = $updSig->error;
+                        $updSig->close();
+                        throw new Exception('Could not attach signature to employee record: ' . $errSig);
+                    }
+                    $updSig->close();
+                } else {
+                    $signatureSkippedDueToMissingColumn = true;
+                }
+            }
             
             // Also create a login account for the employee with a random temporary password
             $plainPassword = bin2hex(random_bytes(4)); // 8-character hex password
@@ -344,6 +401,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             logActivity($conn, 'Add Employee', 'Employee', $newEmployeeId, "Added employee: $fullName (ID: $employeeId)");
             
             $success = 'Employee added successfully! Employee ID: ' . $employeeId . '. Login account created and a temporary password has been emailed to the employee.';
+            if (!empty($signatureSkippedDueToMissingColumn)) {
+                $success .= ' The signature file was not stored: the employees table has no signature column yet. Open database/alter_add_signature.php once in your browser, then add the signature from Edit Employee.';
+            }
             // Clear form data after successful submission
             $_POST = [];
             
@@ -429,7 +489,7 @@ if ($conn) {
 
         <!-- Form -->
         <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-            <form method="POST" action="" class="space-y-0" id="employeeForm" novalidate>
+            <form method="POST" action="" class="space-y-0" id="employeeForm" enctype="multipart/form-data" novalidate>
                 <!-- Personal Information Section -->
                 <div class="p-6 md:p-8 border-b border-slate-200 bg-gradient-to-b from-slate-50/80 to-white">
                     <div class="flex items-center gap-3 mb-6">
@@ -490,6 +550,12 @@ if ($conn) {
                                 <option value="Male" <?php echo (isset($_POST['gender']) && $_POST['gender'] === 'Male') ? 'selected' : ''; ?>>Male</option>
                                 <option value="Female" <?php echo (isset($_POST['gender']) && $_POST['gender'] === 'Female') ? 'selected' : ''; ?>>Female</option>
                             </select>
+                        </div>
+                        <div class="md:col-span-3">
+                            <label class="block text-sm font-medium text-slate-700 mb-1.5">Signature (optional)</label>
+                            <input type="file" name="employee_signature" id="employee_signature" accept="image/jpeg,image/jpg,image/png"
+                                   class="block w-full max-w-md text-sm text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-amber-50 file:text-amber-800 hover:file:bg-amber-100">
+                            <p class="text-xs text-slate-500 mt-1.5">JPG or PNG, max 1MB. Used on forms and profile like the employee self-upload.</p>
                         </div>
                         <!-- Workplaces -->
                         <div class="md:col-span-3 p-4 rounded-lg bg-slate-50 border border-slate-100">

@@ -58,6 +58,47 @@
     });
   }
 
+  // Collapsible nav inside employee sidebar (same id pattern as admin sidebar-dropdown.js)
+  document.addEventListener('click', function (e) {
+    var sidebar = document.getElementById('employee-sidebar');
+    if (!sidebar) return;
+    var dropdownBtn = e.target.closest('[id$="-dropdown-btn"]');
+    if (!dropdownBtn || !sidebar.contains(dropdownBtn)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    var btnId = dropdownBtn.id;
+    var dropdownType = btnId.replace('-dropdown-btn', '');
+    var dropdown = document.getElementById(dropdownType + '-dropdown');
+    var arrow = document.getElementById(dropdownType + '-arrow');
+    if (!dropdown) return;
+    sidebar.querySelectorAll('[id$="-dropdown"]').forEach(function (dd) {
+      if (dd !== dropdown) dd.classList.add('hidden');
+    });
+    sidebar.querySelectorAll('[id$="-arrow"]').forEach(function (arr) {
+      if (arr !== arrow) arr.style.transform = 'rotate(0deg)';
+    });
+    var isHidden = dropdown.classList.contains('hidden');
+    dropdown.classList.toggle('hidden');
+    if (arrow) {
+      arrow.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+    }
+  });
+
+  document.addEventListener('click', function (e) {
+    var sidebar = document.getElementById('employee-sidebar');
+    if (!sidebar) return;
+    var dropdownBtn = e.target.closest('[id$="-dropdown-btn"]');
+    var dropdown = e.target.closest('[id$="-dropdown"]');
+    var container = e.target.closest('.dropdown-container');
+    if (dropdownBtn || dropdown || container) return;
+    sidebar.querySelectorAll('[id$="-dropdown"]').forEach(function (dd) {
+      dd.classList.add('hidden');
+    });
+    sidebar.querySelectorAll('[id$="-arrow"]').forEach(function (arr) {
+      arr.style.transform = 'rotate(0deg)';
+    });
+  });
+
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initEmployeeSidebar);
   } else {
