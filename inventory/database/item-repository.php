@@ -101,20 +101,22 @@ function createInventoryItem(mysqli $conn, array $data): bool
     $itemImagePathsJson = inventory_item_image_paths_to_json($pathsList);
     $itemImagePath = inventory_empty_string_to_null($pathsList[0] ?? null);
     $dateArrived = inventory_empty_string_to_null($data['date_arrived'] ?? null);
+    $brandManufacturer = inventory_empty_string_to_null($data['brand_manufacturer'] ?? null);
 
     $stmt = $conn->prepare("
-        INSERT INTO inventory_items (item_id, item_name, description, `type`, item_condition, remarks, item_image_path, item_image_paths, date_arrived)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO inventory_items (item_id, item_name, description, brand_manufacturer, `type`, item_condition, remarks, item_image_path, item_image_paths, date_arrived)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
     if (!$stmt) {
         error_log('createInventoryItem prepare failed: ' . $conn->error);
         return false;
     }
     $stmt->bind_param(
-        'sssssssss',
+        'ssssssssss',
         $itemId,
         $data['item_name'],
         $data['description'],
+        $brandManufacturer,
         $data['type'],
         $data['item_condition'],
         $data['remarks'],
@@ -171,10 +173,11 @@ function updateInventoryItem(mysqli $conn, int $id, array $data): bool
     $itemImagePathsJson = inventory_item_image_paths_to_json($pathsList);
     $itemImagePath = inventory_empty_string_to_null($pathsList[0] ?? null);
     $dateArrived = inventory_empty_string_to_null($data['date_arrived'] ?? null);
+    $brandManufacturer = inventory_empty_string_to_null($data['brand_manufacturer'] ?? null);
 
     $stmt = $conn->prepare("
         UPDATE inventory_items
-        SET item_id = ?, item_name = ?, description = ?, `type` = ?, item_condition = ?, remarks = ?, item_image_path = ?, item_image_paths = ?, date_arrived = ?
+        SET item_id = ?, item_name = ?, description = ?, brand_manufacturer = ?, `type` = ?, item_condition = ?, remarks = ?, item_image_path = ?, item_image_paths = ?, date_arrived = ?
         WHERE id = ?
     ");
     if (!$stmt) {
@@ -182,10 +185,11 @@ function updateInventoryItem(mysqli $conn, int $id, array $data): bool
         return false;
     }
     $stmt->bind_param(
-        'sssssssssi',
+        'ssssssssssi',
         $finalItemId,
         $data['item_name'],
         $data['description'],
+        $brandManufacturer,
         $data['type'],
         $data['item_condition'],
         $data['remarks'],
@@ -216,7 +220,7 @@ function listInventoryItems(mysqli $conn): array
 {
     $items = [];
     $result = $conn->query("
-        SELECT id, item_id, item_name, description, `type` AS type, item_condition, remarks, item_image_path, item_image_paths, date_arrived
+        SELECT id, item_id, item_name, description, brand_manufacturer, `type` AS type, item_condition, remarks, item_image_path, item_image_paths, date_arrived
         FROM inventory_items
         ORDER BY id DESC
     ");
@@ -231,7 +235,7 @@ function listInventoryItems(mysqli $conn): array
 function getInventoryItemById(mysqli $conn, int $id): ?array
 {
     $stmt = $conn->prepare("
-        SELECT id, item_id, item_name, description, `type` AS type, item_condition, remarks, item_image_path, item_image_paths, date_arrived
+        SELECT id, item_id, item_name, description, brand_manufacturer, `type` AS type, item_condition, remarks, item_image_path, item_image_paths, date_arrived
         FROM inventory_items
         WHERE id = ?
         LIMIT 1

@@ -241,6 +241,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     $itemName = trim((string)($_POST['item_name'] ?? ''));
     $description = trim((string)($_POST['description'] ?? ''));
+    $brandManufacturer = trim((string)($_POST['brand_manufacturer'] ?? ''));
     $type = trim((string)($_POST['type'] ?? ''));
     $itemCondition = trim((string)($_POST['item_condition'] ?? ''));
     $remarks = trim((string)($_POST['remarks'] ?? ''));
@@ -341,6 +342,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $ok = createInventoryItem($conn, [
             'item_name' => $itemName,
             'description' => $description,
+            'brand_manufacturer' => $brandManufacturer,
             'type' => $type,
             'item_condition' => $itemCondition,
             'remarks' => $remarks,
@@ -354,6 +356,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $picNote = count($finalPaths) === 0 ? 'none' : (string)count($finalPaths) . ' image(s)';
             $createDetails = "Item name: " . $itemName . "\n"
                 . "Description: " . ($description ?: '(empty)') . "\n"
+                . "Brand / Manufacturer: " . ($brandManufacturer ?: '(empty)') . "\n"
                 . "Type: " . ($type ?: '(empty)') . "\n"
                 . "Item condition: " . $itemCondition . "\n"
                 . "Remarks: " . ($remarks ?: '(empty)') . "\n"
@@ -375,6 +378,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $ok = updateInventoryItem($conn, $rowId, [
             'item_name' => $itemName,
             'description' => $description,
+            'brand_manufacturer' => $brandManufacturer,
             'type' => $type,
             'item_condition' => $itemCondition,
             'remarks' => $remarks,
@@ -399,6 +403,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $oldType = trim((string)($itemBefore['type'] ?? ''));
                 if ($oldType !== $type) {
                     $changeDetails[] = 'Type: ' . ($oldType ?: '(empty)') . ' → ' . ($type ?: '(empty)');
+                }
+                $oldBrandManufacturer = trim((string)($itemBefore['brand_manufacturer'] ?? ''));
+                if ($oldBrandManufacturer !== $brandManufacturer) {
+                    $changeDetails[] = 'Brand / Manufacturer: ' . ($oldBrandManufacturer ?: '(empty)') . ' → ' . ($brandManufacturer ?: '(empty)');
                 }
                 $oldCond = trim((string)($itemBefore['item_condition'] ?? ''));
                 if ($oldCond !== $itemCondition) {
@@ -679,6 +687,11 @@ if ($editItemId > 0) {
                     <input type="date" name="date_arrived" id="dateArrived" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" value="<?php echo htmlspecialchars((string)($editItem['date_arrived'] ?? '')); ?>">
                 </div>
 
+                <div>
+                    <label class="block text-sm text-slate-600 mb-1">Brand / Manufacturer</label>
+                    <input type="text" name="brand_manufacturer" id="brandManufacturer" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" value="<?php echo htmlspecialchars((string)($editItem['brand_manufacturer'] ?? '')); ?>" placeholder="e.g. Dell, HP, Acer">
+                </div>
+
                 <div class="md:col-span-2">
                     <label class="block text-sm text-slate-600 mb-1">Item pictures</label>
                     <input type="file" name="item_images[]" id="itemImages" accept=".jpg,.jpeg,.png,.gif,.webp" multiple class="w-full max-w-lg border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white">
@@ -728,6 +741,7 @@ if ($editItemId > 0) {
                             <th>Item Condition</th>
                             <th>Remarks</th>
                             <th>Date Arrived</th>
+                            <th>Brand / Manufacturer</th>
                             <th>Pictures</th>
                             <th>Print Label</th>
                             <th>ACTIONS</th>
@@ -748,6 +762,7 @@ if ($editItemId > 0) {
                                 <td><?php echo htmlspecialchars((string)($item['item_condition'] ?? '')); ?></td>
                                 <td><?php echo htmlspecialchars((string)$item['remarks']); ?></td>
                                 <td><?php echo htmlspecialchars((string)$item['date_arrived']); ?></td>
+                                <td><?php echo htmlspecialchars((string)($item['brand_manufacturer'] ?? '')); ?></td>
                                 <td>
                                     <?php if ($rowImgPaths !== []): ?>
                                         <?php foreach ($rowImgPaths as $imgIdx => $imgPath): ?>
@@ -776,6 +791,7 @@ if ($editItemId > 0) {
                                             data-item_condition="<?php echo htmlspecialchars((string)($item['item_condition'] ?? '')); ?>"
                                             data-remarks="<?php echo htmlspecialchars((string)$item['remarks']); ?>"
                                             data-date_arrived="<?php echo htmlspecialchars((string)$item['date_arrived']); ?>"
+                                            data-brand_manufacturer="<?php echo htmlspecialchars((string)($item['brand_manufacturer'] ?? '')); ?>"
                                             data-item_image_path="<?php echo $rowFirstImg; ?>"
                                             data-item-image-paths="<?php echo $rowImgPathsJson; ?>"
                                             title="View"
@@ -812,6 +828,7 @@ if ($editItemId > 0) {
                                             data-item_condition="<?php echo htmlspecialchars((string)($item['item_condition'] ?? '')); ?>"
                                             data-remarks="<?php echo htmlspecialchars((string)$item['remarks']); ?>"
                                             data-date_arrived="<?php echo htmlspecialchars((string)$item['date_arrived']); ?>"
+                                            data-brand_manufacturer="<?php echo htmlspecialchars((string)($item['brand_manufacturer'] ?? '')); ?>"
                                             data-item_image_path="<?php echo $rowFirstImg; ?>"
                                             data-item-image-paths="<?php echo $rowImgPathsJson; ?>"
                                             title="Edit"
@@ -926,6 +943,7 @@ if ($editItemId > 0) {
                 <div><span class="text-slate-500">Condition:</span> <span id="viewCondition" class="text-slate-800"></span></div>
                 <div><span class="text-slate-500">Remarks:</span> <span id="viewRemarks" class="text-slate-800"></span></div>
                 <div><span class="text-slate-500">Date Arrived:</span> <span id="viewDateArrived" class="text-slate-800"></span></div>
+                <div><span class="text-slate-500">Brand / Manufacturer:</span> <span id="viewBrandManufacturer" class="text-slate-800"></span></div>
                 <div><span class="text-slate-500">Pictures:</span> <span id="viewPictureContainer" class="text-slate-800"></span></div>
             </div>
         </div>
@@ -1013,6 +1031,11 @@ if ($editItemId > 0) {
                 <div>
                     <label class="block text-sm text-slate-600 mb-1">Date Arrived / Purchased</label>
                     <input type="date" name="date_arrived" id="editDateArrived" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" value="">
+                </div>
+
+                <div>
+                    <label class="block text-sm text-slate-600 mb-1">Brand / Manufacturer</label>
+                    <input type="text" name="brand_manufacturer" id="editBrandManufacturer" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" value="" placeholder="e.g. Dell, HP, Acer">
                 </div>
 
                 <div class="md:col-span-2">
@@ -1119,6 +1142,7 @@ if ($editItemId > 0) {
                     $('#editItemCondition').val(btn.dataset.item_condition || '');
                     $('#editRemarks').val(btn.dataset.remarks || '');
                     $('#editDateArrived').val(btn.dataset.date_arrived || '');
+                    $('#editBrandManufacturer').val(btn.dataset.brand_manufacturer || '');
                     $('#editItemImages').val('');
                     let paths = [];
                     try {
@@ -1154,6 +1178,7 @@ if ($editItemId > 0) {
                     $('#viewCondition').text(btn.dataset.item_condition || '');
                     $('#viewRemarks').text(btn.dataset.remarks || '');
                     $('#viewDateArrived').text(btn.dataset.date_arrived || '');
+                    $('#viewBrandManufacturer').text(btn.dataset.brand_manufacturer || '');
 
                     const pictureContainer = $('#viewPictureContainer');
                     pictureContainer.empty();

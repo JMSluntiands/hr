@@ -8,6 +8,7 @@ function ensureInventoryItemsTable(mysqli $conn): void
             item_id VARCHAR(30) NOT NULL UNIQUE,
             item_name VARCHAR(100) NOT NULL,
             description TEXT NULL,
+            brand_manufacturer VARCHAR(150) NULL,
             type VARCHAR(100) NULL,
             item_condition VARCHAR(50) NULL,
             remarks TEXT NULL,
@@ -23,6 +24,12 @@ function ensureInventoryItemsTable(mysqli $conn): void
     $check = $conn->query("SHOW COLUMNS FROM inventory_items LIKE 'item_condition'");
     if ($check && $check->num_rows === 0) {
         $conn->query("ALTER TABLE inventory_items ADD COLUMN item_condition VARCHAR(50) NULL AFTER type");
+    }
+
+    // Backward compatibility for existing tables created before brand_manufacturer.
+    $checkBrandManufacturer = $conn->query("SHOW COLUMNS FROM inventory_items LIKE 'brand_manufacturer'");
+    if ($checkBrandManufacturer && $checkBrandManufacturer->num_rows === 0) {
+        $conn->query("ALTER TABLE inventory_items ADD COLUMN brand_manufacturer VARCHAR(150) NULL AFTER description");
     }
 
     // Backward compatibility for existing tables created before item_image_path.
