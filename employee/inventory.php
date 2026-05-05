@@ -11,17 +11,61 @@ include '../database/db.php';
 include 'include/employee_data.php';
 require_once __DIR__ . '/../inventory/database/setup_inventory_items_table.php';
 require_once __DIR__ . '/../inventory/database/setup_inventory_item_allocations_table.php';
+require_once __DIR__ . '/../inventory/database/setup_inventory_item_requests_table.php';
 require_once __DIR__ . '/../inventory/database/mysqli-stmt-fetch.php';
 require_once __DIR__ . '/../inventory/include/inventory-activity-logger.php';
 
 $allocatedItems = [];
+$myItemRequests = [];
 $tableMissing = false;
 $status = (string)($_GET['status'] ?? '');
 $message = (string)($_GET['message'] ?? '');
+$rawInvView = (string)($_GET['view'] ?? 'list');
+$inventoryView = in_array($rawInvView, ['list', 'request'], true) ? $rawInvView : 'list';
 
 if ($conn && $employeeDbId) {
     ensureInventoryItemsTable($conn);
     ensureInventoryItemAllocationsTable($conn);
+    ensureInventoryItemRequestsTable($conn);
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string)($_POST['action'] ?? '') === 'submit_item_request') {
+        $reqItemName = trim((string)($_POST['requested_item_name'] ?? ''));
+        $reqDetails = trim((string)($_POST['requested_item_details'] ?? ''));
+
+        if ($reqItemName === '') {
+            header('Location: inventory.php?view=request&status=error&message=' . rawurlencode('Please enter the item you are requesting.'));
+            exit;
+        }
+
+        $reqDetailsDb = $reqDetails === '' ? '' : $reqDetails;
+        $ins = $conn->prepare("
+            INSERT INTO inventory_item_requests (employee_id, item_name, details, status)
+            VALUES (?, ?, ?, 'pending')
+        ");
+        if ($ins) {
+            $ins->bind_param('iss', $employeeDbId, $reqItemName, $reqDetailsDb);
+            $ok = $ins->execute();
+            $newId = (int)$ins->insert_id;
+            $ins->close();
+
+            if ($ok && $newId > 0) {
+                inventoryLogActivity(
+                    $conn,
+                    'Submit Inventory Item Request',
+                    'Request',
+                    $newId,
+                    'Employee requested inventory item: ' . $reqItemName . '.',
+                    $reqDetailsDb !== '' ? 'Details: ' . $reqDetailsDb : null,
+                    null
+                );
+                header('Location: inventory.php?view=request&status=request_sent');
+                exit;
+            }
+        }
+
+        header('Location: inventory.php?view=request&status=error&message=' . rawurlencode('Could not submit your request. Please try again.'));
+        exit;
+    }
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string)($_POST['action'] ?? '') === 'submit_appeal') {
         $allocationId = (int)($_POST['allocation_id'] ?? 0);
@@ -29,7 +73,7 @@ if ($conn && $employeeDbId) {
         $remarks = trim((string)($_POST['employee_appeal_remarks'] ?? ''));
 
         if ($allocationId <= 0 || $appeal === '') {
-            header('Location: inventory.php?status=error&message=Please+provide+your+appeal+details.');
+            header('Location: inventory.php?view=list&status=error&message=Please+provide+your+appeal+details.');
             exit;
         }
 
@@ -54,12 +98,12 @@ if ($conn && $employeeDbId) {
                 $itemCode = inventoryGetItemCodeByAllocationId($conn, $allocationId);
                 $desc = 'Employee submitted inventory appeal for allocation #' . $allocationId . '.';
                 inventoryLogActivity($conn, inventoryActionWithItemCode('Submit Appeal', $itemCode), 'Appeal', $allocationId, $desc, null, $itemCode);
-                header('Location: inventory.php?status=appeal_sent');
+                header('Location: inventory.php?view=list&status=appeal_sent');
                 exit;
             }
         }
 
-        header('Location: inventory.php?status=error&message=Unable+to+submit+appeal.+Please+try+again.');
+        header('Location: inventory.php?view=list&status=error&message=Unable+to+submit+appeal.+Please+try+again.');
         exit;
     }
 
@@ -90,6 +134,22 @@ if ($conn && $employeeDbId) {
             $stmt->execute();
             $allocatedItems = inventory_stmt_fetch_all_assoc($stmt);
             $stmt->close();
+        }
+
+        $reqCheck = $conn->query("SHOW TABLES LIKE 'inventory_item_requests'");
+        if ($reqCheck && $reqCheck->num_rows > 0) {
+            $reqStmt = $conn->prepare("
+                SELECT id, item_name, details, status, admin_remark, created_at, resolved_at
+                FROM inventory_item_requests
+                WHERE employee_id = ?
+                ORDER BY created_at DESC, id DESC
+            ");
+            if ($reqStmt) {
+                $reqStmt->bind_param('i', $employeeDbId);
+                $reqStmt->execute();
+                $myItemRequests = inventory_stmt_fetch_all_assoc($reqStmt);
+                $reqStmt->close();
+            }
         }
     } else {
         $tableMissing = true;
@@ -194,12 +254,7 @@ if ($conn && $employeeDbId) {
                 </svg>
                 <span>My Compensation</span>
             </a>
-            <a href="inventory.php" data-url="inventory.php" class="js-side-link flex items-center gap-3 px-3 py-2 rounded-lg bg-white/20 text-sm font-medium text-white">
-                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V7a2 2 0 00-2-2h-3V3H9v2H6a2 2 0 00-2 2v6m16 0v6a2 2 0 01-2 2H6a2 2 0 01-2-2v-6m16 0H4m4 0v2m8-2v2" />
-                </svg>
-                <span>My Inventory</span>
-            </a>
+            <?php include __DIR__ . '/include/sidebar-my-inventory-nav.php'; ?>
             <a href="progressive-discipline.php" data-url="progressive-discipline.php" class="js-side-link flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 text-sm font-medium text-white">
                 <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4c-.77-1.33-2.69-1.33-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z" />
@@ -228,7 +283,7 @@ if ($conn && $employeeDbId) {
             <div class="flex items-center justify-between mb-6">
                 <div>
                     <h1 class="text-2xl font-semibold text-slate-800">My Inventory</h1>
-                    <p class="text-sm text-slate-500 mt-1">Mga items na currently naka-allocate sa iyo.</p>
+                    <p class="text-sm text-slate-500 mt-1"><?php echo $inventoryView === 'request' ? 'Request an item or track your submitted requests.' : 'Items currently allocated to you.'; ?></p>
                 </div>
                 <div class="hidden md:flex items-center gap-3 text-sm text-slate-500">
                     <span><?php echo htmlspecialchars($department); ?></span>
@@ -242,6 +297,12 @@ if ($conn && $employeeDbId) {
                     <div class="p-6 pb-0">
                         <div class="rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 text-sm">
                             Appeal sent successfully. Makikita ito ni admin sa inventory messages.
+                        </div>
+                    </div>
+                <?php elseif ($status === 'request_sent'): ?>
+                    <div class="p-6 pb-0">
+                        <div class="rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 text-sm">
+                            Your item request was sent. An admin will review it under Inventory → Request.
                         </div>
                     </div>
                 <?php elseif ($status === 'error'): ?>
@@ -259,70 +320,169 @@ if ($conn && $employeeDbId) {
                         </div>
                     </div>
                 <?php else: ?>
-                    <div class="p-6 overflow-x-auto">
-                        <table id="inventoryTable" class="min-w-full text-sm display w-full">
-                            <thead class="bg-slate-50">
-                                <tr>
-                                    <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Item ID</th>
-                                    <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Item Name</th>
-                                    <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Description</th>
-                                    <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Type</th>
-                                    <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Condition</th>
-                                    <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Date Received</th>
-                                    <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide no-sort">Appeal / Remarks</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-100">
-                                <?php if (empty($allocatedItems)): ?>
-                                    <tr>
-                                        <td colspan="7" class="px-4 py-8 text-center text-slate-500 text-sm">
-                                            Wala pang allocated items sa account mo.
-                                        </td>
-                                    </tr>
-                                <?php else: ?>
-                                    <?php foreach ($allocatedItems as $item): ?>
-                                        <tr class="hover:bg-slate-50/80">
-                                            <td class="px-4 py-3 text-slate-700"><?php echo htmlspecialchars((string)$item['item_id']); ?></td>
-                                            <td class="px-4 py-3 text-slate-700"><?php echo htmlspecialchars((string)$item['item_name']); ?></td>
-                                            <td class="px-4 py-3 text-slate-700"><?php echo htmlspecialchars((string)$item['description']); ?></td>
-                                            <td class="px-4 py-3 text-slate-700"><?php echo htmlspecialchars((string)$item['type']); ?></td>
-                                            <td class="px-4 py-3 text-slate-700"><?php echo htmlspecialchars((string)$item['item_condition']); ?></td>
-                                            <td class="px-4 py-3 text-slate-700">
-                                                <?php
-                                                $receivedDate = (string)($item['date_received'] ?? '');
-                                                echo $receivedDate !== '' ? htmlspecialchars(date('M d, Y', strtotime($receivedDate))) : '—';
-                                                ?>
-                                            </td>
-                                            <td class="px-4 py-3 text-slate-700 min-w-[280px]">
-                                                <?php
-                                                $hasAppeal = trim((string)($item['employee_appeal'] ?? '')) !== '';
-                                                $appealBtn = $hasAppeal ? 'Update Appeal' : 'Submit Appeal';
-                                                ?>
-                                                <?php if ($hasAppeal): ?>
-                                                    <div class="mb-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-800">
-                                                        <div class="font-semibold">Sent to Admin</div>
-                                                        <div class="mt-1"><?php echo htmlspecialchars((string)$item['employee_appeal']); ?></div>
-                                                        <?php if (trim((string)($item['employee_appeal_remarks'] ?? '')) !== ''): ?>
-                                                            <div class="mt-1 text-amber-700">Remarks: <?php echo htmlspecialchars((string)$item['employee_appeal_remarks']); ?></div>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                <?php endif; ?>
-                                                <button
-                                                    type="button"
-                                                    class="openAppealModal px-3 py-1.5 rounded-lg text-xs font-medium bg-[#FA9800] text-white hover:opacity-90"
-                                                    data-allocation-id="<?php echo (int)$item['id']; ?>"
-                                                    data-item-label="<?php echo htmlspecialchars((string)$item['item_id'] . ' - ' . (string)$item['item_name']); ?>"
-                                                    data-existing-appeal="<?php echo htmlspecialchars((string)($item['employee_appeal'] ?? '')); ?>"
-                                                    data-existing-remarks="<?php echo htmlspecialchars((string)($item['employee_appeal_remarks'] ?? '')); ?>"
-                                                >
-                                                    <?php echo $appealBtn; ?>
-                                                </button>
-                                            </td>
+                    <div class="p-4 md:p-6 space-y-4">
+                        <details class="inventory-collapsible group rounded-xl border border-slate-200 bg-white shadow-sm open:shadow"<?php echo $inventoryView === 'list' ? ' open' : ''; ?>>
+                            <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-4 py-3 font-semibold text-slate-800 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
+                                <span class="flex items-center gap-2">
+                                    <svg class="h-5 w-5 text-[#FA9800] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V7a2 2 0 00-2-2h-3V3H9v2H6a2 2 0 00-2 2v6m16 0v6a2 2 0 01-2 2H6a2 2 0 01-2-2v-6m16 0H4m4 0v2m8-2v2" />
+                                    </svg>
+                                    My Items
+                                </span>
+                                <svg class="h-5 w-5 text-slate-400 transition-transform group-open:rotate-180 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </summary>
+                            <div class="border-t border-slate-100 px-4 pb-4 pt-2 overflow-x-auto">
+                                <table id="inventoryTable" class="min-w-full text-sm display w-full">
+                                    <thead class="bg-slate-50">
+                                        <tr>
+                                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Item ID</th>
+                                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Item Name</th>
+                                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Description</th>
+                                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Type</th>
+                                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Condition</th>
+                                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Date Received</th>
+                                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide no-sort">Appeal / Remarks</th>
                                         </tr>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
-                            </tbody>
-                        </table>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100">
+                                        <?php if (empty($allocatedItems)): ?>
+                                            <tr>
+                                                <td colspan="7" class="px-4 py-8 text-center text-slate-500 text-sm">
+                                                    Wala pang allocated items sa account mo.
+                                                </td>
+                                            </tr>
+                                        <?php else: ?>
+                                            <?php foreach ($allocatedItems as $item): ?>
+                                                <tr class="hover:bg-slate-50/80">
+                                                    <td class="px-4 py-3 text-slate-700"><?php echo htmlspecialchars((string)$item['item_id']); ?></td>
+                                                    <td class="px-4 py-3 text-slate-700"><?php echo htmlspecialchars((string)$item['item_name']); ?></td>
+                                                    <td class="px-4 py-3 text-slate-700"><?php echo htmlspecialchars((string)$item['description']); ?></td>
+                                                    <td class="px-4 py-3 text-slate-700"><?php echo htmlspecialchars((string)$item['type']); ?></td>
+                                                    <td class="px-4 py-3 text-slate-700"><?php echo htmlspecialchars((string)$item['item_condition']); ?></td>
+                                                    <td class="px-4 py-3 text-slate-700">
+                                                        <?php
+                                                        $receivedDate = (string)($item['date_received'] ?? '');
+                                                        echo $receivedDate !== '' ? htmlspecialchars(date('M d, Y', strtotime($receivedDate))) : '—';
+                                                        ?>
+                                                    </td>
+                                                    <td class="px-4 py-3 text-slate-700 min-w-[280px]">
+                                                        <?php
+                                                        $hasAppeal = trim((string)($item['employee_appeal'] ?? '')) !== '';
+                                                        $appealBtn = $hasAppeal ? 'Update Appeal' : 'Submit Appeal';
+                                                        ?>
+                                                        <?php if ($hasAppeal): ?>
+                                                            <div class="mb-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-800">
+                                                                <div class="font-semibold">Sent to Admin</div>
+                                                                <div class="mt-1"><?php echo htmlspecialchars((string)$item['employee_appeal']); ?></div>
+                                                                <?php if (trim((string)($item['employee_appeal_remarks'] ?? '')) !== ''): ?>
+                                                                    <div class="mt-1 text-amber-700">Remarks: <?php echo htmlspecialchars((string)$item['employee_appeal_remarks']); ?></div>
+                                                                <?php endif; ?>
+                                                            </div>
+                                                        <?php endif; ?>
+                                                        <button
+                                                            type="button"
+                                                            class="openAppealModal px-3 py-1.5 rounded-lg text-xs font-medium bg-[#FA9800] text-white hover:opacity-90"
+                                                            data-allocation-id="<?php echo (int)$item['id']; ?>"
+                                                            data-item-label="<?php echo htmlspecialchars((string)$item['item_id'] . ' - ' . (string)$item['item_name']); ?>"
+                                                            data-existing-appeal="<?php echo htmlspecialchars((string)($item['employee_appeal'] ?? '')); ?>"
+                                                            data-existing-remarks="<?php echo htmlspecialchars((string)($item['employee_appeal_remarks'] ?? '')); ?>"
+                                                        >
+                                                            <?php echo $appealBtn; ?>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            <?php endforeach; ?>
+                                        <?php endif; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </details>
+
+                        <details class="inventory-collapsible group rounded-xl border border-slate-200 bg-white shadow-sm open:shadow"<?php echo $inventoryView === 'request' ? ' open' : ''; ?>>
+                            <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-4 py-3 font-semibold text-slate-800 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
+                                <span class="flex items-center gap-2">
+                                    <svg class="h-5 w-5 text-[#FA9800] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                    </svg>
+                                    Request Item
+                                </span>
+                                <svg class="h-5 w-5 text-slate-400 transition-transform group-open:rotate-180 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </summary>
+                            <div class="border-t border-slate-100 px-4 pb-4 pt-4 space-y-6">
+                                <form method="POST" class="rounded-lg border border-slate-100 bg-slate-50/80 p-4 space-y-3">
+                                    <input type="hidden" name="action" value="submit_item_request">
+                                    <div>
+                                        <label for="requested_item_name" class="block text-sm font-medium text-slate-700 mb-1">Item name <span class="text-red-500">*</span></label>
+                                        <input type="text" name="requested_item_name" id="requested_item_name" required maxlength="255" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" placeholder="e.g. Laptop, Mouse, Monitor">
+                                    </div>
+                                    <div>
+                                        <label for="requested_item_details" class="block text-sm font-medium text-slate-700 mb-1">Details <span class="text-slate-400 font-normal">(optional)</span></label>
+                                        <textarea name="requested_item_details" id="requested_item_details" rows="3" maxlength="2000" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" placeholder="Specifications, quantity, or reason for the request"></textarea>
+                                    </div>
+                                    <div class="flex justify-end">
+                                        <button type="submit" class="px-4 py-2 rounded-lg text-sm font-medium bg-[#FA9800] text-white hover:opacity-90">
+                                            Submit request
+                                        </button>
+                                    </div>
+                                </form>
+
+                                <div>
+                                    <h3 class="text-sm font-semibold text-slate-700 mb-2">Your submitted requests</h3>
+                                    <div class="overflow-x-auto rounded-lg border border-slate-100">
+                                        <table class="min-w-full text-sm">
+                                            <thead class="bg-slate-50">
+                                                <tr>
+                                                    <th class="text-left px-3 py-2 text-xs font-semibold text-slate-500 uppercase">Item</th>
+                                                    <th class="text-left px-3 py-2 text-xs font-semibold text-slate-500 uppercase">Details</th>
+                                                    <th class="text-left px-3 py-2 text-xs font-semibold text-slate-500 uppercase">Status</th>
+                                                    <th class="text-left px-3 py-2 text-xs font-semibold text-slate-500 uppercase">Date</th>
+                                                    <th class="text-left px-3 py-2 text-xs font-semibold text-slate-500 uppercase">Admin response</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="divide-y divide-slate-100 bg-white">
+                                                <?php if (empty($myItemRequests)): ?>
+                                                    <tr>
+                                                        <td colspan="5" class="px-3 py-6 text-center text-slate-500 text-sm">
+                                                            You have not submitted any requests yet.
+                                                        </td>
+                                                    </tr>
+                                                <?php else: ?>
+                                                    <?php foreach ($myItemRequests as $req): ?>
+                                                        <?php
+                                                        $rs = (string)($req['status'] ?? '');
+                                                        $reqCreated = (string)($req['created_at'] ?? '');
+                                                        ?>
+                                                        <tr class="hover:bg-slate-50/80">
+                                                            <td class="px-3 py-2 text-slate-700"><?php echo htmlspecialchars((string)$req['item_name']); ?></td>
+                                                            <td class="px-3 py-2 text-slate-600"><?php echo nl2br(htmlspecialchars(trim((string)($req['details'] ?? '')) !== '' ? (string)$req['details'] : '—')); ?></td>
+                                                            <td class="px-3 py-2">
+                                                                <?php if ($rs === 'pending'): ?>
+                                                                    <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">Pending</span>
+                                                                <?php elseif ($rs === 'approved'): ?>
+                                                                    <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">Approved</span>
+                                                                <?php else: ?>
+                                                                    <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">Rejected</span>
+                                                                <?php endif; ?>
+                                                            </td>
+                                                            <td class="px-3 py-2 text-slate-600 whitespace-nowrap">
+                                                                <?php echo $reqCreated !== '' ? htmlspecialchars(date('M d, Y', strtotime($reqCreated))) : '—'; ?>
+                                                            </td>
+                                                            <td class="px-3 py-2 text-slate-600 text-xs">
+                                                                <?php echo trim((string)($req['admin_remark'] ?? '')) !== '' ? nl2br(htmlspecialchars((string)$req['admin_remark'])) : '—'; ?>
+                                                            </td>
+                                                        </tr>
+                                                    <?php endforeach; ?>
+                                                <?php endif; ?>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </details>
                     </div>
                 <?php endif; ?>
             </section>
@@ -395,8 +555,8 @@ if ($conn && $employeeDbId) {
           if (!url) return;
           e.preventDefault();
 
-          const pathOnly = (url || '').split('#')[0];
-          if (url === 'profile.php' || url === 'compensation.php' || url === 'timeoff.php' || url === 'settings.php' || url === 'index.php' || url === 'progressive-discipline.php' || url === 'inventory.php' || ['incident-report.php', 'incident-report-add.php', 'incident-report-list.php'].indexOf(pathOnly) !== -1) {
+          const pathOnly = (url || '').split('#')[0].split('?')[0];
+          if (url === 'profile.php' || url === 'compensation.php' || url === 'timeoff.php' || url === 'settings.php' || url === 'index.php' || url === 'progressive-discipline.php' || pathOnly === 'inventory.php' || ['incident-report.php', 'incident-report-add.php', 'incident-report-list.php'].indexOf(pathOnly) !== -1) {
             window.location.href = url;
             return;
           }

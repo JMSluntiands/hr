@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/../database/setup_inventory_item_requests_table.php';
+
 $adminName = $adminName ?? $_SESSION['name'] ?? 'Admin User';
 $role = $role ?? $_SESSION['role'] ?? 'admin';
 $currentPage = basename($_SERVER['PHP_SELF'], '.php');
@@ -12,10 +14,19 @@ $isInventory = ($currentPage === 'inventory' || $currentPage === 'index');
 $isAllocation = ($currentPage === 'allocation');
 $isReport = ($currentPage === 'report');
 $isMessages = ($currentPage === 'messages');
+$isRequest = ($currentPage === 'request');
 $isActivityLog = ($currentPage === 'activity-log');
 $unreadMessageCount = 0;
+$pendingRequestCount = 0;
 
 if (isset($conn) && $conn instanceof mysqli) {
+    ensureInventoryItemRequestsTable($conn);
+
+    $pendingReqResult = $conn->query("SELECT COUNT(*) AS c FROM inventory_item_requests WHERE status = 'pending'");
+    if ($pendingReqResult && $pr = $pendingReqResult->fetch_assoc()) {
+        $pendingRequestCount = (int)($pr['c'] ?? 0);
+    }
+
     $unreadResult = $conn->query("
         SELECT COUNT(*) AS total_unread
         FROM inventory_item_allocations
@@ -101,6 +112,20 @@ require_once dirname(__DIR__, 2) . '/include/sidebar-scrollbar-once.php';
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h8m-9 4h10m-9 4h6M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z" />
             </svg>
             <span>Allocation</span>
+        </a>
+
+        <a href="request.php" class="flex items-center justify-between gap-3 px-3 py-2 rounded-lg font-medium text-white hover:bg-white/10 transition-colors<?php echo $isRequest ? ' ' . $activeClass : ''; ?>">
+            <span class="flex items-center gap-3">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span>Request</span>
+            </span>
+            <?php if ($pendingRequestCount > 0): ?>
+                <span class="inline-flex min-w-[22px] h-[22px] items-center justify-center rounded-full bg-red-600 text-white text-xs font-semibold px-1">
+                    <?php echo $pendingRequestCount > 99 ? '99+' : $pendingRequestCount; ?>
+                </span>
+            <?php endif; ?>
         </a>
 
         <a href="report.php" class="flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-white hover:bg-white/10 transition-colors<?php echo $isReport ? ' ' . $activeClass : ''; ?>">
