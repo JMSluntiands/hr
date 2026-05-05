@@ -54,7 +54,7 @@ $bankDetails = null;
 if ($employeeDbId && $conn) {
     $checkTable = $conn->query("SHOW TABLES LIKE 'employee_document_uploads'");
     if ($checkTable && $checkTable->num_rows > 0) {
-        $docStmt = $conn->prepare("SELECT id, document_type, file_path, status, created_at, updated_at FROM employee_document_uploads WHERE employee_id = ? ORDER BY document_type, created_at DESC");
+        $docStmt = $conn->prepare("SELECT id, document_type, file_path, status, created_at, updated_at FROM employee_document_uploads WHERE employee_id = ? ORDER BY created_at DESC, id DESC");
         if ($docStmt) {
             $docStmt->bind_param('i', $employeeDbId);
             $docStmt->execute();

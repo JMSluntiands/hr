@@ -37,13 +37,56 @@ function ensureIncidentReportsTable(mysqli $conn): bool
 
 function incidentReportAllowedTypes(): array
 {
+    return array_keys(incidentReportTypeDescriptions());
+}
+
+function incidentReportTypeDescriptions(): array
+{
     return [
-        'Accident Report',
-        'Hazzard Report',
-        'Near Miss Report',
-        'Fire Incident Report',
-        'Health and Safety Risk Assessment Report',
-        'Facility Inspection Report',
-        'Slip and Fall Incident Report',
+        'Safety & Health' => [
+            'Physical injury or accident (on-site)',
+            'Ergonomic or home office-related injury (remote)',
+            'Mental health or wellbeing concern',
+        ],
+        'Near Miss' => [
+            'An event that could have resulted in harm but did not',
+        ],
+        'Property & Equipment Damage' => [
+            'Damage to office or company-issued equipment',
+            'Damage to personal equipment used for work',
+            'Power or utility disruption affecting work',
+        ],
+        'Security Breach' => [
+            'Unauthorized physical access to office premises',
+            'Unauthorized access to home workspace or work materials',
+        ],
+        'Confidentiality / Data Breach' => [
+            'Improper sharing of sensitive or confidential information',
+            'Data exposed via unsecured network or public environment (remote)',
+            'Accidental disclosure through messaging, email, or screen sharing',
+        ],
+        'IT / System Failure' => [
+            'Network or internet outage',
+            'Hardware or software malfunction',
+            'Unauthorized VPN, remote access, or cloud platform failure',
+        ],
+        'Misconduct / Policy Violation' => [
+            'Breach of workplace code of conduct',
+            'Non-compliance with remote work policy',
+            'Unauthorized use of company data, tools, or systems',
+        ],
+        'Workplace Harassment / Bullying' => [
+            'Occurring in person, via messaging, email, or video calls',
+        ],
+        'Communication or Coordination' => [
+            'Miscommunication leading to errors or missed deadlines',
+            'Failure to escalate or report critical information',
+        ],
+        'Environmental Incident' => [
+            'Unsafe working conditions on-site or at a remote location',
+        ],
+        'Others' => [
+            "Any incident that doesn't fall under the categories above",
+        ],
     ];
 }

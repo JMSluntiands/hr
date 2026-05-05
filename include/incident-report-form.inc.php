@@ -13,7 +13,10 @@ $v = function (string $key, string $default = '') use ($irRecord): string {
 $sel = function (string $key, string $val) use ($irRecord): string {
     return ((string)($irRecord[$key] ?? '') === $val) ? ' selected' : '';
 };
-$incidentTypes = incidentReportAllowedTypes();
+$incidentTypeDescriptions = incidentReportTypeDescriptions();
+$incidentTypes = array_keys($incidentTypeDescriptions);
+$incidentDescriptionJson = json_encode($incidentTypeDescriptions, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+$selectedIncidentType = (string)($irRecord['incident_type'] ?? '');
 $injuredYes = ((string)($irRecord['anyone_injured'] ?? 'No')) === 'Yes';
 
 $inputBase = 'w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 shadow-sm placeholder:text-slate-400 transition focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/25';
@@ -89,6 +92,10 @@ $sectionTitle = 'mb-4 flex items-center gap-2 text-sm font-semibold text-slate-8
                                 <option value="<?php echo htmlspecialchars($t, ENT_QUOTES, 'UTF-8'); ?>"<?php echo $sel('incident_type', $t); ?>><?php echo htmlspecialchars($t); ?></option>
                             <?php endforeach; ?>
                         </select>
+                        <div id="ir_incident_type_description" class="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 <?php echo $selectedIncidentType === '' ? 'hidden' : ''; ?>">
+                            <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Description</p>
+                            <ul id="ir_incident_type_description_list" class="list-disc space-y-1 pl-5"></ul>
+                        </div>
                     </div>
                     <div class="sm:col-span-2">
                         <label class="<?php echo $labelBase; ?>" for="ir_incident_details">Details of incident <span class="font-normal normal-case text-red-500">*</span></label>
@@ -177,6 +184,34 @@ $sectionTitle = 'mb-4 flex items-center gap-2 text-sm font-semibold text-slate-8
 
 <script>
 (function () {
+    var incidentTypeSelect = document.getElementById('ir_incident_type');
+    var incidentTypeDescription = document.getElementById('ir_incident_type_description');
+    var incidentTypeDescriptionList = document.getElementById('ir_incident_type_description_list');
+    var incidentTypeMap = <?php echo $incidentDescriptionJson ?: '{}'; ?>;
+
+    function renderIncidentTypeDescription(type) {
+        if (!incidentTypeSelect || !incidentTypeDescription || !incidentTypeDescriptionList) return;
+        var lines = Array.isArray(incidentTypeMap[type]) ? incidentTypeMap[type] : [];
+        incidentTypeDescriptionList.innerHTML = '';
+        if (!lines.length) {
+            incidentTypeDescription.classList.add('hidden');
+            return;
+        }
+        for (var i = 0; i < lines.length; i += 1) {
+            var li = document.createElement('li');
+            li.textContent = lines[i];
+            incidentTypeDescriptionList.appendChild(li);
+        }
+        incidentTypeDescription.classList.remove('hidden');
+    }
+
+    if (incidentTypeSelect) {
+        renderIncidentTypeDescription(incidentTypeSelect.value);
+        incidentTypeSelect.addEventListener('change', function () {
+            renderIncidentTypeDescription(incidentTypeSelect.value);
+        });
+    }
+
     var sel = document.getElementById('anyone_injured');
     var block = document.getElementById('injury_block');
     var hint = document.getElementById('injury_hint');

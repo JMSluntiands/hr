@@ -49,6 +49,10 @@ $allowedTypes = [
     'Employee Agreement Contract',
     'Contractual Agreement Contract',
 ];
+$multiUploadTypes = [
+    'Employee Agreement Contract',
+    'Contractual Agreement Contract',
+];
 
 if (empty($documentType) || !in_array($documentType, $allowedTypes, true)) {
     header('Content-Type: application/json');
@@ -96,18 +100,29 @@ if (!move_uploaded_file($file['tmp_name'], $filePath)) {
     exit;
 }
 
-// Delete old file if exists
-$checkStmt = $conn->prepare("SELECT file_path FROM employee_document_uploads WHERE employee_id = ? AND document_type = ?");
-$checkStmt->bind_param('is', $employeeId, $documentType);
-$checkStmt->execute();
-$oldResult = $checkStmt->get_result();
-if (($oldRow = $oldResult->fetch_assoc()) && !empty($oldRow['file_path'])) {
-    $oldPath = '../uploads/' . $oldRow['file_path'];
-    if (file_exists($oldPath)) {
-        @unlink($oldPath);
+// For most document types, keep only the latest upload by replacing older files.
+// For agreement contracts, keep full history (multiple uploads).
+if (!in_array($documentType, $multiUploadTypes, true)) {
+    $checkStmt = $conn->prepare("SELECT file_path FROM employee_document_uploads WHERE employee_id = ? AND document_type = ?");
+    $checkStmt->bind_param('is', $employeeId, $documentType);
+    $checkStmt->execute();
+    $oldResult = $checkStmt->get_result();
+    while (($oldRow = $oldResult->fetch_assoc())) {
+        if (empty($oldRow['file_path'])) {
+            continue;
+        }
+        $oldPath = '../uploads/' . $oldRow['file_path'];
+        if (file_exists($oldPath)) {
+            @unlink($oldPath);
+        }
     }
+    $checkStmt->close();
+
+    $deleteStmt = $conn->prepare("DELETE FROM employee_document_uploads WHERE employee_id = ? AND document_type = ?");
+    $deleteStmt->bind_param('is', $employeeId, $documentType);
+    $deleteStmt->execute();
+    $deleteStmt->close();
 }
-$checkStmt->close();
 
 // Insert new upload (creates request for admin)
 $relativePath = 'employee_documents/' . $filename;

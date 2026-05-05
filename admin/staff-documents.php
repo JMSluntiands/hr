@@ -27,7 +27,7 @@ if ($conn) {
         $stmt = $conn->prepare("SELECT id, document_type, file_path, status, created_at, updated_at 
                                 FROM employee_document_uploads 
                                 WHERE employee_id = ? 
-                                ORDER BY document_type, created_at DESC");
+                                ORDER BY created_at DESC, id DESC");
         if ($stmt) {
             $stmt->bind_param('i', $employeeId);
             $stmt->execute();
