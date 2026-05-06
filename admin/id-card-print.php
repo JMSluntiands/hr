@@ -58,14 +58,17 @@ if (!hr_employee_is_regular_for_id_card($emp)) {
 $ecName = trim((string)($emp['emergency_contact_name'] ?? ''));
 $ecRelationship = trim((string)($emp['emergency_contact_relationship'] ?? ''));
 $ecPhone = trim((string)($emp['emergency_contact_phone'] ?? ''));
-$hasEmergencyContact = $ecName !== '' || $ecRelationship !== '' || $ecPhone !== '';
+$ecAddress = trim((string)($emp['emergency_contact_address'] ?? ''));
+$hasEmergencyContact = $ecName !== '' || $ecRelationship !== '' || $ecPhone !== '' || $ecAddress !== '';
 
 $photoPath = '';
 if (!empty($emp['profile_picture']) && file_exists(__DIR__ . '/../uploads/' . $emp['profile_picture'])) {
     $photoPath = '../uploads/' . $emp['profile_picture'];
 }
 
-$companyName = 'LUNTIAN Pty Ltd - COOLAI DRAFTING SERVICES';
+$companyNameLine1 = 'LUNTIAN Pty Ltd -';
+$companyNameLine2 = 'COOLAI DRAFTING SERVICES';
+$companyName = $companyNameLine1 . ' ' . $companyNameLine2;
 $companyAddress = '9 Maharlika Hi-way, Basud, Camarines Norte 4608';
 ?>
 <!DOCTYPE html>
@@ -132,7 +135,10 @@ $companyAddress = '9 Maharlika Hi-way, Basud, Camarines Norte 4608';
         <!-- Top: Company name, styled like sample -->
         <div class="bg-white pt-3 pb-2 px-3 text-center">
             <div class="text-[#FA9800] text-[11px] font-bold tracking-wide uppercase">
-                <?php echo htmlspecialchars($companyName); ?>
+                <?php echo htmlspecialchars($companyNameLine1); ?>
+            </div>
+            <div class="text-[#FA9800] text-[11px] font-bold tracking-wide uppercase">
+                <?php echo htmlspecialchars($companyNameLine2); ?>
             </div>
             <div class="mt-1 text-[7px] text-slate-600 leading-tight">
                 <?php echo htmlspecialchars($companyAddress); ?>
@@ -175,7 +181,10 @@ $companyAddress = '9 Maharlika Hi-way, Basud, Camarines Norte 4608';
     <div class="id-card-back bg-white flex flex-col">
         <div class="bg-[#FA9800] text-white py-1.5 px-3 text-center">
             <div class="text-[11px] font-bold tracking-wide uppercase">
-                <?php echo htmlspecialchars($companyName); ?>
+                <?php echo htmlspecialchars($companyNameLine1); ?>
+            </div>
+            <div class="text-[11px] font-bold tracking-wide uppercase">
+                <?php echo htmlspecialchars($companyNameLine2); ?>
             </div>
         </div>
         <div class="p-2.5 flex-1 flex flex-col min-h-0">
@@ -187,6 +196,7 @@ $companyAddress = '9 Maharlika Hi-way, Basud, Camarines Norte 4608';
                     <div class="flex gap-1 min-w-0"><span class="w-14 text-slate-500 shrink-0">Name:</span><span class="min-w-0 break-words font-medium"><?php echo htmlspecialchars($ecName !== '' ? $ecName : '—'); ?></span></div>
                     <div class="flex"><span class="w-14 text-slate-500 shrink-0">Relation:</span><span class="truncate min-w-0"><?php echo htmlspecialchars($ecRelationship !== '' ? $ecRelationship : '—'); ?></span></div>
                     <div class="flex"><span class="w-14 text-slate-500 shrink-0">Phone:</span><span class="truncate min-w-0"><?php echo htmlspecialchars($ecPhone !== '' ? $ecPhone : '—'); ?></span></div>
+                    <div class="flex gap-1 min-w-0"><span class="w-14 text-slate-500 shrink-0">Address:</span><span class="min-w-0 break-words"><?php echo htmlspecialchars($ecAddress !== '' ? $ecAddress : '—'); ?></span></div>
                     <?php else: ?>
                     <p class="text-[9px] text-slate-500">No emergency contact on file.</p>
                     <?php endif; ?>
