@@ -65,7 +65,8 @@ if (!empty($emp['profile_picture']) && file_exists(__DIR__ . '/../uploads/' . $e
     $photoPath = '../uploads/' . $emp['profile_picture'];
 }
 
-$companyName = 'Luntiands';
+$companyName = 'LUNTIAN Pty Ltd - COOLAI DRAFTING SERVICES';
+$companyAddress = '9 Maharlika Hi-way, Basud, Camarines Norte 4608';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -128,10 +129,11 @@ $companyName = 'Luntiands';
 
     <div class="id-cards-row">
     <div class="id-card bg-white flex flex-col">
-        <!-- Top: Logo + Company Name -->
+        <!-- Top: Company name, styled like sample -->
         <div class="bg-white pt-3 pb-2 px-3 text-center">
-            <div class="h-6 flex items-center justify-center text-[#1e1e2d] text-[10px] font-semibold tracking-wide">LOGO</div>
-            <div class="text-[#1e1e2d] text-xs font-bold"><?php echo htmlspecialchars($companyName); ?></div>
+            <div class="text-[#FA9800] text-[11px] font-bold tracking-wide uppercase">
+                <?php echo htmlspecialchars($companyName); ?>
+            </div>
         </div>
 
         <!-- Middle: Photo + Orange shapes -->
@@ -157,11 +159,14 @@ $companyName = 'Luntiands';
             </div>
         </div>
 
-        <!-- Bottom: ID Number -->
-        <div class="bg-white pt-2 pb-3 px-3">
+        <!-- Bottom: ID Number + company address -->
+        <div class="bg-white pt-2 pb-3 px-3 space-y-1">
             <div class="border-t-2 border-[#FA9800] pt-1.5 text-center">
                 <span class="text-[#1e1e2d] font-semibold text-[10px]">ID No: </span>
                 <span class="text-[#1e1e2d] font-mono font-bold text-[10px]"><?php echo htmlspecialchars($emp['employee_id'] ?? '—'); ?></span>
+            </div>
+            <div class="text-[7px] text-slate-600 leading-tight text-center">
+                <?php echo htmlspecialchars($companyAddress); ?>
             </div>
         </div>
     </div>
@@ -169,7 +174,9 @@ $companyName = 'Luntiands';
     <!-- Back of ID Card -->
     <div class="id-card-back bg-white flex flex-col">
         <div class="bg-[#FA9800] text-white py-1.5 px-3 text-center">
-            <div class="text-xs font-bold"><?php echo htmlspecialchars($companyName); ?></div>
+            <div class="text-[11px] font-bold tracking-wide uppercase">
+                <?php echo htmlspecialchars($companyName); ?>
+            </div>
         </div>
         <div class="p-2.5 flex-1 flex flex-col min-h-0">
             <div class="id-card-back-scroll">
@@ -202,9 +209,12 @@ $companyName = 'Luntiands';
                 </div>
             </div>
             </div>
-            <div class="shrink-0 pt-2 border-t border-slate-200">
+            <div class="shrink-0 pt-2 border-t border-slate-200 space-y-1">
                 <p class="text-[7px] text-slate-600 leading-tight text-center">
                     This ID card is the property of <?php echo htmlspecialchars($companyName); ?>. If found, please return to the company office. Unauthorized use is strictly prohibited.
+                </p>
+                <p class="text-[7px] text-slate-600 leading-tight text-center">
+                    <?php echo htmlspecialchars($companyAddress); ?>
                 </p>
             </div>
         </div>
