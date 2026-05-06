@@ -157,7 +157,7 @@ if ($conn) {
                                 <?php if (hr_employee_is_regular_for_id_card($emp)): ?>
                                 <a href="id-card-print.php?id=<?php echo (int)($emp['id'] ?? 0); ?>" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#FA9800] hover:bg-[#d97706] text-white text-xs font-medium rounded-lg transition-colors">View ID</a>
                                 <?php else: ?>
-                                <span class="inline-flex items-center px-3 py-1.5 text-slate-400 text-xs font-medium rounded-lg border border-slate-200 bg-slate-50 cursor-not-allowed" title="ID card is only available for Regular employees.">View ID</span>
+                                <span class="inline-flex items-center px-3 py-1.5 text-slate-400 text-xs font-medium rounded-lg border border-slate-200 bg-slate-50 cursor-not-allowed" title="ID card is only available for EMPLOYEE type.">View ID</span>
                                 <?php endif; ?>
                                 <a href="staff-view.php?id=<?php echo (int)($emp['id'] ?? 0); ?>" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg transition-colors ml-1">Profile</a>
                             </td>
