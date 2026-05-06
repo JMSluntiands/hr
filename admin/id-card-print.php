@@ -134,6 +134,9 @@ $companyAddress = '9 Maharlika Hi-way, Basud, Camarines Norte 4608';
             <div class="text-[#FA9800] text-[11px] font-bold tracking-wide uppercase">
                 <?php echo htmlspecialchars($companyName); ?>
             </div>
+            <div class="mt-1 text-[7px] text-slate-600 leading-tight">
+                <?php echo htmlspecialchars($companyAddress); ?>
+            </div>
         </div>
 
         <!-- Middle: Photo + Orange shapes -->
@@ -159,14 +162,11 @@ $companyAddress = '9 Maharlika Hi-way, Basud, Camarines Norte 4608';
             </div>
         </div>
 
-        <!-- Bottom: ID Number + company address -->
+        <!-- Bottom: ID Number -->
         <div class="bg-white pt-2 pb-3 px-3 space-y-1">
             <div class="border-t-2 border-[#FA9800] pt-1.5 text-center">
                 <span class="text-[#1e1e2d] font-semibold text-[10px]">ID No: </span>
                 <span class="text-[#1e1e2d] font-mono font-bold text-[10px]"><?php echo htmlspecialchars($emp['employee_id'] ?? '—'); ?></span>
-            </div>
-            <div class="text-[7px] text-slate-600 leading-tight text-center">
-                <?php echo htmlspecialchars($companyAddress); ?>
             </div>
         </div>
     </div>
@@ -180,22 +180,6 @@ $companyAddress = '9 Maharlika Hi-way, Basud, Camarines Norte 4608';
         </div>
         <div class="p-2.5 flex-1 flex flex-col min-h-0">
             <div class="id-card-back-scroll">
-            <div class="mb-1.5">
-                <div class="text-[9px] font-bold text-[#FA9800] uppercase tracking-wide mb-1 border-b border-slate-200 pb-0.5">Details</div>
-                <div class="space-y-0.5 text-[9px] text-slate-800">
-                    <div class="flex"><span class="w-14 text-slate-500 shrink-0">Name:</span><span class="font-medium truncate min-w-0"><?php echo htmlspecialchars($emp['full_name'] ?? '—'); ?></span></div>
-                    <div class="flex"><span class="w-14 text-slate-500 shrink-0">ID No:</span><span class="font-mono truncate min-w-0"><?php echo htmlspecialchars($emp['employee_id'] ?? '—'); ?></span></div>
-                    <div class="flex"><span class="w-14 text-slate-500 shrink-0">Position:</span><span class="truncate min-w-0"><?php echo htmlspecialchars($emp['position'] ?? '—'); ?></span></div>
-                    <div class="flex"><span class="w-14 text-slate-500 shrink-0">Dept:</span><span class="truncate min-w-0"><?php echo htmlspecialchars($emp['department'] ?? '—'); ?></span></div>
-                    <div class="flex"><span class="w-14 text-slate-500 shrink-0">Hired:</span><span><?php echo !empty($emp['date_hired']) ? date('M d, Y', strtotime($emp['date_hired'])) : '—'; ?></span></div>
-                    <div class="flex"><span class="w-14 text-slate-500 shrink-0">Phone:</span><span class="truncate min-w-0"><?php echo htmlspecialchars($emp['phone'] ?? '—'); ?></span></div>
-                    <div class="flex"><span class="w-14 text-slate-500 shrink-0">Email:</span><span class="truncate break-all min-w-0"><?php echo htmlspecialchars($emp['email'] ?? '—'); ?></span></div>
-                    <div class="flex gap-1 min-w-0"><span class="w-14 text-slate-500 shrink-0">Primary:</span><span class="min-w-0 break-words"><?php echo htmlspecialchars($emp['address'] ?? '—'); ?></span></div>
-                    <?php if (!empty($emp['secondary_workplace'])): ?>
-                    <div class="flex gap-1 min-w-0"><span class="w-14 text-slate-500 shrink-0">Secondary:</span><span class="min-w-0 break-words"><?php echo htmlspecialchars($emp['secondary_workplace']); ?></span></div>
-                    <?php endif; ?>
-                </div>
-            </div>
             <div class="mb-1.5">
                 <div class="text-[9px] font-bold text-[#FA9800] uppercase tracking-wide mb-1 border-b border-slate-200 pb-0.5">Emergency Contact</div>
                 <div class="space-y-0.5 text-[9px] text-slate-800">
