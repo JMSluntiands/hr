@@ -71,6 +71,12 @@ $dateArrived = (string)($item['date_arrived'] ?? '');
             border-radius: 10px;
             padding: 12px;
         }
+        .sticker-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+        }
         .title {
             font-size: 14px;
             font-weight: 700;
@@ -88,6 +94,7 @@ $dateArrived = (string)($item['date_arrived'] ?? '');
             align-items: center;
             justify-content: center;
             flex-wrap: wrap;
+            margin-top: 4px;
         }
         #qrcode {
             width: 120px;
@@ -130,26 +137,30 @@ $dateArrived = (string)($item['date_arrived'] ?? '');
     </div>
 
     <div class="sticker">
-        <div class="title"><?php echo htmlspecialchars($itemName); ?></div>
-        <div class="meta">
-            Item ID: <?php echo htmlspecialchars($itemId); ?><br>
-            <?php if ($type !== ''): ?>Type: <?php echo htmlspecialchars($type); ?><br><?php endif; ?>
-            <?php if ($dateArrived !== ''): ?>Date: <?php echo htmlspecialchars($dateArrived); ?><br><?php endif; ?>
-            <?php if ($description !== ''): ?>Description: <?php echo htmlspecialchars($description); ?><br><?php endif; ?>
-            <?php if ($remarks !== ''): ?>Remarks: <?php echo htmlspecialchars($remarks); ?><?php endif; ?>
-        </div>
-        <div class="codes">
+        <div class="sticker-header">
+            <div>
+                <div class="title"><?php echo htmlspecialchars($itemName); ?></div>
+                <div class="meta">
+                    Item ID: <?php echo htmlspecialchars($itemId); ?><br>
+                    <?php if ($type !== ''): ?>Type: <?php echo htmlspecialchars($type); ?><br><?php endif; ?>
+                    <?php if ($dateArrived !== ''): ?>Date: <?php echo htmlspecialchars($dateArrived); ?><br><?php endif; ?>
+                    <?php if ($description !== ''): ?>Description: <?php echo htmlspecialchars($description); ?><br><?php endif; ?>
+                    <?php if ($remarks !== ''): ?>Remarks: <?php echo htmlspecialchars($remarks); ?><?php endif; ?>
+                </div>
+            </div>
             <?php if ($mode === 'qr' || $mode === 'both'): ?>
                 <div id="qrcode"></div>
             <?php endif; ?>
+        </div>
 
-            <?php if ($mode === 'barcode' || $mode === 'both'): ?>
+        <?php if ($mode === 'barcode' || $mode === 'both'): ?>
+            <div class="codes">
                 <div class="barcode-wrap">
                     <svg id="barcode"></svg>
                     <div class="id-text"><?php echo htmlspecialchars($itemId); ?></div>
                 </div>
-            <?php endif; ?>
-        </div>
+            </div>
+        <?php endif; ?>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>

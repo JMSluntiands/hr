@@ -12,11 +12,30 @@ if ($id <= 0) {
 }
 
 include '../database/db.php';
+require_once __DIR__ . '/include/id-card-employment.php';
 
 $emp = null;
 if ($conn) {
-    // SELECT * avoids fatal errors when optional columns (e.g. profile_picture) were never migrated
-    $stmt = $conn->prepare('SELECT * FROM employees WHERE id = ? LIMIT 1');
+    $tTypes = $conn->query("SHOW TABLES LIKE 'employment_types'");
+    $hasTypes = $tTypes && $tTypes->num_rows > 0;
+    $tComp = $conn->query("SHOW TABLES LIKE 'employee_compensation'");
+    $hasComp = $tComp && $tComp->num_rows > 0;
+    $fields = 'e.*';
+    $join = '';
+    if ($hasTypes) {
+        $fields .= ', et.name AS employment_type_name';
+        $join .= ' LEFT JOIN employment_types et ON e.employment_type_id = et.id';
+    } else {
+        $fields .= ', NULL AS employment_type_name';
+    }
+    if ($hasComp) {
+        $fields .= ', ec.employment_type AS compensation_employment_type';
+        $join .= ' LEFT JOIN employee_compensation ec ON ec.employee_id = e.id';
+    } else {
+        $fields .= ', NULL AS compensation_employment_type';
+    }
+    $sql = "SELECT $fields FROM employees e$join WHERE e.id = ? LIMIT 1";
+    $stmt = $conn->prepare($sql);
     if ($stmt) {
         $stmt->bind_param('i', $id);
         $stmt->execute();
@@ -27,6 +46,11 @@ if ($conn) {
 }
 
 if (!$emp) {
+    header('Location: id-creation.php');
+    exit;
+}
+
+if (!hr_employee_is_regular_for_id_card($emp)) {
     header('Location: id-creation.php');
     exit;
 }

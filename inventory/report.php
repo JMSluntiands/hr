@@ -233,6 +233,20 @@ $message = $_GET['message'] ?? '';
         <?php endif; ?>
 
         <section class="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                <div>
+                    <label for="itemNameFilter" class="block text-sm text-slate-600 mb-1">Filter by Item Name</label>
+                    <select id="itemNameFilter" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+                        <option value="">All item names</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="allocatedToFilter" class="block text-sm text-slate-600 mb-1">Filter by Allocated To</label>
+                    <select id="allocatedToFilter" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+                        <option value="">All allocation owners</option>
+                    </select>
+                </div>
+            </div>
             <div class="overflow-x-auto">
                 <table id="reportTable" class="display stripe hover w-full text-sm">
                     <thead>
@@ -262,10 +276,73 @@ $message = $_GET['message'] ?? '';
     <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
     <script>
         $(function () {
-            $('#reportTable').DataTable({
+            const table = $('#reportTable').DataTable({
                 pageLength: 10,
                 order: [[0, 'asc']]
             });
+
+            const itemNameColumnIndex = 0;
+            const allocatedToColumnIndex = 3;
+            const itemNameFilter = document.getElementById('itemNameFilter');
+            const allocatedToFilter = document.getElementById('allocatedToFilter');
+
+            const uniqueItemNames = [];
+            const uniqueAllocatedTo = [];
+
+            table.column(itemNameColumnIndex).data().each(function (value) {
+                const text = String(value).trim();
+                if (text !== '' && !uniqueItemNames.includes(text)) {
+                    uniqueItemNames.push(text);
+                }
+            });
+
+            table.column(allocatedToColumnIndex).data().each(function (value) {
+                const text = String(value).trim();
+                if (text !== '' && !uniqueAllocatedTo.includes(text)) {
+                    uniqueAllocatedTo.push(text);
+                }
+            });
+
+            uniqueItemNames.sort(function (a, b) {
+                return a.localeCompare(b);
+            });
+            uniqueAllocatedTo.sort(function (a, b) {
+                return a.localeCompare(b);
+            });
+
+            uniqueItemNames.forEach(function (itemName) {
+                const option = document.createElement('option');
+                option.value = itemName;
+                option.textContent = itemName;
+                itemNameFilter.appendChild(option);
+            });
+
+            uniqueAllocatedTo.forEach(function (allocatedTo) {
+                const option = document.createElement('option');
+                option.value = allocatedTo;
+                option.textContent = allocatedTo;
+                allocatedToFilter.appendChild(option);
+            });
+
+            function applyFilters() {
+                const selectedItemName = itemNameFilter.value;
+                const selectedAllocatedTo = allocatedToFilter.value;
+
+                table.column(itemNameColumnIndex).search(
+                    selectedItemName ? '^' + $.fn.dataTable.util.escapeRegex(selectedItemName) + '$' : '',
+                    Boolean(selectedItemName),
+                    false
+                );
+                table.column(allocatedToColumnIndex).search(
+                    selectedAllocatedTo ? '^' + $.fn.dataTable.util.escapeRegex(selectedAllocatedTo) + '$' : '',
+                    Boolean(selectedAllocatedTo),
+                    false
+                );
+                table.draw();
+            }
+
+            itemNameFilter.addEventListener('change', applyFilters);
+            allocatedToFilter.addEventListener('change', applyFilters);
         });
     </script>
 

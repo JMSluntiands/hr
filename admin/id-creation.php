@@ -10,6 +10,7 @@ $adminName = $_SESSION['name'] ?? 'Admin User';
 $role      = $_SESSION['role'] ?? 'admin';
 
 include '../database/db.php';
+require_once __DIR__ . '/include/id-card-employment.php';
 
 $employees = [];
 $nextId = '';
@@ -25,7 +26,35 @@ if ($conn) {
         }
         $hasEmployeeId = in_array('employee_id', $cols);
         if ($hasEmployeeId) {
-            $res = $conn->query("SELECT id, employee_id, full_name, email, department, position, date_hired, status, profile_picture FROM employees ORDER BY id DESC");
+            $hasTypes = false;
+            $tchk = $conn->query("SHOW TABLES LIKE 'employment_types'");
+            if ($tchk && $tchk->num_rows > 0) {
+                $hasTypes = true;
+            }
+            $hasComp = false;
+            $cchk = $conn->query("SHOW TABLES LIKE 'employee_compensation'");
+            if ($cchk && $cchk->num_rows > 0) {
+                $hasComp = true;
+            }
+            $baseFields = 'e.id, e.employee_id, e.full_name, e.email, e.department, e.position, e.date_hired, e.status';
+            if (in_array('profile_picture', $cols, true)) {
+                $baseFields .= ', e.profile_picture';
+            }
+            $join = '';
+            if ($hasTypes) {
+                $baseFields .= ', et.name AS employment_type_name';
+                $join .= ' LEFT JOIN employment_types et ON e.employment_type_id = et.id';
+            } else {
+                $baseFields .= ', NULL AS employment_type_name';
+            }
+            if ($hasComp) {
+                $baseFields .= ', ec.employment_type AS compensation_employment_type';
+                $join .= ' LEFT JOIN employee_compensation ec ON ec.employee_id = e.id';
+            } else {
+                $baseFields .= ', NULL AS compensation_employment_type';
+            }
+            $sql = "SELECT $baseFields FROM employees e$join ORDER BY e.id DESC";
+            $res = $conn->query($sql);
             if ($res && $res->num_rows > 0) {
                 while ($row = $res->fetch_assoc()) {
                     $employees[] = $row;
@@ -125,7 +154,11 @@ if ($conn) {
                                 </span>
                             </td>
                             <td class="px-4 py-3">
+                                <?php if (hr_employee_is_regular_for_id_card($emp)): ?>
                                 <a href="id-card-print.php?id=<?php echo (int)($emp['id'] ?? 0); ?>" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#FA9800] hover:bg-[#d97706] text-white text-xs font-medium rounded-lg transition-colors">View ID</a>
+                                <?php else: ?>
+                                <span class="inline-flex items-center px-3 py-1.5 text-slate-400 text-xs font-medium rounded-lg border border-slate-200 bg-slate-50 cursor-not-allowed" title="ID card is only available for Regular employees.">View ID</span>
+                                <?php endif; ?>
                                 <a href="staff-view.php?id=<?php echo (int)($emp['id'] ?? 0); ?>" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg transition-colors ml-1">Profile</a>
                             </td>
                         </tr>
