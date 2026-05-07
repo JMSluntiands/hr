@@ -13,10 +13,6 @@ unset($_SESSION['reimbursement_list_msg']);
 
 $list = [];
 if ($conn) {
-    $conn->query("ALTER TABLE reimbursements ADD COLUMN admin_receipt_path VARCHAR(255) NULL");
-    $conn->query("ALTER TABLE reimbursements ADD COLUMN admin_receipt_original_name VARCHAR(255) NULL");
-    $conn->query("ALTER TABLE reimbursements ADD COLUMN reimbursed_at DATETIME NULL");
-
     $sql = "SELECT r.*, e.full_name, e.employee_id AS emp_code
             FROM reimbursements r
             JOIN employees e ON e.id = r.employee_id

@@ -21,10 +21,6 @@ if ($id <= 0) {
     exit;
 }
 
-$conn->query("ALTER TABLE reimbursements ADD COLUMN admin_receipt_path VARCHAR(255) NULL");
-$conn->query("ALTER TABLE reimbursements ADD COLUMN admin_receipt_original_name VARCHAR(255) NULL");
-$conn->query("ALTER TABLE reimbursements ADD COLUMN reimbursed_at DATETIME NULL");
-
 if (!isset($_FILES['admin_receipt']) || !is_array($_FILES['admin_receipt'])) {
     $_SESSION['reimbursement_list_msg'] = 'Please upload reimbursement receipt.';
     header('Location: reimbursement-list.php');
