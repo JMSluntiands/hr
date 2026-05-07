@@ -312,7 +312,9 @@ if ($conn) {
                                 html += '<div class="border border-slate-200 rounded-lg p-4 hover:bg-slate-50">';
                                 html += '<div class="flex items-start justify-between mb-2">';
                                 html += '<h4 class="font-medium text-slate-800">' + (doc.document_type || 'Document') + '</h4>';
-                                if (doc.status) {
+                                if (doc.deletion_requested_at) {
+                                    html += '<span class="px-2 py-0.5 rounded-full text-xs font-medium bg-slate-200 text-slate-800">Removal pending</span>';
+                                } else if (doc.status) {
                                     const statusClass = doc.status === 'Approved' ? 'bg-emerald-100 text-emerald-700' : 
                                                       doc.status === 'Pending' ? 'bg-amber-100 text-amber-700' : 
                                                       'bg-red-100 text-red-700';

@@ -60,6 +60,20 @@ if (empty($documentType) || !in_array($documentType, $allowedTypes, true)) {
     exit;
 }
 
+$colDel = $conn->query("SHOW COLUMNS FROM employee_document_uploads LIKE 'deletion_requested_at'");
+if ($colDel && $colDel->num_rows > 0) {
+    $pendStmt = $conn->prepare("SELECT id FROM employee_document_uploads WHERE employee_id = ? AND document_type = ? AND deletion_requested_at IS NOT NULL LIMIT 1");
+    $pendStmt->bind_param('is', $employeeId, $documentType);
+    $pendStmt->execute();
+    if ($pendStmt->get_result()->num_rows > 0) {
+        $pendStmt->close();
+        header('Content-Type: application/json');
+        echo json_encode(['status' => 'error', 'message' => 'A removal request is pending for this document. Please wait for HR approval before uploading again.']);
+        exit;
+    }
+    $pendStmt->close();
+}
+
 if (!isset($_FILES['document_file']) || $_FILES['document_file']['error'] !== UPLOAD_ERR_OK) {
     header('Content-Type: application/json');
     echo json_encode(['status' => 'error', 'message' => 'File upload error']);

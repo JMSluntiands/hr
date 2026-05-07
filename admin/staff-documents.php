@@ -24,7 +24,9 @@ if ($conn) {
     // Check if employee_document_uploads table exists
     $checkTable = $conn->query("SHOW TABLES LIKE 'employee_document_uploads'");
     if ($checkTable && $checkTable->num_rows > 0) {
-        $stmt = $conn->prepare("SELECT id, document_type, file_path, status, created_at, updated_at 
+        $hasDel = $conn->query("SHOW COLUMNS FROM employee_document_uploads LIKE 'deletion_requested_at'");
+        $extra = ($hasDel && $hasDel->num_rows > 0) ? ', deletion_requested_at' : '';
+        $stmt = $conn->prepare("SELECT id, document_type, file_path, status, created_at, updated_at{$extra}
                                 FROM employee_document_uploads 
                                 WHERE employee_id = ? 
                                 ORDER BY created_at DESC, id DESC");

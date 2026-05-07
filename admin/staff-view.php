@@ -75,7 +75,9 @@ if ($conn) {
     // Fetch employee documents
     $checkTable = $conn->query("SHOW TABLES LIKE 'employee_document_uploads'");
     if ($checkTable && $checkTable->num_rows > 0) {
-        $docStmt = $conn->prepare("SELECT id, document_type, file_path, status, created_at, updated_at 
+        $hasDelColSv = $conn->query("SHOW COLUMNS FROM employee_document_uploads LIKE 'deletion_requested_at'");
+        $docExtraSv = ($hasDelColSv && $hasDelColSv->num_rows > 0) ? ', deletion_requested_at' : '';
+        $docStmt = $conn->prepare("SELECT id, document_type, file_path, status, created_at, updated_at{$docExtraSv}
                                    FROM employee_document_uploads 
                                    WHERE employee_id = ? 
                                    ORDER BY created_at DESC, id DESC");
@@ -619,10 +621,15 @@ if ($conn) {
                                 <?php foreach ($documentTypes as $docType):
                                     $doc = $documentsByType[$docType] ?? null;
                                     $hasFile = $doc && !empty($doc['file_path']);
+                                    $pendingRemovalSv = $hasFile && !empty($doc['deletion_requested_at'] ?? null);
                                     if (!$hasFile) {
                                         $status = 'No File';
                                         $statusClass = 'bg-slate-100 text-slate-600';
                                         $statusText = 'No File';
+                                    } elseif ($pendingRemovalSv) {
+                                        $status = $doc['status'] ?? 'Pending';
+                                        $statusClass = 'bg-slate-200 text-slate-800';
+                                        $statusText = 'Removal pending (employee)';
                                     } else {
                                         $status = $doc['status'] ?? 'Pending';
                                         $statusClass = $status === 'Approved' ? 'bg-emerald-100 text-emerald-700' :
@@ -633,7 +640,7 @@ if ($conn) {
                                     $lastUpdated = $doc && isset($doc['updated_at']) && $doc['updated_at']
                                         ? date('M d, Y', strtotime($doc['updated_at']))
                                         : ($doc && !empty($doc['created_at']) ? date('M d, Y', strtotime($doc['created_at'])) : '—');
-                                    $isApproved = $status === 'Approved';
+                                    $isApproved = $hasFile && ($doc['status'] ?? '') === 'Approved' && !$pendingRemovalSv;
                                 ?>
                                 <tr>
                                     <td class="px-3 py-2 text-center">
@@ -688,14 +695,21 @@ if ($conn) {
                                 $isImage = $fileUrl && preg_match('/\.(jpg|jpeg|png|gif|webp)$/i', $doc['file_path']);
                                 $isPdf = $fileUrl && preg_match('/\.pdf$/i', $doc['file_path']);
                                 $status = $doc['status'] ?? 'Pending';
-                                $statusClass = $status === 'Approved' ? 'bg-emerald-100 text-emerald-700' : 
-                                              ($status === 'Rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700');
+                                $gridDelPending = !empty($doc['deletion_requested_at'] ?? null);
+                                if ($gridDelPending) {
+                                    $statusClass = 'bg-slate-200 text-slate-800';
+                                    $gridStatusSv = 'Removal pending';
+                                } else {
+                                    $statusClass = $status === 'Approved' ? 'bg-emerald-100 text-emerald-700' : 
+                                                  ($status === 'Rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700');
+                                    $gridStatusSv = $status;
+                                }
                             ?>
                             <div class="border border-slate-200 rounded-lg p-4 hover:bg-slate-50 transition-colors">
                                 <div class="flex items-start justify-between mb-3">
                                     <h4 class="font-medium text-slate-800 text-sm"><?php echo htmlspecialchars($doc['document_type'] ?? 'Document'); ?></h4>
                                     <span class="px-2 py-0.5 rounded-full text-xs font-medium <?php echo $statusClass; ?>">
-                                        <?php echo htmlspecialchars($status); ?>
+                                        <?php echo htmlspecialchars($gridStatusSv); ?>
                                     </span>
                                 </div>
                                 

@@ -14,7 +14,8 @@ $isLeaves      = ($isLeavesAlloc || $isLeavesSum);
 $isReqLeaves   = ($currentPage === 'request-leaves');
 $isReqDoc      = ($currentPage === 'request-document');
 $isReqBank     = ($currentPage === 'request-bank');
-$isRequest     = ($isReqLeaves || $isReqDoc || $isReqBank);
+$isDocArchive  = ($currentPage === 'document-archive');
+$isRequest     = ($isReqLeaves || $isReqDoc || $isReqBank || $isDocArchive);
 $isActivityLog = ($currentPage === 'activity-log');
 $isProgressiveDiscipline = ($currentPage === 'progressive-discipline');
 $isIncidentReport = in_array($currentPage, ['incident-report', 'incident-report-add', 'incident-report-list', 'incident-report-edit', 'incident-report-submitted'], true);
@@ -40,6 +41,7 @@ $incidentArrow  = $isIncidentReport ? ' rotate-180' : '';
 $requestLeavesPending = 0;
 $requestDocPending = 0;
 $requestBankPending = 0;
+$documentArchivePending = 0;
 if (isset($conn) && $conn) {
     $t = $conn->query("SHOW TABLES LIKE 'leave_requests'");
     if ($t && $t->num_rows > 0) {
@@ -61,8 +63,13 @@ if (isset($conn) && $conn) {
         $r = $conn->query("SELECT COUNT(*) AS c FROM bank_account_change_requests WHERE status = 'Pending'");
         if ($r && $row = $r->fetch_assoc()) $requestBankPending = (int)$row['c'];
     }
+    $cDel = $conn->query("SHOW COLUMNS FROM employee_document_uploads LIKE 'deletion_requested_at'");
+    if ($cDel && $cDel->num_rows > 0) {
+        $r = $conn->query("SELECT COUNT(*) AS c FROM employee_document_uploads WHERE status = 'Approved' AND deletion_requested_at IS NOT NULL");
+        if ($r && $row = $r->fetch_assoc()) $documentArchivePending = (int)$row['c'];
+    }
 }
-$requestTotalPending = $requestLeavesPending + $requestDocPending + $requestBankPending;
+$requestTotalPending = $requestLeavesPending + $requestDocPending + $requestBankPending + $documentArchivePending;
 
 require_once dirname(__DIR__, 2) . '/include/sidebar-scrollbar-once.php';
 ?>
@@ -181,6 +188,12 @@ require_once dirname(__DIR__, 2) . '/include/sidebar-scrollbar-once.php';
                         <span>Request Document</span>
                         <?php if ($requestDocPending > 0): ?>
                             <span class="ml-auto min-w-[1.25rem] h-5 px-1.5 flex items-center justify-center rounded-full bg-white/90 text-[#FA9800] text-xs font-semibold"><?php echo $requestDocPending; ?></span>
+                        <?php endif; ?>
+                    </a>
+                    <a href="document-archive" class="flex items-center gap-3 pl-11 pr-3 py-2 text-sm text-white hover:bg-white/10 rounded-lg transition-colors<?php echo $isDocArchive ? ' ' . $activeClass : ''; ?>">
+                        <span>Document Archive</span>
+                        <?php if ($documentArchivePending > 0): ?>
+                            <span class="ml-auto min-w-[1.25rem] h-5 px-1.5 flex items-center justify-center rounded-full bg-white/90 text-[#FA9800] text-xs font-semibold"><?php echo $documentArchivePending; ?></span>
                         <?php endif; ?>
                     </a>
                     <a href="request-bank" class="flex items-center gap-3 pl-11 pr-3 py-2 text-sm text-white hover:bg-white/10 rounded-lg transition-colors<?php echo $isReqBank ? ' ' . $activeClass : ''; ?>">

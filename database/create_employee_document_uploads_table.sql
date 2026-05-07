@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS `employee_document_uploads` (
   `rejection_reason` text DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  `deletion_requested_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `idx_employee_id` (`employee_id`),
   KEY `idx_status` (`status`),

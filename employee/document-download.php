@@ -45,6 +45,11 @@ if ($userRole !== 'admin' && $userEmail !== ($doc['email'] ?? '')) {
     exit;
 }
 
+if ($userRole !== 'admin' && !empty($doc['deletion_requested_at'])) {
+    header('HTTP/1.1 403 Forbidden');
+    exit;
+}
+
 $filePath = '../uploads/' . $doc['file_path'];
 if (!file_exists($filePath)) {
     header('HTTP/1.1 404 Not Found');

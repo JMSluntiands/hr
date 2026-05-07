@@ -54,7 +54,9 @@ $bankDetails = null;
 if ($employeeDbId && $conn) {
     $checkTable = $conn->query("SHOW TABLES LIKE 'employee_document_uploads'");
     if ($checkTable && $checkTable->num_rows > 0) {
-        $docStmt = $conn->prepare("SELECT id, document_type, file_path, status, created_at, updated_at FROM employee_document_uploads WHERE employee_id = ? ORDER BY created_at DESC, id DESC");
+        $hasDelCol = $conn->query("SHOW COLUMNS FROM employee_document_uploads LIKE 'deletion_requested_at'");
+        $docExtraCols = ($hasDelCol && $hasDelCol->num_rows > 0) ? ', deletion_requested_at' : '';
+        $docStmt = $conn->prepare("SELECT id, document_type, file_path, status, created_at, updated_at{$docExtraCols} FROM employee_document_uploads WHERE employee_id = ? ORDER BY created_at DESC, id DESC");
         if ($docStmt) {
             $docStmt->bind_param('i', $employeeDbId);
             $docStmt->execute();
@@ -618,21 +620,26 @@ foreach ($documents as $d) {
                         <?php foreach ($documentTypes as $docType):
                             $doc = $documentsByType[$docType] ?? null;
                             $hasFile = $doc && !empty($doc['file_path']);
+                            $pendingRemoval = $hasFile && !empty($doc['deletion_requested_at'] ?? null);
                             if (!$hasFile) {
                                 $status = 'No File';
                                 $statusClass = 'bg-slate-100 text-slate-600';
                                 $statusText = 'No File';
+                            } elseif ($pendingRemoval) {
+                                $status = $doc['status'] ?? 'Pending';
+                                $statusClass = 'bg-slate-200 text-slate-700';
+                                $statusText = 'Pending HR removal';
                             } else {
                                 $status = $doc['status'] ?? 'Pending';
                                 $statusClass = $status === 'Approved' ? 'bg-emerald-100 text-emerald-700' : ($status === 'Rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700');
                                 $statusText = $status === 'Approved' ? 'Verified' : ($status === 'Rejected' ? 'Rejected' : 'Pending validation');
                             }
                             $lastUpdated = $doc && isset($doc['updated_at']) && $doc['updated_at'] ? date('M d, Y', strtotime($doc['updated_at'])) : ($doc && !empty($doc['created_at']) ? date('M d, Y', strtotime($doc['created_at'])) : '—');
-                            $isApproved = $status === 'Approved';
+                            $isVerifiedActive = $hasFile && ($status === 'Approved' || ($doc['status'] ?? '') === 'Approved') && !$pendingRemoval;
                         ?>
                         <tr>
                             <td class="px-3 py-2 text-center">
-                                <?php if ($isApproved): ?>
+                                <?php if ($isVerifiedActive): ?>
                                     <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500 text-white">
                                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
@@ -658,14 +665,19 @@ foreach ($documents as $d) {
                             </td>
                             <td class="px-4 py-2 text-slate-500 text-xs"><?php echo $lastUpdated; ?></td>
                             <td class="px-4 py-2">
-                                <div class="flex items-center gap-2">
+                                <div class="flex items-center flex-wrap gap-2">
                                     <button type="button" class="upload-doc-btn px-3 py-1.5 rounded-lg bg-[#d97706] hover:bg-[#b45309] text-white text-xs font-medium transition-colors" data-doc-type="<?php echo htmlspecialchars($docType); ?>" title="Upload">Upload</button>
-                                    <?php if ($hasFile): ?>
+                                    <?php if ($hasFile && !$pendingRemoval): ?>
                                     <a href="document-view.php?id=<?php echo (int)$doc['id']; ?>" target="_blank" class="px-3 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-medium transition-colors" title="View">View</a>
                                     <a href="document-download.php?id=<?php echo (int)$doc['id']; ?>" class="px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-800 text-white text-xs font-medium transition-colors" title="Download">Download</a>
+                                    <?php elseif ($pendingRemoval): ?>
+                                    <span class="text-xs text-slate-500">On hold until HR approves removal</span>
                                     <?php else: ?>
                                     <span class="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-400 text-xs cursor-not-allowed">View</span>
                                     <span class="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-400 text-xs cursor-not-allowed">Download</span>
+                                    <?php endif; ?>
+                                    <?php if ($isVerifiedActive): ?>
+                                    <button type="button" class="request-doc-removal-btn px-3 py-1.5 rounded-lg border border-red-200 text-red-700 hover:bg-red-50 text-xs font-medium transition-colors" data-doc-id="<?php echo (int)$doc['id']; ?>" data-doc-name="<?php echo htmlspecialchars($docType); ?>" title="Request removal (HR approval required)">Request removal</button>
                                     <?php endif; ?>
                                 </div>
                             </td>
@@ -704,14 +716,22 @@ foreach ($documents as $d) {
                             $isImage = $fileUrl && preg_match('/\.(jpg|jpeg|png|gif|webp)$/i', $doc['file_path']);
                             $isPdf = $fileUrl && preg_match('/\.pdf$/i', $doc['file_path']);
                             $status = $doc['status'] ?? 'Pending';
-                            $statusClass = $status === 'Approved' ? 'bg-emerald-100 text-emerald-700' : ($status === 'Rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700');
+                            $gridPendingRemoval = !empty($doc['deletion_requested_at'] ?? null);
+                            if ($gridPendingRemoval) {
+                                $statusClass = 'bg-slate-200 text-slate-700';
+                                $gridStatusLabel = 'Pending HR removal';
+                            } else {
+                                $statusClass = $status === 'Approved' ? 'bg-emerald-100 text-emerald-700' : ($status === 'Rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700');
+                                $gridStatusLabel = $status;
+                            }
+                            $canRequestRemovalGrid = ($status === 'Approved' && !$gridPendingRemoval);
                         ?>
                         <div class="border border-slate-200 rounded-lg p-4 hover:bg-slate-50 transition-colors">
                             <div class="flex items-start justify-between mb-3">
                                 <h4 class="font-medium text-slate-800 text-sm"><?php echo htmlspecialchars($doc['document_type'] ?? 'Document'); ?></h4>
-                                <span class="px-2 py-0.5 rounded-full text-xs font-medium <?php echo $statusClass; ?>"><?php echo htmlspecialchars($status); ?></span>
+                                <span class="px-2 py-0.5 rounded-full text-xs font-medium <?php echo $statusClass; ?>"><?php echo htmlspecialchars($gridStatusLabel); ?></span>
                             </div>
-                            <?php if ($fileUrl && file_exists(__DIR__ . '/../uploads/' . $doc['file_path'])): ?>
+                            <?php if ($fileUrl && file_exists(__DIR__ . '/../uploads/' . $doc['file_path']) && !$gridPendingRemoval): ?>
                                 <?php if ($isImage): ?>
                                     <div class="mb-3 rounded border border-slate-200 overflow-hidden">
                                         <img src="<?php echo $fileUrl; ?>" alt="<?php echo htmlspecialchars($doc['document_type'] ?? ''); ?>" class="w-full h-32 object-cover">
@@ -731,8 +751,13 @@ foreach ($documents as $d) {
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
                                     View/Download
                                 </a>
+                            <?php elseif ($gridPendingRemoval): ?>
+                                <div class="mb-3 p-4 bg-slate-50 rounded border border-slate-200 text-center"><p class="text-xs text-slate-600">Pending HR approval for removal.</p></div>
                             <?php else: ?>
                                 <div class="mb-3 p-4 bg-slate-50 rounded border border-slate-200 text-center"><p class="text-xs text-slate-500">File not found</p></div>
+                            <?php endif; ?>
+                            <?php if ($canRequestRemovalGrid): ?>
+                            <button type="button" class="request-doc-removal-btn mt-2 px-3 py-1.5 rounded-lg border border-red-200 text-red-700 hover:bg-red-50 text-xs font-medium" data-doc-id="<?php echo (int)$doc['id']; ?>" data-doc-name="<?php echo htmlspecialchars($doc['document_type'] ?? 'Document'); ?>">Request removal</button>
                             <?php endif; ?>
                             <?php if (!empty($doc['created_at'])): ?>
                                 <p class="text-xs text-slate-400 mt-2">Uploaded: <?php echo date('M d, Y', strtotime($doc['created_at'])); ?></p>
@@ -742,6 +767,63 @@ foreach ($documents as $d) {
                     </div>
                 <?php endif; ?>
             </div>
+        </div>
+
+        <!-- Removal Request Modal -->
+        <div id="removalModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 items-center justify-center p-4">
+            <div id="removalModalCard" class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden transform transition-all duration-200 scale-95 opacity-0">
+                <div class="relative px-6 pt-7 pb-5 bg-gradient-to-br from-red-500 via-red-500 to-rose-600 text-white">
+                    <div class="absolute -top-6 -right-6 w-24 h-24 bg-white/10 rounded-full"></div>
+                    <div class="absolute -bottom-8 -left-8 w-28 h-28 bg-white/10 rounded-full"></div>
+                    <div class="relative flex items-start gap-4">
+                        <div class="flex-shrink-0 w-12 h-12 rounded-full bg-white/20 flex items-center justify-center ring-4 ring-white/15">
+                            <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m0 3.75h.007M10.42 4.51L2.93 17.49A1.75 1.75 0 004.44 20.13h15.12a1.75 1.75 0 001.51-2.64L13.58 4.51a1.75 1.75 0 00-3.16 0z" />
+                            </svg>
+                        </div>
+                        <div class="min-w-0">
+                            <h2 class="text-lg font-semibold leading-tight">Request document removal</h2>
+                            <p class="text-sm text-white/85 mt-1">HR approval is required before this document can be deleted.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="px-6 py-5 space-y-3">
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                        <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Document</p>
+                        <p id="removalDocName" class="text-sm font-medium text-slate-800 mt-0.5">—</p>
+                    </div>
+                    <ul class="text-sm text-slate-600 space-y-2">
+                        <li class="flex items-start gap-2">
+                            <svg class="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zm-1 9a1 1 0 01-1-1v-4a1 1 0 112 0v4a1 1 0 01-1 1z" clip-rule="evenodd"/></svg>
+                            <span>The file stays available until HR approves your request.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <svg class="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zm-1 9a1 1 0 01-1-1v-4a1 1 0 112 0v4a1 1 0 01-1 1z" clip-rule="evenodd"/></svg>
+                            <span>Once approved, it will be moved to the admin archive — not permanently destroyed.</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="px-6 pb-6 pt-2 flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+                    <button type="button" id="cancelRemovalBtn" class="px-4 py-2.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-medium transition-colors">Cancel</button>
+                    <button type="button" id="confirmRemovalBtn" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white text-sm font-semibold shadow-lg shadow-red-500/30 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3"/></svg>
+                        <span id="confirmRemovalLabel">Yes, request removal</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast container (removal flow) -->
+        <div id="docToast" class="hidden fixed top-5 right-5 z-[60] max-w-sm w-[20rem] rounded-xl shadow-xl border overflow-hidden transform transition-all duration-200 translate-x-4 opacity-0">
+            <div class="flex items-start gap-3 p-4 bg-white">
+                <div id="docToastIcon" class="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center"></div>
+                <div class="min-w-0 flex-1">
+                    <p id="docToastTitle" class="text-sm font-semibold text-slate-800"></p>
+                    <p id="docToastBody" class="text-xs text-slate-600 mt-0.5"></p>
+                </div>
+                <button type="button" id="docToastClose" class="text-slate-400 hover:text-slate-600 text-lg leading-none">×</button>
+            </div>
+            <div id="docToastBar" class="h-1"></div>
         </div>
 
         <!-- Upload Document Modal -->
@@ -957,6 +1039,111 @@ foreach ($documents as $d) {
               try { var r = JSON.parse(xhr.responseText); if (r.message) m = r.message; } catch(er) {}
               $('#uploadMessage').removeClass('hidden').addClass('bg-red-50 text-red-700 border border-red-200 px-4 py-2 rounded-lg text-sm').html(m);
               $btn.prop('disabled', false).text(originalText);
+            }
+          });
+        });
+
+        var pendingRemoval = { docId: null, $btn: null };
+
+        function showRemovalModal(docId, docName, $btn) {
+          pendingRemoval.docId = docId;
+          pendingRemoval.$btn = $btn;
+          $('#removalDocName').text(docName || 'Document');
+          $('#confirmRemovalBtn').prop('disabled', false);
+          $('#confirmRemovalLabel').text('Yes, request removal');
+          var $modal = $('#removalModal');
+          var $card = $('#removalModalCard');
+          $modal.removeClass('hidden').addClass('flex');
+          requestAnimationFrame(function() {
+            $card.removeClass('scale-95 opacity-0').addClass('scale-100 opacity-100');
+          });
+        }
+
+        function hideRemovalModal() {
+          var $modal = $('#removalModal');
+          var $card = $('#removalModalCard');
+          $card.removeClass('scale-100 opacity-100').addClass('scale-95 opacity-0');
+          setTimeout(function() {
+            $modal.addClass('hidden').removeClass('flex');
+          }, 180);
+        }
+
+        function showDocToast(type, title, body) {
+          var $t = $('#docToast');
+          var $icon = $('#docToastIcon');
+          var $bar = $('#docToastBar');
+          var palette = {
+            success: { ring: 'border-emerald-200', icon: 'bg-emerald-100 text-emerald-600', bar: 'bg-emerald-500',
+                       svg: '<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>' },
+            error:   { ring: 'border-red-200',     icon: 'bg-red-100 text-red-600',         bar: 'bg-red-500',
+                       svg: '<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>' }
+          };
+          var p = palette[type] || palette.success;
+          $t.removeClass('hidden border-emerald-200 border-red-200').addClass(p.ring);
+          $icon.removeClass().addClass('flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center ' + p.icon).html(p.svg);
+          $bar.removeClass().addClass('h-1 ' + p.bar);
+          $('#docToastTitle').text(title || '');
+          $('#docToastBody').text(body || '');
+          requestAnimationFrame(function() {
+            $t.removeClass('translate-x-4 opacity-0').addClass('translate-x-0 opacity-100');
+          });
+          clearTimeout(window.__docToastTimer);
+          window.__docToastTimer = setTimeout(hideDocToast, 3500);
+        }
+
+        function hideDocToast() {
+          var $t = $('#docToast');
+          $t.removeClass('translate-x-0 opacity-100').addClass('translate-x-4 opacity-0');
+          setTimeout(function() { $t.addClass('hidden'); }, 200);
+        }
+
+        $(document).on('click', '#docToastClose', hideDocToast);
+
+        $(document).on('click', '.request-doc-removal-btn', function() {
+          var docId = $(this).data('doc-id');
+          var docName = $(this).data('doc-name')
+            || $(this).closest('tr').find('td').eq(1).text().trim()
+            || $(this).closest('.border-slate-200').find('h4').first().text().trim()
+            || 'Document';
+          showRemovalModal(docId, docName, $(this));
+        });
+
+        $(document).on('click', '#cancelRemovalBtn', hideRemovalModal);
+        $('#removalModal').on('click', function(e) { if (e.target === this) hideRemovalModal(); });
+        $(document).on('keydown', function(e) {
+          if (e.key === 'Escape' && !$('#removalModal').hasClass('hidden')) hideRemovalModal();
+        });
+
+        $(document).on('click', '#confirmRemovalBtn', function() {
+          if (!pendingRemoval.docId) return;
+          var $cBtn = $(this);
+          $cBtn.prop('disabled', true);
+          $('#confirmRemovalLabel').text('Sending…');
+          if (pendingRemoval.$btn) pendingRemoval.$btn.prop('disabled', true);
+          $.ajax({
+            url: 'document-request-deletion.php',
+            type: 'POST',
+            data: { id: pendingRemoval.docId },
+            dataType: 'json',
+            success: function(res) {
+              if (res.status === 'success') {
+                hideRemovalModal();
+                showDocToast('success', 'Removal request sent', res.message || 'HR will review your request.');
+                setTimeout(function() { location.reload(); }, 1100);
+              } else {
+                $cBtn.prop('disabled', false);
+                $('#confirmRemovalLabel').text('Yes, request removal');
+                if (pendingRemoval.$btn) pendingRemoval.$btn.prop('disabled', false);
+                showDocToast('error', 'Request failed', res.message || 'Could not submit request.');
+              }
+            },
+            error: function(xhr) {
+              var m = 'Something went wrong. Please try again.';
+              try { var r = JSON.parse(xhr.responseText); if (r.message) m = r.message; } catch (er) {}
+              $cBtn.prop('disabled', false);
+              $('#confirmRemovalLabel').text('Yes, request removal');
+              if (pendingRemoval.$btn) pendingRemoval.$btn.prop('disabled', false);
+              showDocToast('error', 'Request failed', m);
             }
           });
         });
