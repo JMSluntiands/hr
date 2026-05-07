@@ -13,11 +13,16 @@ $to = trim((string)($_GET['to'] ?? ''));
 $rows = [];
 $total = 0.00;
 
-if ($conn && $from !== '' && $to !== '') {
-    $conn->query("ALTER TABLE reimbursements ADD COLUMN admin_receipt_path VARCHAR(255) NULL");
-    $conn->query("ALTER TABLE reimbursements ADD COLUMN admin_receipt_original_name VARCHAR(255) NULL");
-    $conn->query("ALTER TABLE reimbursements ADD COLUMN reimbursed_at DATETIME NULL");
+function isValidDateYmd(string $value): bool
+{
+    if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+        return false;
+    }
+    $dt = DateTime::createFromFormat('Y-m-d', $value);
+    return $dt instanceof DateTime && $dt->format('Y-m-d') === $value;
+}
 
+if ($conn && $from !== '' && $to !== '' && isValidDateYmd($from) && isValidDateYmd($to)) {
     $stmt = $conn->prepare(
         "SELECT r.*, e.full_name
          FROM reimbursements r
