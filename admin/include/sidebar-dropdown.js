@@ -3,8 +3,27 @@
 
 (function() {
     'use strict';
+
+    // Prevent duplicate initialization if script is included twice.
+    if (window.__hrSidebarDropdownInitialized) {
+        return;
+    }
+    window.__hrSidebarDropdownInitialized = true;
     
-    // Use event delegation on document level so it works even after navigation
+    function closeAllDropdowns() {
+        const allDropdowns = document.querySelectorAll('[id$="-dropdown"]');
+        const allArrows = document.querySelectorAll('[id$="-arrow"]');
+
+        allDropdowns.forEach(function(dd) {
+            dd.classList.add('hidden');
+        });
+
+        allArrows.forEach(function(arr) {
+            arr.style.transform = 'rotate(0deg)';
+        });
+    }
+
+    // Use one document click handler to avoid handler conflicts.
     document.addEventListener('click', function(e) {
         // Only treat as "dropdown button click" when the click is ON the button itself
         // (not when clicking a link inside the dropdown - those should navigate)
@@ -12,7 +31,7 @@
         
         if (dropdownBtn) {
             e.preventDefault();
-            e.stopPropagation();
+            e.stopImmediatePropagation();
             
             const btnId = dropdownBtn.id;
             const dropdownType = btnId.replace('-dropdown-btn', '');
@@ -44,27 +63,12 @@
             if (arrow) {
                 arrow.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
             }
+            return;
         }
-    });
-
-    // Close dropdowns when clicking outside
-    document.addEventListener('click', function(e) {
-        const dropdownBtn = e.target.closest('[id$="-dropdown-btn"]');
-        const dropdown = e.target.closest('[id$="-dropdown"]');
         const dropdownContainer = e.target.closest('.dropdown-container');
         
-        if (!dropdownBtn && !dropdown && !dropdownContainer) {
-            // Clicked outside, close all dropdowns
-            const allDropdowns = document.querySelectorAll('[id$="-dropdown"]');
-            const allArrows = document.querySelectorAll('[id$="-arrow"]');
-            
-            allDropdowns.forEach(function(dd) {
-                dd.classList.add('hidden');
-            });
-            
-            allArrows.forEach(function(arr) {
-                arr.style.transform = 'rotate(0deg)';
-            });
+        if (!dropdownContainer) {
+            closeAllDropdowns();
         }
     });
 })();
