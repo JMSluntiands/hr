@@ -6,10 +6,11 @@ $role = $role ?? $_SESSION['role'] ?? 'admin';
 $currentPage = basename($_SERVER['PHP_SELF'], '.php');
 $itemTab = (string)($_GET['tab'] ?? 'add');
 
-$isItem = ($currentPage === 'item');
-$isItemAdd = $isItem && $itemTab === 'add';
-$isItemList = $isItem && $itemTab === 'list';
-$isItemHistory = $isItem && $itemTab === 'history';
+$isItemPage = ($currentPage === 'item');
+$isItemAdd = $isItemPage && $itemTab === 'add';
+$isItemList = $isItemPage && $itemTab === 'list';
+$isItemHistory = $isItemPage && $itemTab === 'history';
+$isItemCollapsibleActive = $isItemAdd || $isItemHistory;
 $isInventory = ($currentPage === 'inventory' || $currentPage === 'index');
 $isAllocation = ($currentPage === 'allocation');
 $isReport = ($currentPage === 'report');
@@ -39,9 +40,9 @@ if (isset($conn) && $conn instanceof mysqli) {
     }
 }
 $activeClass = 'bg-white/20';
-$itemNavOpen = $isItem ? '' : ' hidden';
-$itemNavArrow = $isItem ? ' rotate-180' : '';
-$itemNavBtnActive = $isItem ? ' ' . $activeClass : '';
+$itemNavOpen = $isItemCollapsibleActive ? '' : ' hidden';
+$itemNavArrow = $isItemCollapsibleActive ? ' rotate-180' : '';
+$itemNavBtnActive = $isItemCollapsibleActive ? ' ' . $activeClass : '';
 
 require_once dirname(__DIR__, 2) . '/include/sidebar-scrollbar-once.php';
 ?>
@@ -83,6 +84,20 @@ require_once dirname(__DIR__, 2) . '/include/sidebar-scrollbar-once.php';
     </div>
 
     <nav class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-y-contain p-4 space-y-1 text-sm">
+        <a href="inventory.php" class="flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-white hover:bg-white/10 transition-colors<?php echo $isInventory ? ' ' . $activeClass : ''; ?>">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M6 7V5a1 1 0 011-1h10a1 1 0 011 1v2m-1 4H7m10 4H7m13-8v10a2 2 0 01-2 2H6a2 2 0 01-2-2V7" />
+            </svg>
+            <span>Inventory</span>
+        </a>
+
+        <a href="item.php?tab=list" class="flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-white hover:bg-white/10 transition-colors<?php echo $isItemList ? ' ' . $activeClass : ''; ?>">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
+            </svg>
+            <span>List Item</span>
+        </a>
+
         <div class="dropdown-container">
             <button type="button" id="inventory-item-dropdown-btn" class="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-left font-medium text-white transition-colors hover:bg-white/10<?php echo $itemNavBtnActive; ?>" aria-expanded="<?php echo $itemNavOpen === '' ? 'true' : 'false'; ?>" aria-controls="inventory-item-dropdown">
                 <svg class="h-5 w-5 shrink-0 text-white pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -95,17 +110,9 @@ require_once dirname(__DIR__, 2) . '/include/sidebar-scrollbar-once.php';
             </button>
             <div id="inventory-item-dropdown" class="mb-2 ml-10 space-y-1<?php echo $itemNavOpen; ?>" role="region" aria-label="Item submenu">
                 <a href="item.php?tab=add" class="block rounded-lg px-3 py-1.5 text-xs font-medium text-white/90 transition-colors hover:bg-white/10<?php echo $isItemAdd ? ' ' . $activeClass : ''; ?>">Add Item</a>
-                <a href="item.php?tab=list" class="block rounded-lg px-3 py-1.5 text-xs font-medium text-white/90 transition-colors hover:bg-white/10<?php echo $isItemList ? ' ' . $activeClass : ''; ?>">List Item</a>
                 <a href="item.php?tab=history" class="block rounded-lg px-3 py-1.5 text-xs font-medium text-white/90 transition-colors hover:bg-white/10<?php echo $isItemHistory ? ' ' . $activeClass : ''; ?>">Item History</a>
             </div>
         </div>
-
-        <a href="inventory.php" class="flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-white hover:bg-white/10 transition-colors<?php echo $isInventory ? ' ' . $activeClass : ''; ?>">
-            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M6 7V5a1 1 0 011-1h10a1 1 0 011 1v2m-1 4H7m10 4H7m13-8v10a2 2 0 01-2 2H6a2 2 0 01-2-2V7" />
-            </svg>
-            <span>Inventory</span>
-        </a>
 
         <a href="allocation.php" class="flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-white hover:bg-white/10 transition-colors<?php echo $isAllocation ? ' ' . $activeClass : ''; ?>">
             <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -738,6 +738,7 @@ if ($editItemId > 0) {
                             <th>Item Name</th>
                             <th>Description</th>
                             <th>Type</th>
+                            <th>Allocated To</th>
                             <th>Item Condition</th>
                             <th>Remarks</th>
                             <th>Date Arrived</th>
@@ -759,6 +760,10 @@ if ($editItemId > 0) {
                                 <td><?php echo htmlspecialchars($item['item_name']); ?></td>
                                 <td><?php echo htmlspecialchars((string)$item['description']); ?></td>
                                 <td><?php echo htmlspecialchars((string)$item['type']); ?></td>
+                                <td><?php
+                                    $allocName = trim((string)($item['allocated_to_name'] ?? ''));
+                                    echo $allocName !== '' ? htmlspecialchars($allocName) : 'NA';
+                                ?></td>
                                 <td><?php echo htmlspecialchars((string)($item['item_condition'] ?? '')); ?></td>
                                 <td><?php echo htmlspecialchars((string)$item['remarks']); ?></td>
                                 <td><?php echo htmlspecialchars((string)$item['date_arrived']); ?></td>

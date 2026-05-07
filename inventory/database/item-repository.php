@@ -220,9 +220,28 @@ function listInventoryItems(mysqli $conn): array
 {
     $items = [];
     $result = $conn->query("
-        SELECT id, item_id, item_name, description, brand_manufacturer, `type` AS type, item_condition, remarks, item_image_path, item_image_paths, date_arrived
-        FROM inventory_items
-        ORDER BY id DESC
+        SELECT
+            ii.id,
+            ii.item_id,
+            ii.item_name,
+            ii.description,
+            ii.brand_manufacturer,
+            ii.`type` AS type,
+            ii.item_condition,
+            ii.remarks,
+            ii.item_image_path,
+            ii.item_image_paths,
+            ii.date_arrived,
+            (
+                SELECT e.full_name
+                FROM inventory_item_allocations ia
+                INNER JOIN employees e ON e.id = ia.employee_id
+                WHERE ia.inventory_item_id = ii.id AND ia.date_return IS NULL
+                ORDER BY ia.date_received DESC, ia.id DESC
+                LIMIT 1
+            ) AS allocated_to_name
+        FROM inventory_items ii
+        ORDER BY ii.id DESC
     ");
     if ($result) {
         while ($row = $result->fetch_assoc()) {
