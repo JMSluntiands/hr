@@ -262,6 +262,14 @@ if ($employeeDbId && $conn) {
                 </svg>
                 <span>My Request</span>
             </a>
+            <a href="reimbursement.php"
+               data-url="reimbursement.php"
+               class="js-side-link flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 text-sm font-medium text-white">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2m6 4H9m6-8H9m10 14H5a2 2 0 01-2-2V6a2 2 0 012-2h9l5 5v9a2 2 0 01-2 2z" />
+                </svg>
+                <span>My Reimbursement</span>
+            </a>
             <!-- My Compensation -->
             <a href="compensation.php"
                data-url="compensation.php"
@@ -622,7 +630,7 @@ if ($employeeDbId && $conn) {
                 e.preventDefault();
 
                 const pathOnly = (url || '').split('#')[0].split('?')[0];
-                if (url === 'profile.php' || url === 'compensation.php' || url === 'timeoff.php' || url === 'settings.php' || url === 'progressive-discipline.php' || pathOnly === 'inventory.php' || ['incident-report.php', 'incident-report-add.php', 'incident-report-list.php'].indexOf(pathOnly) !== -1) {
+                if (url === 'profile.php' || url === 'compensation.php' || url === 'timeoff.php' || url === 'settings.php' || url === 'progressive-discipline.php' || url === 'reimbursement.php' || pathOnly === 'inventory.php' || ['incident-report.php', 'incident-report-add.php', 'incident-report-list.php'].indexOf(pathOnly) !== -1) {
                     window.location.href = url;
                     return;
                 }

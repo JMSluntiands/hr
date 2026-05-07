@@ -31,6 +31,20 @@ if ($employeeDbId && $conn) {
             $docPendingStmt->close();
         }
     }
+
+    $checkReimbursement = $conn->query("SHOW TABLES LIKE 'reimbursements'");
+    if ($checkReimbursement && $checkReimbursement->num_rows > 0) {
+        $reimPendingStmt = $conn->prepare("SELECT COUNT(*) as count FROM reimbursements WHERE employee_id = ? AND status = 'Pending'");
+        if ($reimPendingStmt) {
+            $reimPendingStmt->bind_param('i', $employeeDbId);
+            $reimPendingStmt->execute();
+            $reimPendingResult = $reimPendingStmt->get_result();
+            if ($reimPendingRow = $reimPendingResult->fetch_assoc()) {
+                $pendingCount += (int)($reimPendingRow['count'] ?? 0);
+            }
+            $reimPendingStmt->close();
+        }
+    }
 }
 
 // Get Recent Requests from database (combine leave_requests and document_requests)
@@ -80,6 +94,27 @@ if ($employeeDbId && $conn) {
                 ];
             }
             $docReqStmt->close();
+        }
+    }
+
+    $checkReimbursement = $conn->query("SHOW TABLES LIKE 'reimbursements'");
+    if ($checkReimbursement && $checkReimbursement->num_rows > 0) {
+        $reimStmt = $conn->prepare("SELECT id, expense_type as type, status, created_at, 'Reimbursement' as request_type FROM reimbursements WHERE employee_id = ? ORDER BY created_at DESC LIMIT 5");
+        if ($reimStmt) {
+            $reimStmt->bind_param('i', $employeeDbId);
+            $reimStmt->execute();
+            $reimResult = $reimStmt->get_result();
+            while ($row = $reimResult->fetch_assoc()) {
+                $allRequests[] = [
+                    'id' => $row['id'],
+                    'date' => date('M d, Y', strtotime($row['created_at'])),
+                    'type' => $row['type'],
+                    'status' => $row['status'],
+                    'request_type' => $row['request_type'],
+                    'created_at' => $row['created_at']
+                ];
+            }
+            $reimStmt->close();
         }
     }
     
@@ -196,6 +231,14 @@ if ($employeeDbId && $conn) {
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
                 <span>My Request</span>
+            </a>
+            <a href="reimbursement.php"
+               data-url="reimbursement.php"
+               class="js-side-link flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 text-sm font-medium text-white">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2m6 4H9m6-8H9m10 14H5a2 2 0 01-2-2V6a2 2 0 012-2h9l5 5v9a2 2 0 01-2 2z" />
+                </svg>
+                <span>My Reimbursement</span>
             </a>
             <!-- My Compensation -->
             <a href="compensation.php"
@@ -466,7 +509,7 @@ if ($employeeDbId && $conn) {
 
           // My Profile, Compensation, Time Off, and Dashboard: full page load so content and modals always work correctly
           const pathOnly = (url || '').split('#')[0].split('?')[0];
-          if (url === 'profile.php' || url === 'compensation.php' || url === 'timeoff.php' || url === 'settings.php' || url === 'index.php' || url === 'progressive-discipline.php' || pathOnly === 'inventory.php' || ['incident-report.php', 'incident-report-add.php', 'incident-report-list.php'].indexOf(pathOnly) !== -1) {
+          if (url === 'profile.php' || url === 'compensation.php' || url === 'timeoff.php' || url === 'settings.php' || url === 'index.php' || url === 'progressive-discipline.php' || url === 'reimbursement.php' || pathOnly === 'inventory.php' || ['incident-report.php', 'incident-report-add.php', 'incident-report-list.php'].indexOf(pathOnly) !== -1) {
             window.location.href = url;
             return;
           }

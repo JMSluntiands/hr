@@ -33,6 +33,7 @@ if ($conn) {
     $leaveCount = 0;
     $docRequestCount = 0;
     $docUploadCount = 0;
+    $reimbursementCount = 0;
     
     // Count pending leave requests (check if table exists)
     $checkLeaveReq = $conn->query("SHOW TABLES LIKE 'leave_requests'");
@@ -60,9 +61,17 @@ if ($conn) {
             $docUploadCount = (int)$row['total'];
         }
     }
+
+    $checkReimbursement = $conn->query("SHOW TABLES LIKE 'reimbursements'");
+    if ($checkReimbursement && $checkReimbursement->num_rows > 0) {
+        $reimbursementResult = $conn->query("SELECT COUNT(*) as total FROM reimbursements WHERE status = 'Pending'");
+        if ($reimbursementResult && $row = $reimbursementResult->fetch_assoc()) {
+            $reimbursementCount = (int)$row['total'];
+        }
+    }
     
     // Total open requests
-    $openRequests = $leaveCount + $docRequestCount + $docUploadCount;
+    $openRequests = $leaveCount + $docRequestCount + $docUploadCount + $reimbursementCount;
     
     // Pending approvals (same as open requests - all items needing approval)
     $pendingApprovals = $openRequests;

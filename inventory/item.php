@@ -157,8 +157,8 @@ function uploadInventoryItemImage(?array $file, string &$errorMessage)
         return false;
     }
 
-    if ((int)$file['size'] > 5 * 1024 * 1024) {
-        $errorMessage = 'Image must be 5MB or below.';
+    if ((int)$file['size'] > 10 * 1024 * 1024) {
+        $errorMessage = 'Image must be 10MB or below.';
         return false;
     }
 
@@ -695,7 +695,7 @@ if ($editItemId > 0) {
                 <div class="md:col-span-2">
                     <label class="block text-sm text-slate-600 mb-1">Item pictures</label>
                     <input type="file" name="item_images[]" id="itemImages" accept=".jpg,.jpeg,.png,.gif,.webp" multiple class="w-full max-w-lg border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white">
-                    <p class="mt-1 text-xs text-slate-500">JPG, PNG, GIF, or WEBP, up to 5MB each. Hold Ctrl (Windows) or Cmd (Mac) to select multiple. Maximum 20 images per item.</p>
+                    <p class="mt-1 text-xs text-slate-500">JPG, PNG, GIF, or WEBP, up to 10MB each. Hold Ctrl (Windows) or Cmd (Mac) to select multiple. Maximum 20 images per item.</p>
                     <p id="currentImageNote" class="mt-2 text-xs text-slate-600">
                         <?php if (!empty($editItemImagePaths)): ?>
                             <span class="text-slate-500">Current:</span>

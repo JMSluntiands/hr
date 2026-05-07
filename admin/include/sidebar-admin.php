@@ -12,10 +12,14 @@ $isLeavesAlloc = ($currentPage === 'leaves-allocation');
 $isLeavesSum   = ($currentPage === 'leaves-summary');
 $isLeaves      = ($isLeavesAlloc || $isLeavesSum);
 $isReqLeaves   = ($currentPage === 'request-leaves');
+$isReimbursementReview = ($currentPage === 'reimbursement-review');
+$isReimbursementList = ($currentPage === 'reimbursement-list');
+$isReimbursementReport = ($currentPage === 'reimbursement-report');
 $isReqDoc      = ($currentPage === 'request-document');
 $isReqBank     = ($currentPage === 'request-bank');
 $isDocArchive  = ($currentPage === 'document-archive');
 $isRequest     = ($isReqLeaves || $isReqDoc || $isReqBank || $isDocArchive);
+$isReimbursement = ($isReimbursementReview || $isReimbursementList || $isReimbursementReport);
 $isActivityLog = ($currentPage === 'activity-log');
 $isProgressiveDiscipline = ($currentPage === 'progressive-discipline');
 $isIncidentReport = in_array($currentPage, ['incident-report', 'incident-report-add', 'incident-report-list', 'incident-report-edit', 'incident-report-submitted'], true);
@@ -32,16 +36,19 @@ $activeClass = 'bg-white/20';
 $employeesOpen = $isEmployees ? '' : ' hidden';
 $leavesOpen    = $isLeaves ? '' : ' hidden';
 $requestOpen   = $isRequest ? '' : ' hidden';
+$reimbursementOpen = $isReimbursement ? '' : ' hidden';
 $incidentOpen  = $isIncidentReport ? '' : ' hidden';
 $employeesArrow = $isEmployees ? ' rotate-180' : '';
 $leavesArrow    = $isLeaves ? ' rotate-180' : '';
 $requestArrow   = $isRequest ? ' rotate-180' : '';
+$reimbursementArrow = $isReimbursement ? ' rotate-180' : '';
 $incidentArrow  = $isIncidentReport ? ' rotate-180' : '';
 
 $requestLeavesPending = 0;
 $requestDocPending = 0;
 $requestBankPending = 0;
 $documentArchivePending = 0;
+$reimbursementPending = 0;
 if (isset($conn) && $conn) {
     $t = $conn->query("SHOW TABLES LIKE 'leave_requests'");
     if ($t && $t->num_rows > 0) {
@@ -62,6 +69,11 @@ if (isset($conn) && $conn) {
     if ($t && $t->num_rows > 0) {
         $r = $conn->query("SELECT COUNT(*) AS c FROM bank_account_change_requests WHERE status = 'Pending'");
         if ($r && $row = $r->fetch_assoc()) $requestBankPending = (int)$row['c'];
+    }
+    $t = $conn->query("SHOW TABLES LIKE 'reimbursements'");
+    if ($t && $t->num_rows > 0) {
+        $r = $conn->query("SELECT COUNT(*) AS c FROM reimbursements WHERE status = 'Pending'");
+        if ($r && $row = $r->fetch_assoc()) $reimbursementPending = (int)$row['c'];
     }
     $cDel = $conn->query("SHOW COLUMNS FROM employee_document_uploads LIKE 'deletion_requested_at'");
     if ($cDel && $cDel->num_rows > 0) {
@@ -164,6 +176,32 @@ require_once dirname(__DIR__, 2) . '/include/sidebar-scrollbar-once.php';
                 </div>
             </div>
             <!-- Request Dropdown -->
+            <div class="dropdown-container">
+                <button type="button" id="reimbursement-dropdown-btn" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-white hover:bg-white/10 cursor-pointer transition-colors<?php echo $isReimbursement ? ' ' . $activeClass : ''; ?>">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2m6 4H9m6-8H9m10 14H5a2 2 0 01-2-2V6a2 2 0 012-2h9l5 5v9a2 2 0 01-2 2z" />
+                    </svg>
+                    <span>Reimbursement</span>
+                    <?php if ($reimbursementPending > 0): ?>
+                        <span class="ml-auto min-w-[1.25rem] h-5 px-1.5 flex items-center justify-center rounded-full bg-white/90 text-[#FA9800] text-xs font-semibold"><?php echo $reimbursementPending; ?></span>
+                    <?php endif; ?>
+                    <svg id="reimbursement-arrow" class="w-4 h-4 ml-auto transition-transform text-white pointer-events-none<?php echo $reimbursementArrow; ?>" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </button>
+                <div id="reimbursement-dropdown" class="space-y-1 mt-1<?php echo $reimbursementOpen; ?>">
+                    <a href="reimbursement-review" class="flex items-center gap-3 pl-11 pr-3 py-2 text-sm text-white hover:bg-white/10 rounded-lg transition-colors<?php echo $isReimbursementReview ? ' ' . $activeClass : ''; ?>">
+                        <span>For Review Reimbursement</span>
+                    </a>
+                    <a href="reimbursement-list" class="flex items-center gap-3 pl-11 pr-3 py-2 text-sm text-white hover:bg-white/10 rounded-lg transition-colors<?php echo $isReimbursementList ? ' ' . $activeClass : ''; ?>">
+                        <span>List of Reimbursement</span>
+                    </a>
+                    <a href="reimbursement-report" class="flex items-center gap-3 pl-11 pr-3 py-2 text-sm text-white hover:bg-white/10 rounded-lg transition-colors<?php echo $isReimbursementReport ? ' ' . $activeClass : ''; ?>">
+                        <span>Report Reimbursement</span>
+                    </a>
+                </div>
+            </div>
+
             <div class="dropdown-container">
                 <button type="button" id="request-dropdown-btn" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-white hover:bg-white/10 cursor-pointer transition-colors<?php echo $isRequest ? ' ' . $activeClass : ''; ?>">
                     <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
