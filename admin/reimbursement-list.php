@@ -12,6 +12,7 @@ $msg = $_SESSION['reimbursement_list_msg'] ?? '';
 unset($_SESSION['reimbursement_list_msg']);
 
 $list = [];
+$completedList = [];
 if ($conn) {
     $sql = "SELECT r.*, e.full_name, e.employee_id AS emp_code
             FROM reimbursements r
@@ -19,7 +20,15 @@ if ($conn) {
             WHERE r.status = 'Approved'
             ORDER BY r.approved_at DESC, r.created_at DESC";
     $res = $conn->query($sql);
-    if ($res) while ($row = $res->fetch_assoc()) $list[] = $row;
+    if ($res) {
+        while ($row = $res->fetch_assoc()) {
+            if (!empty($row['admin_receipt_path'])) {
+                $completedList[] = $row;
+                continue;
+            }
+            $list[] = $row;
+        }
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -38,6 +47,7 @@ if ($conn) {
         <?php if ($msg): ?>
             <div class="mb-4 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-700"><?php echo htmlspecialchars($msg); ?></div>
         <?php endif; ?>
+        <h2 class="text-lg font-semibold text-slate-700 mb-3">For Receipt Attachment</h2>
         <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-x-auto">
             <table class="min-w-full text-sm">
                 <thead class="bg-slate-50">
@@ -71,6 +81,40 @@ if ($conn) {
                                         <button type="submit" class="px-3 py-1.5 rounded bg-[#FA9800] text-white text-xs whitespace-nowrap">Attach</button>
                                     </form>
                                 <?php endif; ?>
+                            </td>
+                        </tr>
+                    <?php endforeach; endif; ?>
+                </tbody>
+            </table>
+        </div>
+
+        <h2 class="text-lg font-semibold text-slate-700 mt-8 mb-3">Completed Reimbursed</h2>
+        <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-x-auto">
+            <table class="min-w-full text-sm">
+                <thead class="bg-slate-50">
+                    <tr>
+                        <th class="text-left px-4 py-3 text-xs font-semibold uppercase">Employee</th>
+                        <th class="text-left px-4 py-3 text-xs font-semibold uppercase">Expense Type</th>
+                        <th class="text-left px-4 py-3 text-xs font-semibold uppercase">Purchased Date</th>
+                        <th class="text-left px-4 py-3 text-xs font-semibold uppercase">Amount</th>
+                        <th class="text-left px-4 py-3 text-xs font-semibold uppercase">Approved By</th>
+                        <th class="text-left px-4 py-3 text-xs font-semibold uppercase">Reimbursed At</th>
+                        <th class="text-left px-4 py-3 text-xs font-semibold uppercase">Reimbursement Receipt</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    <?php if (empty($completedList)): ?>
+                        <tr><td colspan="7" class="px-4 py-6 text-center text-slate-500">No completed reimbursed records yet.</td></tr>
+                    <?php else: foreach ($completedList as $row): ?>
+                        <tr>
+                            <td class="px-4 py-3 text-slate-700"><?php echo htmlspecialchars((string)$row['full_name']); ?></td>
+                            <td class="px-4 py-3 text-slate-700"><?php echo htmlspecialchars((string)$row['expense_type']); ?></td>
+                            <td class="px-4 py-3 text-slate-700"><?php echo date('M d, Y', strtotime((string)$row['purchased_date'])); ?></td>
+                            <td class="px-4 py-3 text-slate-700">PHP <?php echo number_format((float)$row['amount'], 2); ?></td>
+                            <td class="px-4 py-3 text-slate-700"><?php echo htmlspecialchars((string)($row['approved_by_name'] ?: 'Admin')); ?></td>
+                            <td class="px-4 py-3 text-slate-700"><?php echo !empty($row['reimbursed_at']) ? date('M d, Y h:i A', strtotime((string)$row['reimbursed_at'])) : '—'; ?></td>
+                            <td class="px-4 py-3 text-slate-700">
+                                <a class="text-[#FA9800] hover:underline" href="../uploads/<?php echo htmlspecialchars((string)$row['admin_receipt_path']); ?>" target="_blank">View Attached</a>
                             </td>
                         </tr>
                     <?php endforeach; endif; ?>
