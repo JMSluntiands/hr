@@ -342,6 +342,7 @@ $message = $_GET['message'] ?? '';
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
     <style>
         .dataTables_wrapper .dataTables_paginate .paginate_button {
             border: 1px solid #cbd5e1 !important;
@@ -357,6 +358,19 @@ $message = $_GET['message'] ?? '';
             border-color: #FA9800 !important;
             background: #FA9800 !important;
             color: #ffffff !important;
+        }
+        .select2-container .select2-selection--single {
+            height: 42px;
+            border: 1px solid rgb(203 213 225);
+            border-radius: 0.5rem;
+            padding: 0.35rem 0.25rem;
+            font-size: 0.875rem;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 40px;
+        }
+        .select2-container {
+            width: 100% !important;
         }
     </style>
     <script>
@@ -404,7 +418,7 @@ $message = $_GET['message'] ?? '';
 
                 <div>
                     <label class="block text-sm text-slate-600 mb-1">Item</label>
-                    <select name="inventory_item_id" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" required>
+                    <select id="inventoryItemSelect" name="inventory_item_id" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" required>
                         <option value="">Select item</option>
                         <?php foreach ($availableItems as $item): ?>
                             <option value="<?php echo (int)$item['id']; ?>">
@@ -504,11 +518,18 @@ $message = $_GET['message'] ?? '';
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
         const allocationRows = <?php echo json_encode($allocations, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT); ?>;
         const selectedEmployeeFromQuery = <?php echo (int)$selectedEmployeeIdForExport; ?>;
 
         $(function () {
+            $('#inventoryItemSelect').select2({
+                placeholder: 'Select item',
+                allowClear: true,
+                width: '100%'
+            });
+
             const table = $('#allocationTable').DataTable({
                 pageLength: 10,
                 language: {
