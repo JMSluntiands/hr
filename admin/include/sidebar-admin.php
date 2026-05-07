@@ -75,15 +75,21 @@ if (isset($conn) && $conn) {
         $r = $conn->query("SELECT COUNT(*) AS c FROM reimbursements WHERE status = 'Pending'");
         if ($r && $row = $r->fetch_assoc()) $reimbursementPending = (int)$row['c'];
     }
-    $cDel = $conn->query("SHOW COLUMNS FROM employee_document_uploads LIKE 'deletion_requested_at'");
-    if ($cDel && $cDel->num_rows > 0) {
-        $r = $conn->query("SELECT COUNT(*) AS c FROM employee_document_uploads WHERE status = 'Approved' AND deletion_requested_at IS NOT NULL");
-        if ($r && $row = $r->fetch_assoc()) $documentArchivePending = (int)$row['c'];
+    $t = $conn->query("SHOW TABLES LIKE 'employee_document_uploads'");
+    if ($t && $t->num_rows > 0) {
+        $cDel = $conn->query("SHOW COLUMNS FROM employee_document_uploads LIKE 'deletion_requested_at'");
+        if ($cDel && $cDel->num_rows > 0) {
+            $r = $conn->query("SELECT COUNT(*) AS c FROM employee_document_uploads WHERE status = 'Approved' AND deletion_requested_at IS NOT NULL");
+            if ($r && $row = $r->fetch_assoc()) $documentArchivePending = (int)$row['c'];
+        }
     }
 }
 $requestTotalPending = $requestLeavesPending + $requestDocPending + $requestBankPending + $documentArchivePending;
 
-require_once dirname(__DIR__, 2) . '/include/sidebar-scrollbar-once.php';
+$sidebarScrollbarPath = dirname(__DIR__, 2) . '/include/sidebar-scrollbar-once.php';
+if (is_file($sidebarScrollbarPath)) {
+    require_once $sidebarScrollbarPath;
+}
 ?>
     <!-- Mobile Top Bar -->
     <header class="md:hidden fixed inset-x-0 top-0 z-30 bg-[#FA9800] text-white flex items-center justify-between px-4 py-3 shadow">
