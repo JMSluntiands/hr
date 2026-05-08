@@ -10,7 +10,7 @@ include '../database/db.php';
 include 'include/activity-logger.php';
 
 $adminName = $_SESSION['name'] ?? 'Admin';
-$redirect = 'accounts';
+$redirect = 'accounts.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST' && $_SERVER['REQUEST_METHOD'] !== 'GET') {
     header('Location: ' . $redirect);
@@ -40,6 +40,7 @@ if (!$action) {
     exit;
 }
 
+try {
 if ($action === 'edit_role') {
     if (!$id) {
         $_SESSION['accounts_msg'] = 'Invalid account id.';
@@ -216,3 +217,9 @@ if ($action === 'reset_password') {
 $_SESSION['accounts_msg'] = 'Unknown action.';
 header('Location: ' . $redirect);
 exit;
+} catch (\Throwable $e) {
+    error_log('Accounts action failed: ' . $e->getMessage());
+    $_SESSION['accounts_msg'] = 'Action failed due to a server/database error.';
+    header('Location: ' . $redirect);
+    exit;
+}

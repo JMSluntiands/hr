@@ -14,11 +14,20 @@ function logActivity($conn, $action, $entityType, $entityId = null, $description
     $userName = $_SESSION['name'] ?? 'Unknown';
     $ipAddress = $_SERVER['REMOTE_ADDR'] ?? null;
     
-    $stmt = $conn->prepare("INSERT INTO activity_logs (user_id, user_name, action, entity_type, entity_id, description, ip_address) VALUES (?, ?, ?, ?, ?, ?, ?)");
-    $stmt->bind_param('isssiss', $userId, $userName, $action, $entityType, $entityId, $description, $ipAddress);
-    $result = $stmt->execute();
-    $stmt->close();
-    
-    return $result;
+    try {
+        $stmt = $conn->prepare("INSERT INTO activity_logs (user_id, user_name, action, entity_type, entity_id, description, ip_address) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        if (!$stmt) {
+            return false;
+        }
+
+        $stmt->bind_param('isssiss', $userId, $userName, $action, $entityType, $entityId, $description, $ipAddress);
+        $result = $stmt->execute();
+        $stmt->close();
+
+        return $result;
+    } catch (\Throwable $e) {
+        error_log('Activity log insert failed: ' . $e->getMessage());
+        return false;
+    }
 }
 }

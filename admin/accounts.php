@@ -18,40 +18,45 @@ $generatedEmail = '';
 $generatedMode = '';
 
 if ($conn) {
-    $cols = [];
-    $r = $conn->query("SHOW COLUMNS FROM user_login");
-    if ($r) {
-        while ($row = $r->fetch_assoc()) $cols[] = $row['Field'];
-    }
-    $hasLastChange = in_array('last_password_change', $cols);
-
-    $sel = "SELECT id, email, role";
-    if ($hasLastChange) $sel .= ", last_password_change";
-    $sel .= " FROM user_login ORDER BY email";
-
-    $res = $conn->query($sel);
-    if ($res && $res->num_rows > 0) {
-        while ($row = $res->fetch_assoc()) {
-            $row['_has_last'] = $hasLastChange;
-            $row['_has_account'] = true;
-            $row['_employee_id'] = 0;
-            $accounts[] = $row;
+    try {
+        $cols = [];
+        $r = $conn->query("SHOW COLUMNS FROM user_login");
+        if ($r) {
+            while ($row = $r->fetch_assoc()) $cols[] = $row['Field'];
         }
-    }
+        $hasLastChange = in_array('last_password_change', $cols, true);
 
-    $missing = $conn->query("SELECT e.id AS employee_id, e.email FROM employees e LEFT JOIN user_login u ON u.email = e.email WHERE u.id IS NULL AND e.email <> '' ORDER BY e.email");
-    if ($missing && $missing->num_rows > 0) {
-        while ($row = $missing->fetch_assoc()) {
-            $accounts[] = [
-                'id' => 0,
-                'email' => $row['email'],
-                'role' => 'employee',
-                'last_password_change' => null,
-                '_has_last' => $hasLastChange,
-                '_has_account' => false,
-                '_employee_id' => (int)$row['employee_id'],
-            ];
+        $sel = "SELECT id, email, role";
+        if ($hasLastChange) $sel .= ", last_password_change";
+        $sel .= " FROM user_login ORDER BY email";
+
+        $res = $conn->query($sel);
+        if ($res && $res->num_rows > 0) {
+            while ($row = $res->fetch_assoc()) {
+                $row['_has_last'] = $hasLastChange;
+                $row['_has_account'] = true;
+                $row['_employee_id'] = 0;
+                $accounts[] = $row;
+            }
         }
+
+        $missing = $conn->query("SELECT e.id AS employee_id, e.email FROM employees e LEFT JOIN user_login u ON u.email = e.email WHERE u.id IS NULL AND e.email <> '' ORDER BY e.email");
+        if ($missing && $missing->num_rows > 0) {
+            while ($row = $missing->fetch_assoc()) {
+                $accounts[] = [
+                    'id' => 0,
+                    'email' => $row['email'],
+                    'role' => 'employee',
+                    'last_password_change' => null,
+                    '_has_last' => $hasLastChange,
+                    '_has_account' => false,
+                    '_employee_id' => (int)$row['employee_id'],
+                ];
+            }
+        }
+    } catch (\Throwable $e) {
+        error_log('Accounts page query failed: ' . $e->getMessage());
+        $msg = 'Unable to load account records right now. Please check database schema.';
     }
 }
 
@@ -132,7 +137,7 @@ if (isset($_SESSION['accounts_generated_password'])) {
                             <td class="px-4 py-3">
                                 <div class="flex items-center gap-2">
                                     <?php if (empty($a['_has_account'])): ?>
-                                    <form method="POST" action="accounts-action" onsubmit="return confirm('Create employee account and generate random password now?');" class="inline">
+                                    <form method="POST" action="accounts-action.php" onsubmit="return confirm('Create employee account and generate random password now?');" class="inline">
                                         <input type="hidden" name="action" value="create_employee_account">
                                         <input type="hidden" name="employee_id" value="<?php echo (int)$a['_employee_id']; ?>">
                                         <button type="submit" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium transition-colors" title="Create account">
@@ -140,7 +145,7 @@ if (isset($_SESSION['accounts_generated_password'])) {
                                         </button>
                                     </form>
                                     <?php elseif (strtolower($a['role'] ?? '') === 'employee'): ?>
-                                    <form method="POST" action="accounts-action" onsubmit="return confirm('Generate a new random password for this employee account?');" class="inline">
+                                    <form method="POST" action="accounts-action.php" onsubmit="return confirm('Generate a new random password for this employee account?');" class="inline">
                                         <input type="hidden" name="action" value="reset_password">
                                         <input type="hidden" name="id" value="<?php echo (int)$a['id']; ?>">
                                         <button type="submit" class="p-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition-colors" title="Reset password">
@@ -172,7 +177,7 @@ if (isset($_SESSION['accounts_generated_password'])) {
         <div class="bg-white rounded-xl shadow-xl max-w-sm w-full p-6">
             <h3 class="text-lg font-semibold text-slate-800 mb-2">Edit Role</h3>
             <p class="text-sm text-slate-500 mb-4" id="editRoleEmail"></p>
-            <form method="POST" action="accounts-action" id="editRoleForm">
+            <form method="POST" action="accounts-action.php" id="editRoleForm">
                 <input type="hidden" name="action" value="edit_role">
                 <input type="hidden" name="id" id="editRoleId">
                 <div class="mb-4">
