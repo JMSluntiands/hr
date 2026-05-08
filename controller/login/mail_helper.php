@@ -1,64 +1,115 @@
 <?php
 
-// Define once even if this file is included multiple times.
-if (!function_exists('sendTemporaryPasswordEmail')) {
-    /**
-     * Send temporary password email.
-     * - If Composer/PHPMailer is available, use SMTP via PHPMailer.
-     * - Otherwise fall back to PHP mail() so the app does not crash.
-     */
-    function sendTemporaryPasswordEmail(string $toEmail, string $toName, string $plainPassword): bool
+$mailErrorMessage = '';
+
+if (!function_exists('setMailErrorMessage')) {
+    function setMailErrorMessage(string $message): void
     {
-        $autoloadPath = __DIR__ . '/../../vendor/autoload.php';
+        $GLOBALS['mailErrorMessage'] = $message;
+    }
+}
 
-        if (file_exists($autoloadPath)) {
-            require_once $autoloadPath;
+if (!function_exists('getLastMailError')) {
+    function getLastMailError(): string
+    {
+        return (string)($GLOBALS['mailErrorMessage'] ?? '');
+    }
+}
 
-            try {
-                $mail = new PHPMailer\PHPMailer\PHPMailer(true);
+if (!function_exists('getMailConfigValue')) {
+    function getMailConfigValue(array $config, string $key, string $default = ''): string
+    {
+        $envValue = getenv($key);
+        if ($envValue !== false && trim((string)$envValue) !== '') {
+            return trim((string)$envValue);
+        }
+        if (!empty($config[$key])) {
+            return trim((string)$config[$key]);
+        }
+        return $default;
+    }
+}
 
-                $mail->isSMTP();
-                $mail->Host = 'smtp.gmail.com';
-                $mail->SMTPAuth = true;
-                $mail->Username = 'yourgmail@gmail.com';      // TODO: palitan sa tunay na SMTP account
-                $mail->Password = 'your-app-password';        // TODO: gamitin ang Gmail App Password o SMTP password
-                $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
-                $mail->Port = 587;
-
-                $mail->setFrom('no-reply@yourdomain.com', 'HR System');
-                $mail->addAddress($toEmail, $toName);
-
-                $mail->Subject = 'Your HR system login credentials';
-                $body  = "Dear {$toName},\n\n";
-                $body .= "Your HR system account has been created.\n\n";
-                $body .= "Login email: {$toEmail}\n";
-                $body .= "Temporary password: {$plainPassword}\n\n";
-                $body .= "For security, please log in and change this password immediately after your first login.\n\n";
-                $body .= "Thank you.";
-                $mail->Body = $body;
-
-                $mail->send();
-                return true;
-            } catch (\Throwable $e) {
-                // If PHPMailer fails, fall through to mail() fallback below.
+if (!function_exists('loadMailConfig')) {
+    function loadMailConfig(): array
+    {
+        $configPath = __DIR__ . '/../../config/mail.php';
+        if (file_exists($configPath)) {
+            $mailConfig = include $configPath;
+            if (is_array($mailConfig)) {
+                return $mailConfig;
             }
         }
+        return [];
+    }
+}
 
-        // Fallback: built-in mail()
-        $subject = 'Your HR system login credentials';
-        $body  = "Dear {$toName},\n\n";
-        $body .= "Your HR system account has been created.\n\n";
-        $body .= "Login email: {$toEmail}\n";
-        $body .= "Temporary password: {$plainPassword}\n\n";
-        $body .= "For security, please log in and change this password immediately after your first login.\n\n";
-        $body .= "Thank you.";
+// Define once even if this file is included multiple times.
+if (!function_exists('sendTemporaryPasswordEmail')) {
+    function sendTemporaryPasswordEmail(string $toEmail, string $toName, string $plainPassword): bool
+    {
+        setMailErrorMessage('');
+        $autoloadPath = __DIR__ . '/../../vendor/autoload.php';
+        if (!file_exists($autoloadPath)) {
+            setMailErrorMessage('Composer autoload is missing. Run composer install.');
+            return false;
+        }
+        require_once $autoloadPath;
 
-        $headers = "From: no-reply@yourdomain.com\r\n"
-                 . "Reply-To: no-reply@yourdomain.com\r\n"
-                 . "X-Mailer: PHP/" . phpversion();
+        $cfg = loadMailConfig();
+        $smtpHost = getMailConfigValue($cfg, 'MAIL_HOST', 'smtp.gmail.com');
+        $smtpPort = (int)getMailConfigValue($cfg, 'MAIL_PORT', '587');
+        $smtpUser = getMailConfigValue($cfg, 'MAIL_USERNAME', '');
+        $smtpPass = getMailConfigValue($cfg, 'MAIL_PASSWORD', '');
+        $fromEmail = getMailConfigValue($cfg, 'MAIL_FROM_EMAIL', $smtpUser);
+        $fromName = getMailConfigValue($cfg, 'MAIL_FROM_NAME', 'HR System');
+        $encryption = strtolower(getMailConfigValue($cfg, 'MAIL_ENCRYPTION', 'tls'));
 
-        @mail($toEmail, $subject, $body, $headers);
-        return true;
+        if ($smtpUser === '' || $smtpPass === '') {
+            setMailErrorMessage('SMTP config missing. Set MAIL_USERNAME and MAIL_PASSWORD in config/mail.php.');
+            return false;
+        }
+        if (stripos($smtpUser, 'yourgmail@gmail.com') !== false || stripos($smtpPass, 'your-app-password') !== false) {
+            setMailErrorMessage('SMTP config still uses placeholder values. Update config/mail.php with real Gmail credentials.');
+            return false;
+        }
+
+        try {
+            $mail = new PHPMailer\PHPMailer\PHPMailer(true);
+            $mail->isSMTP();
+            $mail->Host = $smtpHost;
+            $mail->SMTPAuth = true;
+            $mail->Username = $smtpUser;
+            $mail->Password = $smtpPass;
+            $mail->Port = $smtpPort;
+            $mail->CharSet = 'UTF-8';
+            $mail->SMTPAutoTLS = true;
+
+            if ($encryption === 'ssl') {
+                $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS;
+            } else {
+                $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+            }
+
+            $mail->setFrom($fromEmail, $fromName);
+            $mail->addAddress($toEmail, $toName);
+            $mail->Subject = 'Your HR system login credentials';
+
+            $body  = "Dear {$toName},\n\n";
+            $body .= "Your HR system account has been created.\n\n";
+            $body .= "Login email: {$toEmail}\n";
+            $body .= "Temporary password: {$plainPassword}\n\n";
+            $body .= "For security, please log in and change this password immediately after your first login.\n\n";
+            $body .= "Thank you.";
+            $mail->Body = $body;
+
+            $mail->send();
+            return true;
+        } catch (\Throwable $e) {
+            setMailErrorMessage('SMTP send failed: ' . $e->getMessage());
+            error_log('Mail send failed: ' . $e->getMessage());
+            return false;
+        }
     }
 }
 

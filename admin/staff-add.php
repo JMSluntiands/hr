@@ -23,7 +23,6 @@ if ($conn) {
     ensure_employees_staff_columns($conn);
 }
 include 'include/activity-logger.php';
-include __DIR__ . '/../controller/login/mail_helper.php';
 
 $success = '';
 $error = '';
@@ -225,20 +224,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // Check if email already exists in user_login
-    if (empty($errors)) {
-        $stmt = $conn->prepare("SELECT id FROM user_login WHERE email = ? LIMIT 1");
-        if ($stmt) {
-            $stmt->bind_param("s", $email);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            if ($result->num_rows > 0) {
-                $errors[] = 'Email already exists in user accounts';
-            }
-            $stmt->close();
-        }
-    }
-
     // Optional signature image (same rules as employee profile upload)
     $sigFile = isset($_FILES['employee_signature']) ? $_FILES['employee_signature'] : null;
     $employeeSignatureValid = false;
@@ -330,26 +315,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
             
-            // Also create a login account for the employee with a random temporary password
-            $plainPassword = bin2hex(random_bytes(4)); // 8-character hex password
-            $defaultPassword = md5($plainPassword);
-            $employeeRole = 'employee';
-            
-            $loginStmt = $conn->prepare("INSERT INTO user_login (email, password, role) VALUES (?, ?, ?)");
-            if (!$loginStmt) {
-                throw new Exception('Error preparing user_login insert: ' . $conn->error);
-            }
-            
-            $loginStmt->bind_param("sss", $email, $defaultPassword, $employeeRole);
-            
-            if (!$loginStmt->execute()) {
-                throw new Exception('Error creating user login: ' . $loginStmt->error);
-            }
-            $loginStmt->close();
-
-            // Email the temporary password to the employee via PHPMailer/SMTP
-            sendTemporaryPasswordEmail($email, $fullName, $plainPassword);
-
             // Ensure compensation table exists and save initial compensation values
             $createCompTableSql = "CREATE TABLE IF NOT EXISTS `employee_compensation` (
                 `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -414,7 +379,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Log activity
             logActivity($conn, 'Add Employee', 'Employee', $newEmployeeId, "Added employee: $fullName (ID: $employeeId)");
             
-            $success = 'Employee added successfully! Employee ID: ' . $employeeId . '. Login account created and a temporary password has been emailed to the employee.';
+            $success = 'Employee added successfully! Employee ID: ' . $employeeId . '. Create the login account from Accounts page to generate a password.';
             if (!empty($signatureSkippedDueToMissingColumn)) {
                 $success .= ' The signature file was not stored: the employees table has no signature column yet. Open database/alter_add_signature.php once in your browser, then add the signature from Edit Employee.';
             }
