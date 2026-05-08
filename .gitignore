@@ -4,3 +4,4 @@ document/
 vendor
 database/vendor
 config/google-oauth.php
+config/slack.php

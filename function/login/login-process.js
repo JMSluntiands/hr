@@ -1,6 +1,10 @@
 (function () {
-  var LOGIN_BTN_HTML = "Login";
-  var LOGIN_BTN_LOADING_HTML = '<span class="login-spinner"></span> Logging in...';
+  var AUTH_BUTTON_LABELS = {
+    login: "Login",
+    timein: "Time In",
+  };
+  var AUTH_BTN_LOADING_HTML = '<span class="login-spinner"></span> Signing in...';
+  var TIME_IN_LOCK_KEY = "hr_time_in_lock";
   function clearClientCache() {
     try {
       localStorage.clear();
@@ -28,17 +32,89 @@
   }
 
   function setLoading($btn, loading) {
+    var action = ($btn.data("action") || "login").toString().toLowerCase();
+    var defaultLabel = AUTH_BUTTON_LABELS[action] || AUTH_BUTTON_LABELS.login;
     if (loading) {
-      $btn.prop("disabled", true).addClass("is-loading").html(LOGIN_BTN_LOADING_HTML);
+      $btn.prop("disabled", true).addClass("is-loading").html(AUTH_BTN_LOADING_HTML);
     } else {
-      $btn.prop("disabled", false).removeClass("is-loading").html(LOGIN_BTN_HTML);
+      $btn.prop("disabled", false).removeClass("is-loading").html(defaultLabel);
     }
   }
 
-  $(document).on("click", ".js-login-btn", function (e) {
+  function getLockData() {
+    try {
+      var raw = localStorage.getItem(TIME_IN_LOCK_KEY);
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function setLockData(data) {
+    try {
+      localStorage.setItem(TIME_IN_LOCK_KEY, JSON.stringify(data));
+    } catch (e) {}
+  }
+
+  function removeLockData() {
+    try {
+      localStorage.removeItem(TIME_IN_LOCK_KEY);
+    } catch (e) {}
+  }
+
+  function getTodayInManila() {
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Manila",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date());
+  }
+
+  function isTimeInLockedForEmail(email) {
+    var lock = getLockData();
+    if (!lock) return false;
+    var today = getTodayInManila();
+    if (lock.date !== today || !lock.email || lock.email !== email.toLowerCase()) {
+      removeLockData();
+      return false;
+    }
+    return true;
+  }
+
+  function applyTimeInButtonState(isLocked) {
+    $(".js-auth-btn[data-action='timein']").each(function () {
+      var $btn = $(this);
+      if (isLocked) {
+        $btn.prop("disabled", true).addClass("opacity-60 cursor-not-allowed").text("Time In Done");
+      } else {
+        $btn
+          .prop("disabled", false)
+          .removeClass("opacity-60 cursor-not-allowed is-loading")
+          .text("Time In");
+      }
+    });
+  }
+
+  function refreshTimeInButtonStateByEmail(email) {
+    var normalizedEmail = (email || "").toString().trim().toLowerCase();
+    if (!normalizedEmail) {
+      applyTimeInButtonState(false);
+      return;
+    }
+    applyTimeInButtonState(isTimeInLockedForEmail(normalizedEmail));
+  }
+
+  $(document).on("input blur", "input[name=email]", function () {
+    refreshTimeInButtonStateByEmail($(this).val());
+  });
+
+  $(document).on("click", ".js-auth-btn", function (e) {
     e.preventDefault();
     var $btn = $(this);
     if ($btn.prop("disabled") || $btn.hasClass("is-loading")) return;
+    var action = ($btn.data("action") || "login").toString().toLowerCase();
 
     // Kunin ang values mula sa form na naglalaman ng button na na-click
     var $form = $btn.closest("form.js-login-form");
@@ -49,6 +125,18 @@
       Toastify({
         text: "Please fill in all fields",
         duration: 3000,
+        gravity: "top",
+        position: "right",
+        backgroundColor: "#e3342f",
+      }).showToast();
+      return;
+    }
+
+    if (action === "timein" && isTimeInLockedForEmail(email)) {
+      applyTimeInButtonState(true);
+      Toastify({
+        text: "Time In is already submitted for today. Try again after 12:00 AM.",
+        duration: 4000,
         gravity: "top",
         position: "right",
         backgroundColor: "#e3342f",
@@ -85,7 +173,7 @@
     $.ajax({
       url: "controller/login/login-process.php",
       method: "POST",
-      data: { email: email, password: password },
+      data: { email: email, password: password, action: action },
       dataType: "json",
       cache: false,
       complete: function () {
@@ -100,6 +188,15 @@
           position: "right",
           backgroundColor: response.status === "success" ? "#38a169" : "#e3342f",
         }).showToast();
+
+        if (response.status === "success" && action === "timein") {
+          setLockData({
+            email: email.toLowerCase(),
+            date: getTodayInManila(),
+          });
+          applyTimeInButtonState(true);
+          return;
+        }
 
         if (response.status === "success") {
           clearClientCache().finally(function () {
@@ -122,4 +219,6 @@
       },
     });
   });
+
+  refreshTimeInButtonStateByEmail($("input[name=email]").first().val());
 })();

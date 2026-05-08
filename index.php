@@ -131,7 +131,24 @@
             </div>
           </div>
 
-          <button type="button" class="js-login-btn w-full bg-[#E9A319] hover:bg-[#d18a15] text-white font-semibold py-3 rounded-xl transition-colors" id="loginButton">Login</button>
+          <div class="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              class="js-auth-btn w-full bg-[#E9A319] hover:bg-[#d18a15] text-white font-semibold py-3 rounded-xl transition-colors"
+              id="loginButton"
+              data-action="login"
+            >
+              Login
+            </button>
+            <button
+              type="button"
+              class="js-auth-btn w-full bg-slate-700 hover:bg-slate-800 text-white font-semibold py-3 rounded-xl transition-colors"
+              id="timeInButton"
+              data-action="timein"
+            >
+              Time In
+            </button>
+          </div>
 
         </form>
       </div>
@@ -175,7 +192,24 @@
               </div>
             </div>
 
-            <button type="button" class="js-login-btn w-full bg-[#E9A319] hover:bg-[#d18a15] text-white font-semibold py-3 rounded-xl transition-colors" id="loginButtonMobile">Login</button>
+            <div class="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                class="js-auth-btn w-full bg-[#E9A319] hover:bg-[#d18a15] text-white font-semibold py-3 rounded-xl transition-colors"
+                id="loginButtonMobile"
+                data-action="login"
+              >
+                Login
+              </button>
+              <button
+                type="button"
+                class="js-auth-btn w-full bg-slate-700 hover:bg-slate-800 text-white font-semibold py-3 rounded-xl transition-colors"
+                id="timeInButtonMobile"
+                data-action="timein"
+              >
+                Time In
+              </button>
+            </div>
 
           </form>
         </div>
