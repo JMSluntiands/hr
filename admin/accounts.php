@@ -17,6 +17,7 @@ $generatedPassword = '';
 $generatedEmail = '';
 $generatedMode = '';
 $hasLastChange = false;
+$userLoginIdColumn = 'id';
 
 if (!function_exists('tableExists')) {
     function tableExists($conn, string $tableName): bool
@@ -47,14 +48,19 @@ if ($conn) {
     try {
         $hasUserLoginTable = tableExists($conn, 'user_login');
         $hasEmployeesTable = tableExists($conn, 'employees');
+        $hasUserId = $hasUserLoginTable && columnExists($conn, 'user_login', 'id');
+        $hasUserUserId = $hasUserLoginTable && columnExists($conn, 'user_login', 'user_id');
         $hasUserEmail = $hasUserLoginTable && columnExists($conn, 'user_login', 'email');
         $hasUserRole = $hasUserLoginTable && columnExists($conn, 'user_login', 'role');
         $hasEmpEmail = $hasEmployeesTable && columnExists($conn, 'employees', 'email');
         $hasEmpId = $hasEmployeesTable && columnExists($conn, 'employees', 'id');
         $hasLastChange = $hasUserLoginTable && columnExists($conn, 'user_login', 'last_password_change');
+        if ($hasUserUserId && !$hasUserId) {
+            $userLoginIdColumn = 'user_id';
+        }
 
         if ($hasUserLoginTable && $hasUserEmail) {
-            $sel = "SELECT id, email";
+            $sel = "SELECT {$userLoginIdColumn} AS id, email";
             $sel .= $hasUserRole ? ", role" : ", 'employee' AS role";
             if ($hasLastChange) {
                 $sel .= ", last_password_change";
@@ -72,8 +78,8 @@ if ($conn) {
             }
         }
 
-        if ($hasEmployeesTable && $hasEmpEmail && $hasEmpId && $hasUserLoginTable && $hasUserEmail) {
-            $missing = $conn->query("SELECT e.id AS employee_id, e.email FROM employees e LEFT JOIN user_login u ON u.email = e.email WHERE u.id IS NULL AND e.email <> '' ORDER BY e.email");
+        if ($hasEmployeesTable && $hasEmpEmail && $hasEmpId && $hasUserLoginTable && $hasUserEmail && ($hasUserId || $hasUserUserId)) {
+            $missing = $conn->query("SELECT e.id AS employee_id, e.email FROM employees e LEFT JOIN user_login u ON u.email = e.email WHERE u.{$userLoginIdColumn} IS NULL AND e.email <> '' ORDER BY e.email");
             if ($missing && $missing->num_rows > 0) {
                 while ($row = $missing->fetch_assoc()) {
                     $accounts[] = [
@@ -93,11 +99,13 @@ if ($conn) {
             $msg = 'The user_login table is missing in this database.';
         } elseif (!$hasUserEmail) {
             $msg = 'The user_login.email column is missing in this database.';
+        } elseif (!$hasUserId && !$hasUserUserId) {
+            $msg = 'The user_login id column is missing (id/user_id).';
         }
     } catch (\Throwable $e) {
         error_log('Accounts page query failed: ' . $e->getMessage());
         if ($msg === '') {
-            $msg = 'Unable to load some account records due to schema mismatch.';
+            $msg = 'Unable to load some account records due to schema mismatch: ' . $e->getMessage();
         }
     }
 }
