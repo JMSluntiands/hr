@@ -16,47 +16,89 @@ $msg = '';
 $generatedPassword = '';
 $generatedEmail = '';
 $generatedMode = '';
+$hasLastChange = false;
+
+if (!function_exists('tableExists')) {
+    function tableExists($conn, string $tableName): bool
+    {
+        if (!$conn) {
+            return false;
+        }
+        $safeTable = $conn->real_escape_string($tableName);
+        $res = $conn->query("SHOW TABLES LIKE '{$safeTable}'");
+        return ($res && $res->num_rows > 0);
+    }
+}
+
+if (!function_exists('columnExists')) {
+    function columnExists($conn, string $tableName, string $columnName): bool
+    {
+        if (!$conn) {
+            return false;
+        }
+        $safeTable = $conn->real_escape_string($tableName);
+        $safeColumn = $conn->real_escape_string($columnName);
+        $res = $conn->query("SHOW COLUMNS FROM `{$safeTable}` LIKE '{$safeColumn}'");
+        return ($res && $res->num_rows > 0);
+    }
+}
 
 if ($conn) {
     try {
-        $cols = [];
-        $r = $conn->query("SHOW COLUMNS FROM user_login");
-        if ($r) {
-            while ($row = $r->fetch_assoc()) $cols[] = $row['Field'];
-        }
-        $hasLastChange = in_array('last_password_change', $cols, true);
+        $hasUserLoginTable = tableExists($conn, 'user_login');
+        $hasEmployeesTable = tableExists($conn, 'employees');
+        $hasUserEmail = $hasUserLoginTable && columnExists($conn, 'user_login', 'email');
+        $hasUserRole = $hasUserLoginTable && columnExists($conn, 'user_login', 'role');
+        $hasEmpEmail = $hasEmployeesTable && columnExists($conn, 'employees', 'email');
+        $hasEmpId = $hasEmployeesTable && columnExists($conn, 'employees', 'id');
+        $hasLastChange = $hasUserLoginTable && columnExists($conn, 'user_login', 'last_password_change');
 
-        $sel = "SELECT id, email, role";
-        if ($hasLastChange) $sel .= ", last_password_change";
-        $sel .= " FROM user_login ORDER BY email";
+        if ($hasUserLoginTable && $hasUserEmail) {
+            $sel = "SELECT id, email";
+            $sel .= $hasUserRole ? ", role" : ", 'employee' AS role";
+            if ($hasLastChange) {
+                $sel .= ", last_password_change";
+            }
+            $sel .= " FROM user_login ORDER BY email";
 
-        $res = $conn->query($sel);
-        if ($res && $res->num_rows > 0) {
-            while ($row = $res->fetch_assoc()) {
-                $row['_has_last'] = $hasLastChange;
-                $row['_has_account'] = true;
-                $row['_employee_id'] = 0;
-                $accounts[] = $row;
+            $res = $conn->query($sel);
+            if ($res && $res->num_rows > 0) {
+                while ($row = $res->fetch_assoc()) {
+                    $row['_has_last'] = $hasLastChange;
+                    $row['_has_account'] = true;
+                    $row['_employee_id'] = 0;
+                    $accounts[] = $row;
+                }
             }
         }
 
-        $missing = $conn->query("SELECT e.id AS employee_id, e.email FROM employees e LEFT JOIN user_login u ON u.email = e.email WHERE u.id IS NULL AND e.email <> '' ORDER BY e.email");
-        if ($missing && $missing->num_rows > 0) {
-            while ($row = $missing->fetch_assoc()) {
-                $accounts[] = [
-                    'id' => 0,
-                    'email' => $row['email'],
-                    'role' => 'employee',
-                    'last_password_change' => null,
-                    '_has_last' => $hasLastChange,
-                    '_has_account' => false,
-                    '_employee_id' => (int)$row['employee_id'],
-                ];
+        if ($hasEmployeesTable && $hasEmpEmail && $hasEmpId && $hasUserLoginTable && $hasUserEmail) {
+            $missing = $conn->query("SELECT e.id AS employee_id, e.email FROM employees e LEFT JOIN user_login u ON u.email = e.email WHERE u.id IS NULL AND e.email <> '' ORDER BY e.email");
+            if ($missing && $missing->num_rows > 0) {
+                while ($row = $missing->fetch_assoc()) {
+                    $accounts[] = [
+                        'id' => 0,
+                        'email' => $row['email'],
+                        'role' => 'employee',
+                        'last_password_change' => null,
+                        '_has_last' => $hasLastChange,
+                        '_has_account' => false,
+                        '_employee_id' => (int)$row['employee_id'],
+                    ];
+                }
             }
+        }
+
+        if (!$hasUserLoginTable) {
+            $msg = 'The user_login table is missing in this database.';
+        } elseif (!$hasUserEmail) {
+            $msg = 'The user_login.email column is missing in this database.';
         }
     } catch (\Throwable $e) {
         error_log('Accounts page query failed: ' . $e->getMessage());
-        $msg = 'Unable to load account records right now. Please check database schema.';
+        if ($msg === '') {
+            $msg = 'Unable to load some account records due to schema mismatch.';
+        }
     }
 }
 
