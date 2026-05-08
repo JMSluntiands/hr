@@ -12,6 +12,16 @@ $role      = $_SESSION['role'] ?? 'admin';
 
 // Include database connection
 include '../database/db.php';
+require_once __DIR__ . '/../include/ensure_departments_performance_column.php';
+require_once __DIR__ . '/../include/ensure_employment_types_table.php';
+require_once __DIR__ . '/../include/ensure_employees_employment_type_id_column.php';
+require_once __DIR__ . '/../include/ensure_employees_staff_columns.php';
+if ($conn) {
+    ensure_departments_performance_column($conn);
+    ensure_employment_types_table($conn);
+    ensure_employees_employment_type_id_column($conn);
+    ensure_employees_staff_columns($conn);
+}
 include 'include/activity-logger.php';
 include __DIR__ . '/../controller/login/mail_helper.php';
 
@@ -48,14 +58,6 @@ if ($conn) {
     }
 }
 
-// Ensure emergency contact address column exists.
-if ($conn) {
-    $checkEmergencyAddress = $conn->query("SHOW COLUMNS FROM employees LIKE 'emergency_contact_address'");
-    if ($checkEmergencyAddress && $checkEmergencyAddress->num_rows === 0) {
-        @$conn->query("ALTER TABLE employees ADD COLUMN emergency_contact_address text DEFAULT NULL AFTER emergency_contact_relationship");
-    }
-}
-
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Get form data
@@ -89,6 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $tin = trim($_POST['tin'] ?? '');
     $nbiClearance = trim($_POST['nbi_clearance'] ?? '');
     $policeClearance = trim($_POST['police_clearance'] ?? '');
+    $performanceReviewSupervisor = isset($_POST['performance_review_supervisor']) ? 1 : 0;
     $basicSalaryDailyInput = trim((string)($_POST['basic_salary_daily'] ?? ''));
     $basicSalaryDaily = 0.00;
     $basicSalaryMonthly = 0.00;
@@ -279,13 +282,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         try {
             // Insert into employees table
-            $stmt = $conn->prepare("INSERT INTO employees (employee_id, full_name, email, phone, position, department, employment_type_id, date_hired, status, address, secondary_workplace, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, emergency_contact_address, birthdate, gender, sss, philhealth, pagibig, tin, nbi_clearance, police_clearance, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
+            $stmt = $conn->prepare("INSERT INTO employees (employee_id, full_name, email, phone, position, department, employment_type_id, date_hired, status, address, secondary_workplace, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, emergency_contact_address, birthdate, gender, sss, philhealth, pagibig, tin, nbi_clearance, police_clearance, performance_review_supervisor, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
             
             if (!$stmt) {
                 throw new Exception('Database prepare error: ' . $conn->error);
             }
-            $bindTypes = 'ssssssi' . str_repeat('s', 16); // 23 params: 6s + 1i + 16s
-            $stmt->bind_param($bindTypes, $employeeId, $fullName, $email, $phone, $position, $department, $employmentTypeId, $dateHired, $status, $address, $secondaryWorkplace, $emergencyContactName, $emergencyContactPhone, $emergencyContactRelationship, $emergencyContactAddress, $birthdate, $gender, $sss, $philhealth, $pagibig, $tin, $nbiClearance, $policeClearance);
+            $bindTypes = str_repeat('s', 6) . 'i' . str_repeat('s', 16) . 'i';
+            $stmt->bind_param($bindTypes, $employeeId, $fullName, $email, $phone, $position, $department, $employmentTypeId, $dateHired, $status, $address, $secondaryWorkplace, $emergencyContactName, $emergencyContactPhone, $emergencyContactRelationship, $emergencyContactAddress, $birthdate, $gender, $sss, $philhealth, $pagibig, $tin, $nbiClearance, $policeClearance, $performanceReviewSupervisor);
             
             if (!$stmt->execute()) {
                 throw new Exception('Error adding employee: ' . $stmt->error);
@@ -700,6 +703,15 @@ if ($conn) {
                                 <option value="Active" <?php echo (!isset($_POST['status']) || $_POST['status'] === 'Active') ? 'selected' : ''; ?>>Active</option>
                                 <option value="Inactive" <?php echo (isset($_POST['status']) && $_POST['status'] === 'Inactive') ? 'selected' : ''; ?>>Inactive</option>
                             </select>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="flex items-start gap-3 cursor-pointer rounded-lg border border-slate-200 bg-slate-50/80 px-4 py-3">
+                                <input type="checkbox" name="performance_review_supervisor" value="1" class="mt-1 rounded border-slate-300 text-amber-600 focus:ring-amber-500" <?php echo !empty($_POST['performance_review_supervisor']) ? 'checked' : ''; ?>>
+                                <span>
+                                    <span class="block text-sm font-medium text-slate-800">Performance review supervisor</span>
+                                    <span class="block text-xs text-slate-500 mt-0.5">When enabled (and the department uses performance review), this employee sees <strong>Form Review</strong> in the employee portal to evaluate staff and view submissions that name them as supervisor.</span>
+                                </span>
+                            </label>
                         </div>
                     </div>
                 </div>

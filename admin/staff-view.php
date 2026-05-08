@@ -424,16 +424,8 @@ if ($conn) {
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <?php if ($compensation): ?>
                             <div>
-                                <p class="text-sm text-slate-500 mb-1">Basic Salary (Monthly)</p>
-                                <p class="font-medium text-slate-800 text-lg">₱<?php echo number_format($compensation['basic_salary_monthly'] ?? 0, 2); ?></p>
-                            </div>
-                            <div>
                                 <p class="text-sm text-slate-500 mb-1">Basic Salary (Daily)</p>
                                 <p class="font-medium text-slate-800 text-lg">₱<?php echo number_format($compensation['basic_salary_daily'] ?? 0, 2); ?></p>
-                            </div>
-                            <div>
-                                <p class="text-sm text-slate-500 mb-1">Basic Salary (Annually)</p>
-                                <p class="font-medium text-slate-800 text-lg">₱<?php echo number_format($compensation['basic_salary_annually'] ?? 0, 2); ?></p>
                             </div>
                             <div>
                                 <p class="text-sm text-slate-500 mb-1">Employment Type</p>
@@ -447,7 +439,9 @@ if ($conn) {
                         
                         <!-- Gross Income based on New Salary -->
                         <?php if ($currentSalary): 
-                            $dailyGross = $currentSalary / 26;
+                            $dailyGross = !empty($compensation['basic_salary_daily'])
+                                ? (float)$compensation['basic_salary_daily']
+                                : ((float)$currentSalary / 26);
                         ?>
                         <div class="md:col-span-2 border-slate-200">
                             <h4 class="text-md font-semibold text-slate-700 mb-4">Gross Income (Based on New Salary)</h4>
@@ -455,7 +449,7 @@ if ($conn) {
                                 <div class="bg-slate-50 p-4 rounded-lg">
                                     <p class="text-sm font-medium text-slate-600 mb-1">Daily Gross Income</p>
                                     <p class="text-slate-800 text-xl font-bold">₱<?php echo number_format($dailyGross, 2); ?></p>
-                                    <p class="text-xs text-slate-500 mt-1">Monthly ÷ 26</p>
+                                    <p class="text-xs text-slate-500 mt-1">Daily compensation basis</p>
                                 </div>
                             </div>
                         </div>

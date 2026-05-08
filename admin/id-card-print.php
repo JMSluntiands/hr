@@ -12,6 +12,12 @@ if ($id <= 0) {
 }
 
 include '../database/db.php';
+require_once __DIR__ . '/../include/ensure_employment_types_table.php';
+require_once __DIR__ . '/../include/ensure_employees_employment_type_id_column.php';
+if ($conn) {
+    ensure_employment_types_table($conn);
+    ensure_employees_employment_type_id_column($conn);
+}
 require_once __DIR__ . '/include/id-card-employment.php';
 
 $emp = null;

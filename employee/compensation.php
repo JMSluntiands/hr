@@ -280,6 +280,7 @@ if ($employeeDbId && $conn) {
                 <span>My Compensation</span>
             </a>
             <?php include __DIR__ . '/include/sidebar-my-inventory-nav.php'; ?>
+            <?php include __DIR__ . '/include/sidebar-performance-nav.php'; ?>
             <a href="progressive-discipline.php"
                data-url="progressive-discipline.php"
                class="js-side-link flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 text-sm font-medium text-white">
@@ -388,16 +389,8 @@ if ($employeeDbId && $conn) {
                     <?php if ($compensation): ?>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label class="block text-sm font-medium text-slate-600 mb-1">Basic Salary (Monthly)</label>
-                                <p class="text-slate-800 text-lg font-semibold">₱<?php echo number_format($compensation['basic_salary_monthly'], 2); ?></p>
-                            </div>
-                            <div>
                                 <label class="block text-sm font-medium text-slate-600 mb-1">Basic Salary (Daily)</label>
                                 <p class="text-slate-800 text-lg font-semibold">₱<?php echo number_format($compensation['basic_salary_daily'], 2); ?></p>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-slate-600 mb-1">Basic Salary (Annually)</label>
-                                <p class="text-slate-800 text-lg font-semibold">₱<?php echo number_format($compensation['basic_salary_annually'], 2); ?></p>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-slate-600 mb-1">Employment Type</label>
@@ -434,27 +427,17 @@ if ($employeeDbId && $conn) {
 
                         <!-- Gross Income (based on new salary) -->
                         <?php if ($currentSalary): 
-                            $monthlyGross = $currentSalary;
-                            $dailyGross = $monthlyGross / 26;
-                            $annualGross = $monthlyGross * 12;
+                            $dailyGross = !empty($compensation['basic_salary_daily'])
+                                ? (float)$compensation['basic_salary_daily']
+                                : ((float)$currentSalary / 26);
                         ?>
                         <div class="mt-6 pt-6 border-t border-slate-100">
                             <h3 class="text-md font-semibold text-slate-700 mb-4">Gross Income</h3>
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div class="bg-slate-50 p-4 rounded-lg">
-                                    <label class="block text-sm font-medium text-slate-600 mb-1">Monthly Gross Income</label>
-                                    <p class="text-slate-800 text-xl font-bold">₱<?php echo number_format($monthlyGross, 2); ?></p>
-                                    <p class="text-xs text-slate-500 mt-1">Based on current salary</p>
-                                </div>
-                                <div class="bg-slate-50 p-4 rounded-lg">
                                     <label class="block text-sm font-medium text-slate-600 mb-1">Daily Gross Income</label>
                                     <p class="text-slate-800 text-xl font-bold">₱<?php echo number_format($dailyGross, 2); ?></p>
-                                    <p class="text-xs text-slate-500 mt-1">Monthly ÷ 26</p>
-                                </div>
-                                <div class="bg-slate-50 p-4 rounded-lg">
-                                    <label class="block text-sm font-medium text-slate-600 mb-1">Annual Gross Income</label>
-                                    <p class="text-slate-800 text-xl font-bold">₱<?php echo number_format($annualGross, 2); ?></p>
-                                    <p class="text-xs text-slate-500 mt-1">Monthly × 12 months</p>
+                                    <p class="text-xs text-slate-500 mt-1">Daily compensation basis</p>
                                 </div>
                             </div>
                         </div>
@@ -630,7 +613,7 @@ if ($employeeDbId && $conn) {
                 e.preventDefault();
 
                 const pathOnly = (url || '').split('#')[0].split('?')[0];
-                if (url === 'profile.php' || url === 'compensation.php' || url === 'timeoff.php' || url === 'settings.php' || url === 'progressive-discipline.php' || url === 'reimbursement.php' || pathOnly === 'inventory.php' || ['incident-report.php', 'incident-report-add.php', 'incident-report-list.php'].indexOf(pathOnly) !== -1) {
+                if (url === 'profile.php' || url === 'compensation.php' || url === 'timeoff.php' || url === 'settings.php' || url === 'progressive-discipline.php' || url === 'reimbursement.php' || pathOnly === 'inventory.php' || ['performance.php', 'performance-my-reviews.php', 'performance-form-review.php', 'performance-review-received.php', 'performance-review-submissions.php'].indexOf(pathOnly) !== -1 || ['incident-report.php', 'incident-report-add.php', 'incident-report-list.php'].indexOf(pathOnly) !== -1) {
                     window.location.href = url;
                     return;
                 }

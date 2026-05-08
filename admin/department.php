@@ -10,11 +10,22 @@ $adminName = $_SESSION['name'] ?? 'Admin User';
 $role      = $_SESSION['role'] ?? 'admin';
 
 include '../database/db.php';
+require_once __DIR__ . '/../include/ensure_departments_performance_column.php';
 
-// Fetch departments
+// Fetch departments (optional column added via database/patch_staff_performance_review.sql)
+$hasPerfReviewCol = false;
+if ($conn) {
+    ensure_departments_performance_column($conn);
+    $colChk = $conn->query("SHOW COLUMNS FROM `departments` LIKE 'additional_performance_review'");
+    $hasPerfReviewCol = ($colChk && $colChk->num_rows > 0);
+}
+
 $departments = [];
 if ($conn) {
-    $result = $conn->query("SELECT id, name, created_at FROM departments ORDER BY name");
+    $sql = $hasPerfReviewCol
+        ? "SELECT id, name, created_at, additional_performance_review FROM departments ORDER BY name"
+        : "SELECT id, name, created_at FROM departments ORDER BY name";
+    $result = $conn->query($sql);
     if ($result && $result->num_rows > 0) {
         while ($row = $result->fetch_assoc()) {
             $departments[] = $row;
@@ -78,6 +89,12 @@ unset($_SESSION['department_msg']);
                        placeholder="Enter department name"
                        class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]">
             </div>
+            <?php if ($hasPerfReviewCol): ?>
+            <label class="flex items-center gap-2 shrink-0 pb-0.5 md:self-end cursor-pointer">
+                <input type="checkbox" name="additional_performance_review" value="1" class="rounded border-slate-300 text-amber-600 focus:ring-amber-500">
+                <span class="text-xs text-slate-600 whitespace-nowrap">Additional performance review</span>
+            </label>
+            <?php endif; ?>
             <button type="submit"
                     class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-[#d97706] hover:bg-[#b45309] text-white text-sm font-medium shadow-sm">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -98,6 +115,9 @@ unset($_SESSION['department_msg']);
                 <thead>
                 <tr class="border-b border-slate-200 bg-slate-50">
                     <th class="text-left px-4 py-2 text-xs font-semibold text-slate-600 uppercase tracking-wide">Name</th>
+                    <?php if ($hasPerfReviewCol): ?>
+                    <th class="text-left px-4 py-2 text-xs font-semibold text-slate-600 uppercase tracking-wide">Performance form</th>
+                    <?php endif; ?>
                     <th class="text-left px-4 py-2 text-xs font-semibold text-slate-600 uppercase tracking-wide">Created</th>
                     <th class="text-right px-4 py-2 text-xs font-semibold text-slate-600 uppercase tracking-wide">Actions</th>
                 </tr>
@@ -108,6 +128,15 @@ unset($_SESSION['department_msg']);
                         <td class="px-4 py-3 text-slate-700">
                             <span class="font-medium"><?php echo htmlspecialchars($dept['name']); ?></span>
                         </td>
+                        <?php if ($hasPerfReviewCol): ?>
+                        <td class="px-4 py-3 text-slate-600 text-sm">
+                            <?php if (!empty($dept['additional_performance_review'])): ?>
+                                <span class="text-emerald-600 font-medium">On</span>
+                            <?php else: ?>
+                                <span class="text-slate-400">—</span>
+                            <?php endif; ?>
+                        </td>
+                        <?php endif; ?>
                         <td class="px-4 py-3 text-slate-500">
                             <?php echo $dept['created_at'] ? date('M d, Y', strtotime($dept['created_at'])) : '—'; ?>
                         </td>
@@ -116,7 +145,8 @@ unset($_SESSION['department_msg']);
                                 <button type="button"
                                         class="edit-dept-btn p-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors text-xs"
                                         data-id="<?php echo (int)$dept['id']; ?>"
-                                        data-name="<?php echo htmlspecialchars($dept['name']); ?>">
+                                        data-name="<?php echo htmlspecialchars($dept['name']); ?>"
+                                        <?php if ($hasPerfReviewCol): ?>data-perf="<?php echo !empty($dept['additional_performance_review']) ? '1' : '0'; ?>"<?php endif; ?>>
                                     Edit
                                 </button>
                                 <form action="department-action.php" method="POST"
@@ -157,6 +187,12 @@ unset($_SESSION['department_msg']);
                 <input type="text" name="name" id="editDeptName" required
                        class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]">
             </div>
+            <?php if ($hasPerfReviewCol): ?>
+            <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" name="additional_performance_review" id="editDeptPerf" value="1" class="rounded border-slate-300 text-amber-600 focus:ring-amber-500">
+                <span class="text-xs text-slate-600">Additional performance review</span>
+            </label>
+            <?php endif; ?>
             <div class="flex justify-end gap-2 pt-1">
                 <button type="button" id="cancelEditDept"
                         class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100">
@@ -180,6 +216,7 @@ unset($_SESSION['department_msg']);
         const cancelBtn = document.getElementById('cancelEditDept');
         const idInput = document.getElementById('editDeptId');
         const nameInput = document.getElementById('editDeptName');
+        const perfInput = document.getElementById('editDeptPerf');
 
         document.querySelectorAll('.edit-dept-btn').forEach(function (btn) {
             btn.addEventListener('click', function () {
@@ -187,6 +224,9 @@ unset($_SESSION['department_msg']);
                 const name = this.dataset.name;
                 idInput.value = id;
                 nameInput.value = name;
+                if (perfInput) {
+                    perfInput.checked = this.dataset.perf === '1';
+                }
                 modal.classList.remove('hidden');
                 modal.classList.add('flex');
             });

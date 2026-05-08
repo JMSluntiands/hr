@@ -7,6 +7,10 @@ if (!isset($_SESSION['user_id']) || (strtolower($_SESSION['role'] ?? '') !== 'ad
 }
 
 include '../database/db.php';
+require_once __DIR__ . '/../include/ensure_employment_types_table.php';
+if ($conn) {
+    ensure_employment_types_table($conn);
+}
 
 $redirect = 'employment-type.php';
 
@@ -26,9 +30,9 @@ if ($action === 'create') {
         exit;
     }
 
-    $stmt = $conn->prepare("INSERT INTO employment_types (name) VALUES (?)");
+    $stmt = $conn->prepare('INSERT INTO `employment_types` (`name`) VALUES (?)');
     if (!$stmt) {
-        $_SESSION['employment_type_msg'] = 'Database error.';
+        $_SESSION['employment_type_msg'] = 'Database error: ' . ($conn->error ?: 'prepare failed');
         header('Location: ' . $redirect);
         exit;
     }
@@ -39,7 +43,7 @@ if ($action === 'create') {
         if ($conn->errno === 1062) {
             $_SESSION['employment_type_msg'] = 'Employment type name already exists.';
         } else {
-            $_SESSION['employment_type_msg'] = 'Failed to add employment type.';
+            $_SESSION['employment_type_msg'] = 'Failed to add employment type: ' . ($conn->error ?: 'execute failed');
         }
     }
     $stmt->close();
@@ -54,9 +58,9 @@ if ($action === 'update') {
         exit;
     }
 
-    $stmt = $conn->prepare("UPDATE employment_types SET name = ? WHERE id = ?");
+    $stmt = $conn->prepare('UPDATE `employment_types` SET `name` = ? WHERE `id` = ?');
     if (!$stmt) {
-        $_SESSION['employment_type_msg'] = 'Database error.';
+        $_SESSION['employment_type_msg'] = 'Database error: ' . ($conn->error ?: 'prepare failed');
         header('Location: ' . $redirect);
         exit;
     }
@@ -67,7 +71,7 @@ if ($action === 'update') {
         if ($conn->errno === 1062) {
             $_SESSION['employment_type_msg'] = 'Employment type name already exists.';
         } else {
-            $_SESSION['employment_type_msg'] = 'Failed to update employment type.';
+            $_SESSION['employment_type_msg'] = 'Failed to update employment type: ' . ($conn->error ?: 'execute failed');
         }
     }
     $stmt->close();
@@ -82,9 +86,9 @@ if ($action === 'delete') {
         exit;
     }
 
-    $stmt = $conn->prepare("DELETE FROM employment_types WHERE id = ?");
+    $stmt = $conn->prepare('DELETE FROM `employment_types` WHERE `id` = ?');
     if (!$stmt) {
-        $_SESSION['employment_type_msg'] = 'Database error.';
+        $_SESSION['employment_type_msg'] = 'Database error: ' . ($conn->error ?: 'prepare failed');
         header('Location: ' . $redirect);
         exit;
     }
@@ -92,7 +96,7 @@ if ($action === 'delete') {
     if ($stmt->execute()) {
         $_SESSION['employment_type_msg'] = '✓ Employment type deleted.';
     } else {
-        $_SESSION['employment_type_msg'] = 'Failed to delete employment type.';
+        $_SESSION['employment_type_msg'] = 'Failed to delete employment type: ' . ($conn->error ?: 'execute failed');
     }
     $stmt->close();
     header('Location: ' . $redirect);

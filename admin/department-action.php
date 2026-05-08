@@ -7,8 +7,17 @@ if (!isset($_SESSION['user_id']) || (strtolower($_SESSION['role'] ?? '') !== 'ad
 }
 
 include '../database/db.php';
+require_once __DIR__ . '/../include/ensure_departments_performance_column.php';
 
 $redirect = 'department.php';
+
+$hasPerfReviewCol = false;
+if ($conn) {
+    ensure_departments_performance_column($conn);
+    $colChk = $conn->query("SHOW COLUMNS FROM `departments` LIKE 'additional_performance_review'");
+    $hasPerfReviewCol = ($colChk && $colChk->num_rows > 0);
+}
+$additionalPerf = ($hasPerfReviewCol && isset($_POST['additional_performance_review'])) ? 1 : 0;
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: ' . $redirect);
@@ -26,20 +35,28 @@ if ($action === 'create') {
         exit;
     }
 
-    $stmt = $conn->prepare("INSERT INTO departments (name) VALUES (?)");
+    if ($hasPerfReviewCol) {
+        $stmt = $conn->prepare('INSERT INTO `departments` (`name`, `additional_performance_review`) VALUES (?, ?)');
+    } else {
+        $stmt = $conn->prepare('INSERT INTO `departments` (`name`) VALUES (?)');
+    }
     if (!$stmt) {
-        $_SESSION['department_msg'] = 'Database error.';
+        $_SESSION['department_msg'] = 'Database error: ' . ($conn->error ?: 'prepare failed');
         header('Location: ' . $redirect);
         exit;
     }
-    $stmt->bind_param('s', $name);
+    if ($hasPerfReviewCol) {
+        $stmt->bind_param('si', $name, $additionalPerf);
+    } else {
+        $stmt->bind_param('s', $name);
+    }
     if ($stmt->execute()) {
         $_SESSION['department_msg'] = '✓ Department added.';
     } else {
         if ($conn->errno === 1062) {
             $_SESSION['department_msg'] = 'Department name already exists.';
         } else {
-            $_SESSION['department_msg'] = 'Failed to add department.';
+            $_SESSION['department_msg'] = 'Failed to add department: ' . ($conn->error ?: 'execute failed');
         }
     }
     $stmt->close();
@@ -54,20 +71,28 @@ if ($action === 'update') {
         exit;
     }
 
-    $stmt = $conn->prepare("UPDATE departments SET name = ? WHERE id = ?");
+    if ($hasPerfReviewCol) {
+        $stmt = $conn->prepare('UPDATE `departments` SET `name` = ?, `additional_performance_review` = ? WHERE `id` = ?');
+    } else {
+        $stmt = $conn->prepare('UPDATE `departments` SET `name` = ? WHERE `id` = ?');
+    }
     if (!$stmt) {
-        $_SESSION['department_msg'] = 'Database error.';
+        $_SESSION['department_msg'] = 'Database error: ' . ($conn->error ?: 'prepare failed');
         header('Location: ' . $redirect);
         exit;
     }
-    $stmt->bind_param('si', $name, $id);
+    if ($hasPerfReviewCol) {
+        $stmt->bind_param('sii', $name, $additionalPerf, $id);
+    } else {
+        $stmt->bind_param('si', $name, $id);
+    }
     if ($stmt->execute()) {
         $_SESSION['department_msg'] = '✓ Department updated.';
     } else {
         if ($conn->errno === 1062) {
             $_SESSION['department_msg'] = 'Department name already exists.';
         } else {
-            $_SESSION['department_msg'] = 'Failed to update department.';
+            $_SESSION['department_msg'] = 'Failed to update department: ' . ($conn->error ?: 'execute failed');
         }
     }
     $stmt->close();
@@ -82,9 +107,9 @@ if ($action === 'delete') {
         exit;
     }
 
-    $stmt = $conn->prepare("DELETE FROM departments WHERE id = ?");
+    $stmt = $conn->prepare('DELETE FROM `departments` WHERE `id` = ?');
     if (!$stmt) {
-        $_SESSION['department_msg'] = 'Database error.';
+        $_SESSION['department_msg'] = 'Database error: ' . ($conn->error ?: 'prepare failed');
         header('Location: ' . $redirect);
         exit;
     }
@@ -92,7 +117,7 @@ if ($action === 'delete') {
     if ($stmt->execute()) {
         $_SESSION['department_msg'] = '✓ Department deleted.';
     } else {
-        $_SESSION['department_msg'] = 'Failed to delete department.';
+        $_SESSION['department_msg'] = 'Failed to delete department: ' . ($conn->error ?: 'execute failed');
     }
     $stmt->close();
     header('Location: ' . $redirect);

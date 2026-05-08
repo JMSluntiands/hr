@@ -10,11 +10,15 @@ $adminName = $_SESSION['name'] ?? 'Admin User';
 $role      = $_SESSION['role'] ?? 'admin';
 
 include '../database/db.php';
+require_once __DIR__ . '/../include/ensure_employment_types_table.php';
+if ($conn) {
+    ensure_employment_types_table($conn);
+}
 
 // Fetch employment types
 $employmentTypes = [];
 if ($conn) {
-    $result = $conn->query("SELECT id, name, created_at FROM employment_types ORDER BY name");
+    $result = $conn->query("SELECT id, name, created_at FROM `employment_types` ORDER BY name");
     if ($result && $result->num_rows > 0) {
         while ($row = $result->fetch_assoc()) {
             $employmentTypes[] = $row;

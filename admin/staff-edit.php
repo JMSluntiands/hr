@@ -12,6 +12,16 @@ $role      = $_SESSION['role'] ?? 'admin';
 
 // Include database connection
 include '../database/db.php';
+require_once __DIR__ . '/../include/ensure_departments_performance_column.php';
+require_once __DIR__ . '/../include/ensure_employment_types_table.php';
+require_once __DIR__ . '/../include/ensure_employees_employment_type_id_column.php';
+require_once __DIR__ . '/../include/ensure_employees_staff_columns.php';
+if ($conn) {
+    ensure_departments_performance_column($conn);
+    ensure_employment_types_table($conn);
+    ensure_employees_employment_type_id_column($conn);
+    ensure_employees_staff_columns($conn);
+}
 include 'include/activity-logger.php';
 include __DIR__ . '/../controller/login/mail_helper.php';
 
@@ -45,22 +55,6 @@ if ($conn) {
                 }
             }
         }
-    }
-}
-
-// Ensure inactive / resignation columns exist (run database/add_employee_inactive_resignation.sql if preferred)
-if ($conn) {
-    $dc = $conn->query("SHOW COLUMNS FROM employees LIKE 'date_inactive'");
-    if ($dc && $dc->num_rows === 0) {
-        @$conn->query("ALTER TABLE employees ADD COLUMN date_inactive date DEFAULT NULL");
-    }
-    $rc = $conn->query("SHOW COLUMNS FROM employees LIKE 'resignation_letter_path'");
-    if ($rc && $rc->num_rows === 0) {
-        @$conn->query("ALTER TABLE employees ADD COLUMN resignation_letter_path varchar(500) DEFAULT NULL");
-    }
-    $ecac = $conn->query("SHOW COLUMNS FROM employees LIKE 'emergency_contact_address'");
-    if ($ecac && $ecac->num_rows === 0) {
-        @$conn->query("ALTER TABLE employees ADD COLUMN emergency_contact_address text DEFAULT NULL AFTER emergency_contact_relationship");
     }
 }
 
@@ -148,6 +142,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $tin = trim($_POST['tin'] ?? '');
     $nbiClearance = trim($_POST['nbi_clearance'] ?? '');
     $policeClearance = trim($_POST['police_clearance'] ?? '');
+    $performanceReviewSupervisor = isset($_POST['performance_review_supervisor']) ? 1 : 0;
     // Preserve existing employment_type_id when form sends empty/0 so it doesn't get cleared
     $postedEmploymentType = isset($_POST['employment_type']) ? (string)$_POST['employment_type'] : '';
     $employmentTypeId = ($postedEmploymentType !== '' && (int)$postedEmploymentType > 0)
@@ -356,12 +351,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                 }
 
-                $stmt = $conn->prepare("UPDATE employees SET full_name=?, email=?, phone=?, position=?, department=?, employment_type_id=?, date_hired=?, status=?, date_inactive=?, resignation_letter_path=?, address=?, secondary_workplace=?, emergency_contact_name=?, emergency_contact_phone=?, emergency_contact_relationship=?, emergency_contact_address=?, birthdate=?, gender=?, sss=?, philhealth=?, pagibig=?, tin=?, nbi_clearance=?, police_clearance=? WHERE id=?");
+                $stmt = $conn->prepare("UPDATE employees SET full_name=?, email=?, phone=?, position=?, department=?, employment_type_id=?, date_hired=?, status=?, date_inactive=?, resignation_letter_path=?, address=?, secondary_workplace=?, emergency_contact_name=?, emergency_contact_phone=?, emergency_contact_relationship=?, emergency_contact_address=?, birthdate=?, gender=?, sss=?, philhealth=?, pagibig=?, tin=?, nbi_clearance=?, police_clearance=?, performance_review_supervisor=? WHERE id=?");
                 if (!$stmt) {
                     throw new Exception('Database prepare error: ' . $conn->error);
                 }
-                $bindTypes = 'sssssi' . str_repeat('s', 18) . 'i';
-                $stmt->bind_param($bindTypes, $fullName, $email, $phone, $position, $department, $employmentTypeId, $dateHired, $status, $dateInactiveForDb, $resignationPathForDb, $address, $secondaryWorkplace, $emergencyContactName, $emergencyContactPhone, $emergencyContactRelationship, $emergencyContactAddress, $birthdate, $gender, $sss, $philhealth, $pagibig, $tin, $nbiClearance, $policeClearance, $employeeId);
+                $bindTypes = 'sssssi' . str_repeat('s', 18) . 'ii';
+                $stmt->bind_param($bindTypes, $fullName, $email, $phone, $position, $department, $employmentTypeId, $dateHired, $status, $dateInactiveForDb, $resignationPathForDb, $address, $secondaryWorkplace, $emergencyContactName, $emergencyContactPhone, $emergencyContactRelationship, $emergencyContactAddress, $birthdate, $gender, $sss, $philhealth, $pagibig, $tin, $nbiClearance, $policeClearance, $performanceReviewSupervisor, $employeeId);
                 if (!$stmt->execute()) {
                     throw new Exception('Error updating employee: ' . $stmt->error);
                 }
@@ -491,11 +486,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->close();
             $conn->begin_transaction();
             try {
-                $stmt = $conn->prepare("INSERT INTO employees (employee_id, full_name, email, phone, position, department, date_hired, status, address, secondary_workplace, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, emergency_contact_address, birthdate, gender, sss, philhealth, pagibig, tin, nbi_clearance, police_clearance, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
+                $stmt = $conn->prepare("INSERT INTO employees (employee_id, full_name, email, phone, position, department, date_hired, status, address, secondary_workplace, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, emergency_contact_address, birthdate, gender, sss, philhealth, pagibig, tin, nbi_clearance, police_clearance, performance_review_supervisor, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
                 if (!$stmt) {
                     throw new Exception('Database prepare error: ' . $conn->error);
                 }
-                $stmt->bind_param("ssssssssssssssssssssss", $newEmployeeIdStr, $fullName, $email, $phone, $position, $department, $dateHired, $status, $address, $secondaryWorkplace, $emergencyContactName, $emergencyContactPhone, $emergencyContactRelationship, $emergencyContactAddress, $birthdate, $gender, $sss, $philhealth, $pagibig, $tin, $nbiClearance, $policeClearance);
+                $stmt->bind_param(str_repeat('s', 22) . 'i', $newEmployeeIdStr, $fullName, $email, $phone, $position, $department, $dateHired, $status, $address, $secondaryWorkplace, $emergencyContactName, $emergencyContactPhone, $emergencyContactRelationship, $emergencyContactAddress, $birthdate, $gender, $sss, $philhealth, $pagibig, $tin, $nbiClearance, $policeClearance, $performanceReviewSupervisor);
                 if (!$stmt->execute()) {
                     throw new Exception('Error adding employee: ' . $stmt->error);
                 }
@@ -759,6 +754,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <option value="Active" <?php echo ($selStatus === 'Active') ? 'selected' : ''; ?>>Active</option>
                                 <option value="Inactive" <?php echo ($selStatus === 'Inactive') ? 'selected' : ''; ?>>Inactive</option>
                             </select>
+                        </div>
+                        <div class="md:col-span-2">
+                            <?php
+                            $perfSupChecked = isset($_POST['performance_review_supervisor'])
+                                ? !empty($_POST['performance_review_supervisor'])
+                                : !empty($employee['performance_review_supervisor'] ?? 0);
+                            ?>
+                            <label class="flex items-start gap-3 cursor-pointer rounded-lg border border-slate-200 bg-slate-50/80 px-4 py-3">
+                                <input type="checkbox" name="performance_review_supervisor" value="1" class="mt-1 rounded border-slate-300 text-amber-600 focus:ring-amber-500" <?php echo $perfSupChecked ? 'checked' : ''; ?>>
+                                <span>
+                                    <span class="block text-sm font-medium text-slate-800">Performance review supervisor</span>
+                                    <span class="block text-xs text-slate-500 mt-0.5">When enabled (and the department uses performance review), this employee sees <strong>Form Review</strong> in the employee portal to evaluate staff and view submissions that name them as supervisor.</span>
+                                </span>
+                            </label>
                         </div>
                         <?php
                         $hasResignationOnFile = !empty(trim((string)($employee['resignation_letter_path'] ?? '')));

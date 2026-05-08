@@ -8,6 +8,12 @@ if (!isset($_SESSION['user_id'])) {
 require_once __DIR__ . '/../controller/session_timeout.php';
 
 include '../database/db.php';
+require_once __DIR__ . '/../include/ensure_employment_types_table.php';
+require_once __DIR__ . '/../include/ensure_employees_employment_type_id_column.php';
+if ($conn) {
+    ensure_employment_types_table($conn);
+    ensure_employees_employment_type_id_column($conn);
+}
 
 // Get employee data from database
 $userId = (int)$_SESSION['user_id'];
@@ -260,6 +266,7 @@ foreach ($documents as $d) {
                 <span>My Compensation</span>
             </a>
             <?php include __DIR__ . '/include/sidebar-my-inventory-nav.php'; ?>
+            <?php include __DIR__ . '/include/sidebar-performance-nav.php'; ?>
             <a href="progressive-discipline.php"
                data-url="progressive-discipline.php"
                class="js-side-link flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 text-sm font-medium text-white">
@@ -503,16 +510,8 @@ foreach ($documents as $d) {
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <?php if ($compensation): ?>
                             <div>
-                                <p class="text-sm text-slate-500 mb-1">Basic Salary (Monthly)</p>
-                                <p class="font-medium text-slate-800 text-lg">₱<?php echo number_format($compensation['basic_salary_monthly'] ?? 0, 2); ?></p>
-                            </div>
-                            <div>
                                 <p class="text-sm text-slate-500 mb-1">Basic Salary (Daily)</p>
                                 <p class="font-medium text-slate-800 text-lg">₱<?php echo number_format($compensation['basic_salary_daily'] ?? 0, 2); ?></p>
-                            </div>
-                            <div>
-                                <p class="text-sm text-slate-500 mb-1">Basic Salary (Annually)</p>
-                                <p class="font-medium text-slate-800 text-lg">₱<?php echo number_format($compensation['basic_salary_annually'] ?? 0, 2); ?></p>
                             </div>
                             <div>
                                 <p class="text-sm text-slate-500 mb-1">Employment Type</p>
@@ -524,24 +523,16 @@ foreach ($documents as $d) {
                             </div>
                         <?php endif; ?>
                         <?php if ($currentSalary && $compensation):
-                            $monthlyGross = $currentSalary;
-                            $dailyGross = $monthlyGross / 26;
-                            $annualGross = $monthlyGross * 12;
+                            $dailyGross = !empty($compensation['basic_salary_daily'])
+                                ? (float)$compensation['basic_salary_daily']
+                                : ((float)$currentSalary / 26);
                         ?>
                         <div class="md:col-span-2 border-slate-200 mt-4">
                             <h4 class="text-md font-semibold text-slate-700 mb-4">Gross Income (Based on Current Salary)</h4>
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div class="bg-amber-50 border border-amber-100 p-5 rounded-xl">
-                                    <p class="text-xs font-medium text-amber-700 uppercase tracking-wide mb-1">Monthly Gross</p>
-                                    <p class="text-slate-800 text-xl font-bold">₱<?php echo number_format($monthlyGross, 2); ?></p>
-                                </div>
-                                <div class="bg-amber-50 border border-amber-100 p-5 rounded-xl">
                                     <p class="text-xs font-medium text-amber-700 uppercase tracking-wide mb-1">Daily Gross</p>
                                     <p class="text-slate-800 text-xl font-bold">₱<?php echo number_format($dailyGross, 2); ?></p>
-                                </div>
-                                <div class="bg-amber-50 border border-amber-100 p-5 rounded-xl">
-                                    <p class="text-xs font-medium text-amber-700 uppercase tracking-wide mb-1">Annual Gross</p>
-                                    <p class="text-slate-800 text-xl font-bold">₱<?php echo number_format($annualGross, 2); ?></p>
                                 </div>
                             </div>
                         </div>
@@ -877,7 +868,7 @@ foreach ($documents as $d) {
 
           // My Profile, Compensation, and Time Off: full page load so content and modals always work correctly
           const pathOnly = (url || '').split('#')[0].split('?')[0];
-          if (url === 'profile.php' || url === 'compensation.php' || url === 'timeoff.php' || url === 'settings.php' || url === 'progressive-discipline.php' || url === 'reimbursement.php' || pathOnly === 'inventory.php' || ['incident-report.php', 'incident-report-add.php', 'incident-report-list.php'].indexOf(pathOnly) !== -1) {
+          if (url === 'profile.php' || url === 'compensation.php' || url === 'timeoff.php' || url === 'settings.php' || url === 'progressive-discipline.php' || url === 'reimbursement.php' || pathOnly === 'inventory.php' || ['performance.php', 'performance-my-reviews.php', 'performance-form-review.php', 'performance-review-received.php', 'performance-review-submissions.php'].indexOf(pathOnly) !== -1 || ['incident-report.php', 'incident-report-add.php', 'incident-report-list.php'].indexOf(pathOnly) !== -1) {
             window.location.href = url;
             return;
           }

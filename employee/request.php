@@ -133,6 +133,7 @@ include 'include/employee_data.php';
                 <span>My Compensation</span>
             </a>
             <?php include __DIR__ . '/include/sidebar-my-inventory-nav.php'; ?>
+            <?php include __DIR__ . '/include/sidebar-performance-nav.php'; ?>
             <a href="progressive-discipline.php"
                data-url="progressive-discipline.php"
                class="js-side-link flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 text-sm font-medium text-white">
@@ -237,7 +238,7 @@ include 'include/employee_data.php';
           e.preventDefault();
 
           const pathOnly = (url || '').split('#')[0].split('?')[0];
-          if (url === 'profile.php' || url === 'compensation.php' || url === 'timeoff.php' || url === 'settings.php' || url === 'progressive-discipline.php' || url === 'reimbursement.php' || pathOnly === 'inventory.php' || ['incident-report.php', 'incident-report-add.php', 'incident-report-list.php'].indexOf(pathOnly) !== -1) {
+          if (url === 'profile.php' || url === 'compensation.php' || url === 'timeoff.php' || url === 'settings.php' || url === 'progressive-discipline.php' || url === 'reimbursement.php' || pathOnly === 'inventory.php' || ['performance.php', 'performance-my-reviews.php', 'performance-form-review.php', 'performance-review-received.php', 'performance-review-submissions.php'].indexOf(pathOnly) !== -1 || ['incident-report.php', 'incident-report-add.php', 'incident-report-list.php'].indexOf(pathOnly) !== -1) {
             window.location.href = url;
             return;
           }
