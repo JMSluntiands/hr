@@ -79,7 +79,15 @@ if ($conn) {
         }
 
         if ($hasEmployeesTable && $hasEmpEmail && $hasEmpId && $hasUserLoginTable && $hasUserEmail && ($hasUserId || $hasUserUserId)) {
-            $missing = $conn->query("SELECT e.id AS employee_id, e.email FROM employees e LEFT JOIN user_login u ON u.email = e.email WHERE u.{$userLoginIdColumn} IS NULL AND e.email <> '' ORDER BY e.email");
+            $missingSql = "SELECT e.id AS employee_id, e.email
+                           FROM employees e
+                           LEFT JOIN user_login u
+                             ON u.email COLLATE utf8mb4_unicode_ci = e.email COLLATE utf8mb4_unicode_ci
+                           WHERE u.{$userLoginIdColumn} IS NULL
+                             AND e.email IS NOT NULL
+                             AND e.email <> ''
+                           ORDER BY e.email";
+            $missing = $conn->query($missingSql);
             if ($missing && $missing->num_rows > 0) {
                 while ($row = $missing->fetch_assoc()) {
                     $accounts[] = [
