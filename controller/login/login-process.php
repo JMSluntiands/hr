@@ -83,6 +83,23 @@ function saveTimeInForDate($conn, $userId, $dateValue, $dateTimeValue)
     return $ok;
 }
 
+function logLoginActivity($conn, $userId, $userName, $action, $description)
+{
+    if (!$conn || $userId <= 0) {
+        return false;
+    }
+    $ipAddress = $_SERVER['REMOTE_ADDR'] ?? null;
+    $entityType = 'auth';
+    $stmt = $conn->prepare("INSERT INTO activity_logs (user_id, user_name, action, entity_type, entity_id, description, ip_address) VALUES (?, ?, ?, ?, ?, ?, ?)");
+    if (!$stmt) {
+        return false;
+    }
+    $stmt->bind_param('isssiss', $userId, $userName, $action, $entityType, $userId, $description, $ipAddress);
+    $ok = $stmt->execute();
+    $stmt->close();
+    return $ok;
+}
+
 $email = trim($_POST['email'] ?? '');
 $password = $_POST['password'] ?? '';
 $loginAction = strtolower(trim((string)($_POST['action'] ?? 'login')));
@@ -179,6 +196,8 @@ if ($user) {
             exit;
         }
 
+        logLoginActivity($conn, $userId, $displayName, 'Time In', "Recorded daily time in for $today");
+
         // Non-blocking notification: time-in should still succeed even if Slack is down.
         sendSlackTimeInNotification($slackWebhookUrl, $displayName);
 
@@ -214,6 +233,7 @@ if ($user) {
         $isDefaultPassword = true;
     }
     $_SESSION['is_default_password'] = $isDefaultPassword;
+    logLoginActivity($conn, $userId, $displayName, 'Login', 'User logged in successfully');
 
     echo json_encode([
         'status' => 'success',

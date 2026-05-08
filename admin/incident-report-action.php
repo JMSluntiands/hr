@@ -8,6 +8,7 @@ if (!isset($_SESSION['user_id']) || strtolower((string)($_SESSION['role'] ?? '')
 
 require_once __DIR__ . '/../database/db.php';
 require_once __DIR__ . '/../database/incident_reports_schema.php';
+require_once __DIR__ . '/include/activity-logger.php';
 
 $redirect = 'incident-report-list';
 
@@ -37,6 +38,7 @@ if ($action === 'approve' || $action === 'decline') {
     }
     $stmt->bind_param('sii', $nextStatus, $adminUserId, $id);
     if ($stmt->execute() && $stmt->affected_rows > 0) {
+        logActivity($conn, $action === 'approve' ? 'Approve Incident Report' : 'Decline Incident Report', 'incident_reports', $id, "Set incident report #$id status to $nextStatus");
         $_SESSION['incident_report_flash'] = 'Incident status updated to ' . $nextStatus . '.';
     } else {
         $_SESSION['incident_report_flash'] = 'Incident not found or already updated.';
@@ -74,6 +76,7 @@ if ($action === 'delete') {
                 @unlink($full);
             }
         }
+        logActivity($conn, 'Delete Incident Report', 'incident_reports', $id, "Deleted incident report #$id");
         $_SESSION['incident_report_flash'] = 'Report deleted.';
     } else {
         $_SESSION['incident_report_flash'] = 'Could not delete report.';
@@ -205,6 +208,8 @@ if ($action === 'create') {
         $reviewedByUserId
     );
     if ($stmt->execute()) {
+        $newReportId = (int)$stmt->insert_id;
+        logActivity($conn, 'Create Incident Report', 'incident_reports', $newReportId, "Created incident report by admin user #$userId");
         $_SESSION['incident_report_flash'] = 'Incident report saved.';
     } else {
         $_SESSION['incident_report_flash'] = 'Could not save report.';
@@ -284,6 +289,7 @@ if ($action === 'update') {
                 @unlink($full);
             }
         }
+        logActivity($conn, 'Update Incident Report', 'incident_reports', $id, "Updated incident report #$id");
         $_SESSION['incident_report_flash'] = 'Report updated.';
         header('Location: ' . $redirect);
     } else {

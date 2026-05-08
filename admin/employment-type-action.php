@@ -8,6 +8,7 @@ if (!isset($_SESSION['user_id']) || (strtolower($_SESSION['role'] ?? '') !== 'ad
 
 include '../database/db.php';
 require_once __DIR__ . '/../include/ensure_employment_types_table.php';
+include 'include/activity-logger.php';
 if ($conn) {
     ensure_employment_types_table($conn);
 }
@@ -38,6 +39,8 @@ if ($action === 'create') {
     }
     $stmt->bind_param('s', $name);
     if ($stmt->execute()) {
+        $newEmploymentTypeId = (int)$conn->insert_id;
+        logActivity($conn, 'Create Employment Type', 'employment_types', $newEmploymentTypeId, "Created employment type: $name");
         $_SESSION['employment_type_msg'] = '✓ Employment type added.';
     } else {
         if ($conn->errno === 1062) {
@@ -66,6 +69,7 @@ if ($action === 'update') {
     }
     $stmt->bind_param('si', $name, $id);
     if ($stmt->execute()) {
+        logActivity($conn, 'Update Employment Type', 'employment_types', $id, "Updated employment type #$id to: $name");
         $_SESSION['employment_type_msg'] = '✓ Employment type updated.';
     } else {
         if ($conn->errno === 1062) {
@@ -94,6 +98,7 @@ if ($action === 'delete') {
     }
     $stmt->bind_param('i', $id);
     if ($stmt->execute()) {
+        logActivity($conn, 'Delete Employment Type', 'employment_types', $id, "Deleted employment type #$id");
         $_SESSION['employment_type_msg'] = '✓ Employment type deleted.';
     } else {
         $_SESSION['employment_type_msg'] = 'Failed to delete employment type: ' . ($conn->error ?: 'execute failed');

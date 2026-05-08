@@ -9,6 +9,7 @@ if (!isset($_SESSION['user_id']) || strtolower((string)($_SESSION['role'] ?? '')
 require_once __DIR__ . '/../controller/session_timeout.php';
 require_once __DIR__ . '/../database/db.php';
 require_once __DIR__ . '/../database/incident_reports_schema.php';
+require_once __DIR__ . '/../admin/include/activity-logger.php';
 
 $redirect = 'incident-report-list.php';
 
@@ -144,6 +145,9 @@ $stmt->bind_param(
 );
 
 if ($stmt->execute()) {
+    $newReportId = (int)$stmt->insert_id;
+    $employeeNameSafe = $employeeName !== '' ? $employeeName : ('user #' . $userId);
+    logActivity($conn, 'Submit Incident Report', 'incident_reports', $newReportId, "Submitted incident report by $employeeNameSafe");
     $_SESSION['incident_report_flash'] = 'Incident report submitted for admin review.';
 } else {
     $_SESSION['incident_report_flash'] = 'Could not save report.';

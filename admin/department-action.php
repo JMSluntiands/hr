@@ -8,6 +8,7 @@ if (!isset($_SESSION['user_id']) || (strtolower($_SESSION['role'] ?? '') !== 'ad
 
 include '../database/db.php';
 require_once __DIR__ . '/../include/ensure_departments_performance_column.php';
+include 'include/activity-logger.php';
 
 $redirect = 'department.php';
 
@@ -51,6 +52,8 @@ if ($action === 'create') {
         $stmt->bind_param('s', $name);
     }
     if ($stmt->execute()) {
+        $newDepartmentId = (int)$conn->insert_id;
+        logActivity($conn, 'Create Department', 'departments', $newDepartmentId, "Created department: $name");
         $_SESSION['department_msg'] = '✓ Department added.';
     } else {
         if ($conn->errno === 1062) {
@@ -87,6 +90,7 @@ if ($action === 'update') {
         $stmt->bind_param('si', $name, $id);
     }
     if ($stmt->execute()) {
+        logActivity($conn, 'Update Department', 'departments', $id, "Updated department #$id to: $name");
         $_SESSION['department_msg'] = '✓ Department updated.';
     } else {
         if ($conn->errno === 1062) {
@@ -115,6 +119,7 @@ if ($action === 'delete') {
     }
     $stmt->bind_param('i', $id);
     if ($stmt->execute()) {
+        logActivity($conn, 'Delete Department', 'departments', $id, "Deleted department #$id");
         $_SESSION['department_msg'] = '✓ Department deleted.';
     } else {
         $_SESSION['department_msg'] = 'Failed to delete department: ' . ($conn->error ?: 'execute failed');
