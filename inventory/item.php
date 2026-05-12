@@ -1135,7 +1135,8 @@ if ($editItemId > 0) {
                     table.column(itemNameColumnIndex).search('^' + $.fn.dataTable.util.escapeRegex(selected) + '$', true, false).draw();
                 });
 
-                $('.editBtn').on('click', function () {
+                // Delegate so buttons work on all DataTables pages (rows are re-drawn in the DOM).
+                $('#itemsTable').on('click', '.editBtn', function () {
                     const btn = this;
                     $('#editRowId').val(btn.dataset.id || '');
                     const pathsRaw = btn.getAttribute('data-item-image-paths') || '[]';
@@ -1174,7 +1175,7 @@ if ($editItemId > 0) {
                     $('#itemEditModal').removeClass('hidden');
                 });
 
-                $('.viewBtn').on('click', function () {
+                $('#itemsTable').on('click', '.viewBtn', function () {
                     const btn = this;
                     $('#viewItemId').text(btn.dataset.item_id || '');
                     $('#viewItemName').text(btn.dataset.item_name || '');
@@ -1215,7 +1216,7 @@ if ($editItemId > 0) {
                     $('#itemViewModal').removeClass('hidden');
                 });
 
-                $('.historyBtn').on('click', function () {
+                $('#itemsTable').on('click', '.historyBtn', function () {
                     const btn = this;
                     const itemDbId = String(btn.dataset.id || '');
                     const itemLabel = (btn.dataset.item_name || '') + ' (' + (btn.dataset.item_id || '') + ')';
