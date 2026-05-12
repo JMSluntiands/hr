@@ -25,4 +25,8 @@ if ($conn->connect_errno) {
     $conn = false;
 } else {
     $conn->set_charset('utf8mb4');
+    date_default_timezone_set('Asia/Manila');
+    if (!$conn->query("SET time_zone = '+08:00'")) {
+        error_log('MySQL SET time_zone failed: ' . $conn->error);
+    }
 }
