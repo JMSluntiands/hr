@@ -16,9 +16,10 @@ $isReimbursementReview = ($currentPage === 'reimbursement-review');
 $isReimbursementList = ($currentPage === 'reimbursement-list');
 $isReimbursementReport = ($currentPage === 'reimbursement-report');
 $isReqDoc      = ($currentPage === 'request-document');
+$isReqUpload   = ($currentPage === 'request-upload');
 $isReqBank     = ($currentPage === 'request-bank');
 $isDocArchive  = ($currentPage === 'document-archive');
-$isRequest     = ($isReqLeaves || $isReqDoc || $isReqBank || $isDocArchive);
+$isRequest     = ($isReqLeaves || $isReqDoc || $isReqUpload || $isReqBank || $isDocArchive);
 $isReimbursement = ($isReimbursementReview || $isReimbursementList || $isReimbursementReport);
 $isActivityLog = ($currentPage === 'activity-log');
 $isProgressiveDiscipline = ($currentPage === 'progressive-discipline');
@@ -47,6 +48,7 @@ $incidentArrow  = $isIncidentReport ? ' rotate-180' : '';
 
 $requestLeavesPending = 0;
 $requestDocPending = 0;
+$requestUploadPending = 0;
 $requestBankPending = 0;
 $documentArchivePending = 0;
 $reimbursementPending = 0;
@@ -59,12 +61,12 @@ if (isset($conn) && $conn) {
     $t = $conn->query("SHOW TABLES LIKE 'document_requests'");
     if ($t && $t->num_rows > 0) {
         $r = $conn->query("SELECT COUNT(*) AS c FROM document_requests WHERE status = 'Pending'");
-        if ($r && $row = $r->fetch_assoc()) $requestDocPending += (int)$row['c'];
+        if ($r && $row = $r->fetch_assoc()) $requestDocPending = (int)$row['c'];
     }
     $t = $conn->query("SHOW TABLES LIKE 'employee_document_uploads'");
     if ($t && $t->num_rows > 0) {
         $r = $conn->query("SELECT COUNT(*) AS c FROM employee_document_uploads WHERE status = 'Pending'");
-        if ($r && $row = $r->fetch_assoc()) $requestDocPending += (int)$row['c'];
+        if ($r && $row = $r->fetch_assoc()) $requestUploadPending = (int)$row['c'];
     }
     $t = $conn->query("SHOW TABLES LIKE 'bank_account_change_requests'");
     if ($t && $t->num_rows > 0) {
@@ -85,7 +87,7 @@ if (isset($conn) && $conn) {
         }
     }
 }
-$requestTotalPending = $requestLeavesPending + $requestDocPending + $requestBankPending + $documentArchivePending;
+$requestTotalPending = $requestLeavesPending + $requestDocPending + $requestUploadPending + $requestBankPending + $documentArchivePending;
 
 $sidebarScrollbarPath = dirname(__DIR__, 2) . '/include/sidebar-scrollbar-once.php';
 if (is_file($sidebarScrollbarPath)) {
@@ -233,6 +235,12 @@ if (is_file($sidebarScrollbarPath)) {
                         <span>Request Document</span>
                         <?php if ($requestDocPending > 0): ?>
                             <span class="ml-auto min-w-[1.25rem] h-5 px-1.5 flex items-center justify-center rounded-full bg-white/90 text-[#FA9800] text-xs font-semibold"><?php echo $requestDocPending; ?></span>
+                        <?php endif; ?>
+                    </a>
+                    <a href="request-upload" class="flex items-center gap-3 pl-11 pr-3 py-2 text-sm text-white hover:bg-white/10 rounded-lg transition-colors<?php echo $isReqUpload ? ' ' . $activeClass : ''; ?>">
+                        <span>Request Upload</span>
+                        <?php if ($requestUploadPending > 0): ?>
+                            <span class="ml-auto min-w-[1.25rem] h-5 px-1.5 flex items-center justify-center rounded-full bg-white/90 text-[#FA9800] text-xs font-semibold"><?php echo $requestUploadPending; ?></span>
                         <?php endif; ?>
                     </a>
                     <a href="document-archive" class="flex items-center gap-3 pl-11 pr-3 py-2 text-sm text-white hover:bg-white/10 rounded-lg transition-colors<?php echo $isDocArchive ? ' ' . $activeClass : ''; ?>">

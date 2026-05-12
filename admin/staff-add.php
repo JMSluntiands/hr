@@ -570,7 +570,10 @@ if ($conn) {
                                     <select name="emergency_contact_relationship" id="emergency_contact_relationship" class="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-shadow bg-white">
                                         <option value="">Select</option>
                                         <option value="Spouse" <?php echo (isset($_POST['emergency_contact_relationship']) && $_POST['emergency_contact_relationship'] === 'Spouse') ? 'selected' : ''; ?>>Spouse</option>
+                                        <option value="Partner" <?php echo (isset($_POST['emergency_contact_relationship']) && $_POST['emergency_contact_relationship'] === 'Partner') ? 'selected' : ''; ?>>Partner</option>
                                         <option value="Parent" <?php echo (isset($_POST['emergency_contact_relationship']) && $_POST['emergency_contact_relationship'] === 'Parent') ? 'selected' : ''; ?>>Parent</option>
+                                        <option value="Grandmother" <?php echo (isset($_POST['emergency_contact_relationship']) && $_POST['emergency_contact_relationship'] === 'Grandmother') ? 'selected' : ''; ?>>Grandmother</option>
+                                        <option value="Grandfather" <?php echo (isset($_POST['emergency_contact_relationship']) && $_POST['emergency_contact_relationship'] === 'Grandfather') ? 'selected' : ''; ?>>Grandfather</option>
                                         <option value="Sibling" <?php echo (isset($_POST['emergency_contact_relationship']) && $_POST['emergency_contact_relationship'] === 'Sibling') ? 'selected' : ''; ?>>Sibling</option>
                                         <option value="Child" <?php echo (isset($_POST['emergency_contact_relationship']) && $_POST['emergency_contact_relationship'] === 'Child') ? 'selected' : ''; ?>>Child</option>
                                         <option value="Friend" <?php echo (isset($_POST['emergency_contact_relationship']) && $_POST['emergency_contact_relationship'] === 'Friend') ? 'selected' : ''; ?>>Friend</option>

@@ -50,7 +50,14 @@ if ($userRole !== 'admin' && !empty($doc['deletion_requested_at'])) {
     exit;
 }
 
-$filePath = '../uploads/' . $doc['file_path'];
+$relPath = trim((string)$doc['file_path']);
+if (preg_match('#[/\\\\]uploads[/\\\\](.+)$#i', str_replace('\\', '/', $relPath), $m)) {
+    $relPath = $m[1];
+} else {
+    $relPath = preg_replace('#^uploads[/\\\\]+#i', '', $relPath);
+}
+$relPath = ltrim(str_replace('\\', '/', $relPath), '/');
+$filePath = '../uploads/' . $relPath;
 if (!file_exists($filePath)) {
     header('HTTP/1.1 404 Not Found');
     exit;
@@ -68,9 +75,15 @@ $mime = $mimeTypes[$ext] ?? 'application/octet-stream';
 $docTypeSlug = preg_replace('/[^A-Za-z0-9\-_]+/', '_', (string)($doc['document_type'] ?? 'document'));
 $downloadName = $docTypeSlug . '_' . $docId . '.' . ($ext !== '' ? $ext : 'bin');
 
+$inline = isset($_GET['inline']) && (string)$_GET['inline'] === '1';
+
 header('Content-Description: File Transfer');
 header('Content-Type: ' . $mime);
-header('Content-Disposition: attachment; filename="' . $downloadName . '"');
+if ($inline) {
+    header('Content-Disposition: inline; filename="' . $downloadName . '"');
+} else {
+    header('Content-Disposition: attachment; filename="' . $downloadName . '"');
+}
 header('Content-Length: ' . filesize($filePath));
 header('Cache-Control: private, max-age=0, must-revalidate');
 header('Pragma: public');

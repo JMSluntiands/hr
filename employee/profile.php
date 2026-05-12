@@ -298,14 +298,15 @@ foreach ($documents as $d) {
     <!-- Mobile sidebar backdrop -->
     <div id="employee-sidebar-backdrop" class="fixed inset-0 z-20 bg-black/40 hidden md:hidden"></div>
 
-    <!-- Main Content (only this area scrolls) -->
-    <main class="min-h-screen overflow-y-auto md:ml-64 pt-24 md:pt-8 px-4 md:px-8 pb-12 bg-gradient-to-b from-slate-100 to-slate-50">
-        <div id="main-inner" class="max-w-5xl mx-auto space-y-6">
+    <!-- Main Content (match employee/index.php shell so dashboard size stays consistent after navigation) -->
+    <main class="min-h-screen p-4 pt-16 md:pt-8 md:ml-64 md:p-8 pb-12 overflow-y-auto bg-[#f1f5f9]">
+        <div id="main-inner" class="w-full max-w-full space-y-6">
         <!-- Header -->
-        <div class="flex items-center justify-between mb-2">
+        <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-2">
             <div>
-                <h1 class="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">My Profile</h1>
-                <p class="text-sm text-slate-500 mt-1">Your details and information at a glance</p>
+                <span class="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 text-amber-800 text-xs font-semibold px-3 py-1 ring-1 ring-amber-500/25 mb-3">Employee profile</span>
+                <h1 class="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">My Profile</h1>
+                <p class="text-sm text-slate-500 mt-1 max-w-2xl">Your details and information at a glance — updated as HR records change.</p>
             </div>
         </div>
 
@@ -314,9 +315,13 @@ foreach ($documents as $d) {
         <?php else: ?>
 
         <!-- Hero Card: Photo + Name + Quick Info -->
-        <div class="bg-white rounded-2xl shadow-md border border-slate-200 overflow-hidden">
-            <div class="bg-gradient-to-r from-amber-500 to-amber-600 h-24 md:h-28"></div>
-            <div class="px-6 md:px-8 pb-6 -mt-12 md:-mt-14 relative">
+        <div class="bg-white rounded-2xl shadow-md border border-slate-200/90 overflow-hidden ring-1 ring-slate-200/60 hover:shadow-lg transition-shadow duration-300">
+            <div class="relative h-28 md:h-32 bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600 overflow-hidden">
+                <div class="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_20%_120%,white,transparent_55%),radial-gradient(circle_at_80%_-20%,white,transparent_45%)]"></div>
+                <div class="absolute -right-8 -top-10 h-40 w-40 rounded-full bg-white/10 blur-2xl"></div>
+                <div class="absolute -left-4 bottom-0 h-24 w-24 rounded-full bg-black/10"></div>
+            </div>
+            <div class="px-5 sm:px-8 pb-6 -mt-12 md:-mt-14 relative">
                 <div class="flex flex-col md:flex-row md:items-end gap-6">
                     <div class="flex flex-col items-center md:items-start gap-4">
                         <div id="profilePhotoPreview" class="w-28 h-28 md:w-32 md:h-32 rounded-2xl overflow-hidden bg-white border-4 border-white shadow-lg flex items-center justify-center flex-shrink-0">
@@ -369,10 +374,10 @@ foreach ($documents as $d) {
         </div>
 
         <!-- Personal Information -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-            <div class="p-6 md:p-8 bg-gradient-to-b from-slate-50 to-white border-b border-slate-100">
+        <div class="bg-white rounded-2xl shadow-md border border-slate-200/90 overflow-hidden ring-1 ring-slate-200/50 hover:shadow-lg transition-shadow duration-300">
+            <div class="p-6 md:p-8 bg-gradient-to-br from-slate-50 via-white to-amber-50/30 border-b border-slate-100">
                 <div class="flex items-center gap-3 mb-6">
-                    <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+                    <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-md shadow-amber-500/25">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                     </span>
                     <div>
@@ -380,32 +385,32 @@ foreach ($documents as $d) {
                         <p class="text-sm text-slate-500">Contact details and work locations</p>
                     </div>
                 </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <div class="p-4 rounded-xl bg-white border border-slate-100 hover:border-amber-200 transition-colors">
+                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5">
+                    <div class="p-4 rounded-xl bg-white/90 border border-slate-100 hover:border-amber-300/80 hover:shadow-md transition-all duration-200">
                         <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Email</p>
                         <p class="font-medium text-slate-800 truncate" title="<?php echo htmlspecialchars($employee['email'] ?? ''); ?>"><?php echo htmlspecialchars($employee['email'] ?? 'N/A'); ?></p>
                     </div>
-                    <div class="p-4 rounded-xl bg-white border border-slate-100 hover:border-amber-200 transition-colors">
+                    <div class="p-4 rounded-xl bg-white/90 border border-slate-100 hover:border-amber-300/80 hover:shadow-md transition-all duration-200">
                         <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Phone</p>
                         <p class="font-medium text-slate-800"><?php echo htmlspecialchars($employee['phone'] ?? 'N/A'); ?></p>
                     </div>
-                    <div class="p-4 rounded-xl bg-white border border-slate-100 hover:border-amber-200 transition-colors">
+                    <div class="p-4 rounded-xl bg-white/90 border border-slate-100 hover:border-amber-300/80 hover:shadow-md transition-all duration-200">
                         <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Birthdate</p>
                         <p class="font-medium text-slate-800"><?php echo !empty($employee['birthdate']) ? date('M d, Y', strtotime($employee['birthdate'])) : 'N/A'; ?></p>
                     </div>
-                    <div class="p-4 rounded-xl bg-white border border-slate-100 hover:border-amber-200 transition-colors">
+                    <div class="p-4 rounded-xl bg-white/90 border border-slate-100 hover:border-amber-300/80 hover:shadow-md transition-all duration-200">
                         <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Gender</p>
                         <p class="font-medium text-slate-800"><?php echo htmlspecialchars($employee['gender'] ?? 'N/A'); ?></p>
                     </div>
-                    <div class="p-4 rounded-xl bg-white border border-slate-100 hover:border-amber-200 transition-colors sm:col-span-2">
+                    <div class="p-4 rounded-xl bg-white/90 border border-slate-100 hover:border-amber-300/80 hover:shadow-md transition-all duration-200 sm:col-span-2">
                         <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Primary Workplace</p>
                         <p class="font-medium text-slate-800"><?php echo htmlspecialchars($employee['address'] ?? 'N/A'); ?></p>
                     </div>
-                    <div class="p-4 rounded-xl bg-white border border-slate-100 hover:border-amber-200 transition-colors sm:col-span-2">
+                    <div class="p-4 rounded-xl bg-white/90 border border-slate-100 hover:border-amber-300/80 hover:shadow-md transition-all duration-200 sm:col-span-2">
                         <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Secondary Workplace</p>
                         <p class="font-medium text-slate-800"><?php echo htmlspecialchars($employee['secondary_workplace'] ?? 'N/A'); ?></p>
                     </div>
-                    <div class="p-4 rounded-xl bg-amber-50/50 border border-amber-100">
+                    <div class="p-4 rounded-xl bg-gradient-to-br from-amber-50 to-orange-50/80 border border-amber-200/60 shadow-sm ring-1 ring-amber-100/80">
                         <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Emergency Contact</p>
                         <p class="font-medium text-slate-800"><?php echo htmlspecialchars($employee['emergency_contact_name'] ?? 'N/A'); ?></p>
                         <p class="text-xs text-slate-500 mt-0.5"><?php echo htmlspecialchars($employee['emergency_contact_relationship'] ?? ''); ?> · <?php echo htmlspecialchars($employee['emergency_contact_phone'] ?? ''); ?></p>
@@ -416,7 +421,7 @@ foreach ($documents as $d) {
             <!-- Employment Information -->
             <div class="p-6 md:p-8 border-t border-slate-100">
                 <div class="flex items-center gap-3 mb-6">
-                    <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+                    <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-md shadow-amber-500/25">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
                     </span>
                     <div>
@@ -447,7 +452,7 @@ foreach ($documents as $d) {
             <!-- Government Information -->
             <div class="p-6 md:p-8 border-t border-slate-100 bg-slate-50/30">
                 <div class="flex items-center gap-3 mb-6">
-                    <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+                    <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-md shadow-amber-500/25">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                     </span>
                     <div>
@@ -485,10 +490,10 @@ foreach ($documents as $d) {
         </div>
 
         <!-- Compensation Details (view only) -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-            <div class="p-6 md:p-8 border-b border-slate-100 bg-gradient-to-b from-amber-50/50 to-white">
+        <div class="bg-white rounded-2xl shadow-md border border-slate-200/90 overflow-hidden ring-1 ring-slate-200/50 hover:shadow-lg transition-shadow duration-300">
+            <div class="p-6 md:p-8 border-b border-slate-100 bg-gradient-to-br from-amber-50/80 via-white to-orange-50/40">
                 <div class="flex items-center gap-3 mb-6">
-                    <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+                    <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-md shadow-amber-500/25">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     </span>
                     <div>
@@ -591,11 +596,11 @@ foreach ($documents as $d) {
             </div>
         </div>
 
-        <!-- Upload Documents (employee uploads; admin validates in Request Document) -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-            <div class="p-6 md:p-8 border-b border-slate-100 bg-gradient-to-b from-slate-50 to-white">
+        <!-- Upload Documents (employee uploads; admin validates under Request Upload) -->
+        <div class="bg-white rounded-2xl shadow-md border border-slate-200/90 overflow-hidden ring-1 ring-slate-200/50 hover:shadow-lg transition-shadow duration-300">
+            <div class="p-6 md:p-8 border-b border-slate-100 bg-gradient-to-br from-slate-50 via-white to-amber-50/30">
                 <div class="flex items-center gap-3">
-                    <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+                    <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-md shadow-amber-500/25">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                     </span>
                     <div>
@@ -688,7 +693,7 @@ foreach ($documents as $d) {
         </div>
 
         <!-- Employee Documents (uploaded files - view only) -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="bg-white rounded-2xl shadow-md border border-slate-200/90 overflow-hidden ring-1 ring-slate-200/50 hover:shadow-lg transition-shadow duration-300">
             <div class="p-6 md:p-8 border-b border-slate-100">
                 <div class="flex items-center gap-3">
                     <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
@@ -866,9 +871,9 @@ foreach ($documents as $d) {
           if (!url) return;
           e.preventDefault();
 
-          // My Profile, Compensation, and Time Off: full page load so content and modals always work correctly
+          // Dashboard, My Profile, Compensation, and Time Off: full page load so layout and modals stay correct
           const pathOnly = (url || '').split('#')[0].split('?')[0];
-          if (url === 'profile.php' || url === 'compensation.php' || url === 'timeoff.php' || url === 'settings.php' || url === 'progressive-discipline.php' || url === 'reimbursement.php' || pathOnly === 'inventory.php' || ['performance.php', 'performance-my-reviews.php', 'performance-form-review.php', 'performance-review-received.php', 'performance-review-submissions.php'].indexOf(pathOnly) !== -1 || ['incident-report.php', 'incident-report-add.php', 'incident-report-list.php'].indexOf(pathOnly) !== -1) {
+          if (url === 'index.php' || url === 'profile.php' || url === 'compensation.php' || url === 'timeoff.php' || url === 'settings.php' || url === 'progressive-discipline.php' || url === 'reimbursement.php' || url === 'request.php' || pathOnly === 'inventory.php' || ['performance.php', 'performance-my-reviews.php', 'performance-form-review.php', 'performance-review-received.php', 'performance-review-submissions.php'].indexOf(pathOnly) !== -1 || ['incident-report.php', 'incident-report-add.php', 'incident-report-list.php'].indexOf(pathOnly) !== -1) {
             window.location.href = url;
             return;
           }
@@ -879,7 +884,7 @@ foreach ($documents as $d) {
 
           // Load only the right content
           $('#main-inner').addClass('opacity-60 pointer-events-none');
-          $('#main-inner').load(url + ' #main-inner > *', function () {
+          $('#main-inner').load(url + ' #main-inner', function () {
             $('#main-inner').removeClass('opacity-60 pointer-events-none');
           });
         });

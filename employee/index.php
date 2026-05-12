@@ -47,83 +47,27 @@ if ($employeeDbId && $conn) {
     }
 }
 
-// Get Recent Requests from database (combine leave_requests and document_requests)
-$recentRequests = [];
-
+// Dashboard: certificate/document counts only (full history on My Request)
+$docStatusSummary = ['Pending' => 0, 'Approved' => 0, 'Rejected' => 0, 'total' => 0];
 if ($employeeDbId && $conn) {
-    $allRequests = [];
-    
-    // Get recent leave requests
-    $checkLeaveReq = $conn->query("SHOW TABLES LIKE 'leave_requests'");
-    if ($checkLeaveReq && $checkLeaveReq->num_rows > 0) {
-        $leaveReqStmt = $conn->prepare("SELECT id, leave_type as type, status, created_at, 'Leave Request' as request_type FROM leave_requests WHERE employee_id = ? ORDER BY created_at DESC LIMIT 5");
-        if ($leaveReqStmt) {
-            $leaveReqStmt->bind_param('i', $employeeDbId);
-            $leaveReqStmt->execute();
-            $leaveReqResult = $leaveReqStmt->get_result();
-            while ($row = $leaveReqResult->fetch_assoc()) {
-                $allRequests[] = [
-                    'id' => $row['id'],
-                    'date' => date('M d, Y', strtotime($row['created_at'])),
-                    'type' => $row['type'],
-                    'status' => $row['status'],
-                    'request_type' => $row['request_type'],
-                    'created_at' => $row['created_at']
-                ];
-            }
-            $leaveReqStmt->close();
-        }
-    }
-    
-    // Get recent document requests
     $checkDocReq = $conn->query("SHOW TABLES LIKE 'document_requests'");
     if ($checkDocReq && $checkDocReq->num_rows > 0) {
-        $docReqStmt = $conn->prepare("SELECT id, document_type as type, status, created_at, 'Document Request' as request_type FROM document_requests WHERE employee_id = ? ORDER BY created_at DESC LIMIT 5");
-        if ($docReqStmt) {
-            $docReqStmt->bind_param('i', $employeeDbId);
-            $docReqStmt->execute();
-            $docReqResult = $docReqStmt->get_result();
-            while ($row = $docReqResult->fetch_assoc()) {
-                $allRequests[] = [
-                    'id' => $row['id'],
-                    'date' => date('M d, Y', strtotime($row['created_at'])),
-                    'type' => $row['type'],
-                    'status' => $row['status'],
-                    'request_type' => $row['request_type'],
-                    'created_at' => $row['created_at']
-                ];
+        $sumStmt = $conn->prepare('SELECT `status`, COUNT(*) AS c FROM `document_requests` WHERE `employee_id` = ? GROUP BY `status`');
+        if ($sumStmt) {
+            $sumStmt->bind_param('i', $employeeDbId);
+            $sumStmt->execute();
+            $sumRes = $sumStmt->get_result();
+            while ($row = $sumRes->fetch_assoc()) {
+                $st = (string)($row['status'] ?? '');
+                $ct = (int)($row['c'] ?? 0);
+                if ($st === 'Pending' || $st === 'Approved' || $st === 'Rejected') {
+                    $docStatusSummary[$st] = $ct;
+                }
+                $docStatusSummary['total'] += $ct;
             }
-            $docReqStmt->close();
+            $sumStmt->close();
         }
     }
-
-    $checkReimbursement = $conn->query("SHOW TABLES LIKE 'reimbursements'");
-    if ($checkReimbursement && $checkReimbursement->num_rows > 0) {
-        $reimStmt = $conn->prepare("SELECT id, expense_type as type, status, created_at, 'Reimbursement' as request_type FROM reimbursements WHERE employee_id = ? ORDER BY created_at DESC LIMIT 5");
-        if ($reimStmt) {
-            $reimStmt->bind_param('i', $employeeDbId);
-            $reimStmt->execute();
-            $reimResult = $reimStmt->get_result();
-            while ($row = $reimResult->fetch_assoc()) {
-                $allRequests[] = [
-                    'id' => $row['id'],
-                    'date' => date('M d, Y', strtotime($row['created_at'])),
-                    'type' => $row['type'],
-                    'status' => $row['status'],
-                    'request_type' => $row['request_type'],
-                    'created_at' => $row['created_at']
-                ];
-            }
-            $reimStmt->close();
-        }
-    }
-    
-    // Sort all requests by created_at DESC and take top 5
-    usort($allRequests, function($a, $b) {
-        return strtotime($b['created_at']) - strtotime($a['created_at']);
-    });
-    
-    $recentRequests = array_slice($allRequests, 0, 5);
 }
 ?>
 
@@ -283,7 +227,7 @@ if ($employeeDbId && $conn) {
     <div id="employee-sidebar-backdrop" class="fixed inset-0 z-20 bg-black/40 hidden md:hidden"></div>
 
     <!-- Main Content (scrollable only on the right side) -->
-    <main class="min-h-screen p-4 pt-16 md:pt-8 md:ml-64 md:p-8 overflow-y-auto">
+    <main class="min-h-screen p-4 pt-16 md:pt-8 md:ml-64 md:p-8 pb-12 overflow-y-auto bg-[#f1f5f9]">
         <div id="main-inner">
         <?php if (!empty($_SESSION['performance_review_denied'])): unset($_SESSION['performance_review_denied']); ?>
         <div class="mb-6 bg-amber-50 border border-amber-200 text-amber-900 px-4 py-3 rounded-lg text-sm">
@@ -316,6 +260,16 @@ if ($employeeDbId && $conn) {
         </div>
         <?php endif; ?>
         
+        <?php
+        $roleLc = strtolower((string)($_SESSION['role'] ?? ''));
+        $employeeProfileUnlinked = ($roleLc === 'employee' && (!$employeeDbId || (int)$employeeDbId <= 0));
+        ?>
+        <?php if ($employeeProfileUnlinked): ?>
+        <div class="mb-6 border border-amber-200 bg-amber-50 text-amber-900 px-4 py-3 rounded-lg text-sm">
+            <strong>Account not linked to HR profile.</strong> Your login email must match the email on your <strong>Employees</strong> record. Ask HR to align them; until then, leave and document requests will not show on this dashboard.
+        </div>
+        <?php endif; ?>
+
         <!-- Top Bar -->
         <div class="flex items-center justify-between mb-8">
             <h1 class="text-2xl font-semibold text-slate-800">
@@ -386,57 +340,28 @@ if ($employeeDbId && $conn) {
             </section>
         </div>
 
-        <!-- Recent Requests -->
+        <!-- Certificate / document status (counts only — details on My Request) -->
         <section class="bg-white rounded-xl shadow-sm border border-slate-100">
-            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-                <h2 class="text-sm font-semibold text-slate-700">Recent Requests</h2>
+            <div class="px-6 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                    <h2 class="text-sm font-semibold text-slate-700">Certificate &amp; document status</h2>
+                    <p class="text-xs text-slate-500 mt-1">Request history, preview, and download are on <strong>My Request</strong>.</p>
+                </div>
+                <a href="request.php" class="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-[#FA9800] text-white text-sm font-medium hover:bg-[#e08900] shrink-0">My Request</a>
             </div>
-            <div class="overflow-x-auto">
-                <table class="min-w-full text-sm">
-                    <thead class="bg-slate-50">
-                        <tr>
-                            <th class="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Date</th>
-                            <th class="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Request Type</th>
-                            <th class="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100">
-                        <?php if (empty($recentRequests)): ?>
-                            <tr>
-                                <td colspan="3" class="px-6 py-8 text-center text-slate-500 text-sm">
-                                    No recent requests found.
-                                </td>
-                            </tr>
-                        <?php else: ?>
-                            <?php foreach ($recentRequests as $request): ?>
-                                <tr class="hover:bg-slate-50/80">
-                                    <td class="px-6 py-3 text-slate-700">
-                                        <?php echo htmlspecialchars($request['date']); ?>
-                                    </td>
-                                    <td class="px-6 py-3 text-slate-700">
-                                        <?php echo htmlspecialchars($request['type']); ?>
-                                    </td>
-                                    <td class="px-6 py-3">
-                                    <?php
-                                        $status = $request['status'];
-                                        $badgeClasses = [
-                                            'Approved' => 'bg-emerald-100 text-emerald-700',
-                                            'Rejected' => 'bg-red-100 text-red-700',
-                                            'Declined' => 'bg-red-100 text-red-700',
-                                            'Pending'  => 'bg-amber-100 text-amber-700',
-                                            'Cancelled' => 'bg-slate-100 text-slate-700'
-                                        ];
-                                        $class = $badgeClasses[$status] ?? 'bg-slate-100 text-slate-700';
-                                    ?>
-                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold <?php echo $class; ?>">
-                                        <?php echo htmlspecialchars($status); ?>
-                                    </span>
-                                </td>
-                            </tr>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
+            <div class="px-6 py-5">
+                <?php if (!empty($employeeProfileUnlinked)): ?>
+                <p class="text-sm text-slate-500">Link your employee profile (see notice above) to see document status.</p>
+                <?php else: ?>
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">Pending: <?php echo (int)($docStatusSummary['Pending'] ?? 0); ?></span>
+                    <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">Approved: <?php echo (int)($docStatusSummary['Approved'] ?? 0); ?></span>
+                    <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">Rejected: <?php echo (int)($docStatusSummary['Rejected'] ?? 0); ?></span>
+                </div>
+                <?php if ((int)($docStatusSummary['total'] ?? 0) === 0): ?>
+                <p class="text-xs text-slate-500 mt-3">You have not submitted any certificate requests yet.</p>
+                <?php endif; ?>
+                <?php endif; ?>
             </div>
         </section>
         </div>
@@ -515,7 +440,7 @@ if ($employeeDbId && $conn) {
 
           // My Profile, Compensation, Time Off, and Dashboard: full page load so content and modals always work correctly
           const pathOnly = (url || '').split('#')[0].split('?')[0];
-          if (url === 'profile.php' || url === 'compensation.php' || url === 'timeoff.php' || url === 'settings.php' || url === 'index.php' || url === 'progressive-discipline.php' || url === 'reimbursement.php' || pathOnly === 'inventory.php' || ['performance.php', 'performance-my-reviews.php', 'performance-form-review.php', 'performance-review-received.php', 'performance-review-submissions.php'].indexOf(pathOnly) !== -1 || ['incident-report.php', 'incident-report-add.php', 'incident-report-list.php'].indexOf(pathOnly) !== -1) {
+          if (url === 'profile.php' || url === 'compensation.php' || url === 'timeoff.php' || url === 'settings.php' || url === 'index.php' || url === 'request.php' || url === 'progressive-discipline.php' || url === 'reimbursement.php' || pathOnly === 'inventory.php' || ['performance.php', 'performance-my-reviews.php', 'performance-form-review.php', 'performance-review-received.php', 'performance-review-submissions.php'].indexOf(pathOnly) !== -1 || ['incident-report.php', 'incident-report-add.php', 'incident-report-list.php'].indexOf(pathOnly) !== -1) {
             window.location.href = url;
             return;
           }
@@ -526,7 +451,7 @@ if ($employeeDbId && $conn) {
 
           // Load only the right content
           $('#main-inner').addClass('opacity-60 pointer-events-none');
-          $('#main-inner').load(url + ' #main-inner > *', function () {
+          $('#main-inner').load(url + ' #main-inner', function () {
             $('#main-inner').removeClass('opacity-60 pointer-events-none');
             // Re-initialize date pickers if dashboard is loaded
             if (url === 'index.php') {

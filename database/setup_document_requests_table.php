@@ -14,6 +14,8 @@ $sql = "CREATE TABLE IF NOT EXISTS `document_requests` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `employee_id` int(11) NOT NULL,
   `document_type` enum('COE','SSS Certificate','Pag-IBIG Certificate','PhilHealth Certificate') NOT NULL,
+  `coe_purpose` varchar(128) DEFAULT NULL,
+  `coe_include_salary` enum('Yes','No') DEFAULT NULL,
   `status` enum('Pending','Approved','Rejected') NOT NULL DEFAULT 'Pending',
   `approved_by` int(11) DEFAULT NULL,
   `approved_at` timestamp NULL DEFAULT NULL,

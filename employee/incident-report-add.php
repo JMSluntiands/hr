@@ -165,12 +165,12 @@ $irExtraHiddenHtml = '';
           e.preventDefault();
           const pathOnly = (url || '').split('#')[0].split('?')[0];
           const irPages = ['incident-report.php', 'incident-report-add.php', 'incident-report-list.php'];
-          if (url === 'profile.php' || url === 'compensation.php' || url === 'timeoff.php' || url === 'settings.php' || url === 'progressive-discipline.php' || url === 'reimbursement.php' || pathOnly === 'inventory.php' || ['performance.php', 'performance-my-reviews.php', 'performance-form-review.php', 'performance-review-received.php', 'performance-review-submissions.php'].indexOf(pathOnly) !== -1 || irPages.indexOf(pathOnly) !== -1 || url === 'index.php') {
+          if (url === 'profile.php' || url === 'compensation.php' || url === 'timeoff.php' || url === 'settings.php' || url === 'progressive-discipline.php' || url === 'reimbursement.php' || url === 'request.php' || pathOnly === 'inventory.php' || ['performance.php', 'performance-my-reviews.php', 'performance-form-review.php', 'performance-review-received.php', 'performance-review-submissions.php'].indexOf(pathOnly) !== -1 || irPages.indexOf(pathOnly) !== -1 || url === 'index.php') {
             window.location.href = url;
             return;
           }
           $('#main-inner').addClass('opacity-60 pointer-events-none');
-          $('#main-inner').load(url + ' #main-inner > *', function () {
+          $('#main-inner').load(url + ' #main-inner', function () {
             $('#main-inner').removeClass('opacity-60 pointer-events-none');
           });
         });

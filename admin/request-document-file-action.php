@@ -13,7 +13,7 @@ $id = (int)($_GET['id'] ?? $_POST['id'] ?? 0);
 
 if (!$conn || !$id || !in_array($action, ['approve', 'decline'], true)) {
     $_SESSION['request_document_msg'] = 'Invalid request.';
-    header('Location: request-document.php');
+    header('Location: request-upload.php');
     exit;
 }
 
@@ -95,7 +95,7 @@ if ($action === 'approve') {
     $reason = trim($_POST['rejection_reason'] ?? '');
     if ($reason === '') {
         $_SESSION['request_document_msg'] = 'Please provide a reason for declining.';
-        header('Location: request-document.php');
+        header('Location: request-upload.php');
         exit;
     }
     $stmt = $conn->prepare("UPDATE employee_document_uploads SET status = 'Rejected', rejection_reason = ?, approved_by = ?, approved_by_name = ?, approved_at = NOW() WHERE id = ?");
@@ -109,5 +109,5 @@ if ($action === 'approve') {
     $stmt->close();
 }
 
-header('Location: request-document.php');
+header('Location: request-upload.php');
 exit;

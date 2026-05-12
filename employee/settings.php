@@ -157,6 +157,7 @@ include 'include/employee_data.php';
         </nav>
         <div class="shrink-0 border-t border-white/20 p-4">
             <a href="../logout.php" class="block text-xs font-medium text-white/80 hover:text-white">Logout</a>
+            <a href="module-select.php" class="block text-xs font-medium text-white/80 hover:text-white mt-2">Back to Main Menu</a>
         </div>
     </aside>
 
@@ -266,7 +267,7 @@ include 'include/employee_data.php';
                 e.preventDefault();
 
                 const pathOnly = (url || '').split('#')[0].split('?')[0];
-                if (url === 'profile.php' || url === 'compensation.php' || url === 'timeoff.php' || url === 'settings.php' || url === 'progressive-discipline.php' || url === 'reimbursement.php' || pathOnly === 'inventory.php' || ['performance.php', 'performance-my-reviews.php', 'performance-form-review.php', 'performance-review-received.php', 'performance-review-submissions.php'].indexOf(pathOnly) !== -1 || ['incident-report.php', 'incident-report-add.php', 'incident-report-list.php'].indexOf(pathOnly) !== -1) {
+                if (url === 'index.php' || url === 'profile.php' || url === 'compensation.php' || url === 'timeoff.php' || url === 'settings.php' || url === 'progressive-discipline.php' || url === 'reimbursement.php' || url === 'request.php' || pathOnly === 'inventory.php' || ['performance.php', 'performance-my-reviews.php', 'performance-form-review.php', 'performance-review-received.php', 'performance-review-submissions.php'].indexOf(pathOnly) !== -1 || ['incident-report.php', 'incident-report-add.php', 'incident-report-list.php'].indexOf(pathOnly) !== -1) {
                     window.location.href = url;
                     return;
                 }
@@ -275,7 +276,7 @@ include 'include/employee_data.php';
                 $(this).addClass('bg-white/20');
 
                 $('#main-inner').addClass('opacity-60 pointer-events-none');
-                $('#main-inner').load(url + ' #main-inner > *', function () {
+                $('#main-inner').load(url + ' #main-inner', function () {
                     $('#main-inner').removeClass('opacity-60 pointer-events-none');
                 });
             });

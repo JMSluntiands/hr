@@ -40,8 +40,9 @@ if ($hasLastLoginCol && !empty($user['last_login'])) {
 }
 
 if ($user) {
-    $empStmt = $conn->prepare("SELECT id, employee_id, full_name, email, position, department, date_hired, profile_picture FROM employees WHERE email = ?");
-    $empStmt->bind_param('s', $user['email']);
+    $email = trim((string)($user['email'] ?? ''));
+    $empStmt = $conn->prepare('SELECT id, employee_id, full_name, email, position, department, date_hired, profile_picture FROM employees WHERE TRIM(LOWER(email)) = LOWER(?) LIMIT 1');
+    $empStmt->bind_param('s', $email);
     $empStmt->execute();
     $empResult = $empStmt->get_result();
     $employeeData = $empResult->fetch_assoc();

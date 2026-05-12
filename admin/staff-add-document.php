@@ -10,8 +10,13 @@ $adminId = (int)$_SESSION['user_id'];
 $adminName = $_SESSION['name'] ?? 'Admin User';
 
 include '../database/db.php';
+require_once __DIR__ . '/../include/ensure_document_files_request_link.php';
+if ($conn) {
+    ensure_document_files_request_link($conn);
+}
 
 $employeeId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+$prefillDocumentRequestId = isset($_GET['document_request_id']) ? (int)$_GET['document_request_id'] : 0;
 if (!$employeeId) {
     header('Location: staff.php');
     exit;
@@ -33,6 +38,10 @@ if (!$employee) {
 }
 
 $documentTypes = [
+    'COE',
+    'SSS Certificate',
+    'Pag-IBIG Certificate',
+    'PhilHealth Certificate',
     'SSS',
     'Philhealth',
     'Pag-Ibig',
@@ -48,16 +57,33 @@ $success = '';
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $documentRequestId = (int)($_POST['document_request_id'] ?? 0);
     $documentType = trim($_POST['document_type'] ?? '');
     if (empty($documentType) || !in_array($documentType, $documentTypes, true)) {
         $error = 'Invalid document type.';
     } elseif (!isset($_FILES['document_file']) || $_FILES['document_file']['error'] !== UPLOAD_ERR_OK) {
         $error = 'Please select a file to upload.';
-    } else {
+    } elseif ($documentRequestId > 0) {
+        $vr = $conn->prepare('SELECT id FROM document_requests WHERE id = ? AND employee_id = ? LIMIT 1');
+        if ($vr) {
+            $vr->bind_param('ii', $documentRequestId, $employeeId);
+            $vr->execute();
+            $vrRes = $vr->get_result();
+            $okReq = $vrRes && $vrRes->num_rows > 0;
+            $vr->close();
+            if (!$okReq) {
+                $error = 'Invalid document request link for this employee.';
+            }
+        } else {
+            $error = 'Could not validate document request.';
+        }
+    }
+
+    if ($error === '') {
         $file = $_FILES['document_file'];
         $allowedExts = ['pdf', 'jpg', 'jpeg', 'png'];
         $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-        if (!in_array($ext, $allowedExts)) {
+        if (!in_array($ext, $allowedExts, true)) {
             $error = 'Invalid file type. Allowed: PDF, JPG, PNG.';
         } else {
             $maxSize = 5 * 1024 * 1024; // 5MB
@@ -87,9 +113,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                     $checkDf = $conn->query("SHOW TABLES LIKE 'document_files'");
                     if ($checkDf && $checkDf->num_rows > 0 && empty($error)) {
-                        $insDf = $conn->prepare("INSERT INTO document_files (employee_id, document_type, file_path, approved_by, approved_by_name, approved_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)");
-                        $insDf->bind_param('ississs', $employeeId, $documentType, $relativePath, $adminId, $adminName, $now, $now);
-                        $insDf->execute();
+                        $hasReqCol = false;
+                        $cc = @$conn->query("SHOW COLUMNS FROM document_files LIKE 'document_request_id'");
+                        if ($cc && $cc->num_rows > 0) {
+                            $hasReqCol = true;
+                        }
+                        if ($hasReqCol && $documentRequestId > 0) {
+                            $insDf = $conn->prepare(
+                                'INSERT INTO document_files (employee_id, document_request_id, document_type, file_path, approved_by, approved_by_name, approved_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+                            );
+                            $insDf->bind_param('iississs', $employeeId, $documentRequestId, $documentType, $relativePath, $adminId, $adminName, $now, $now);
+                        } else {
+                            $insDf = $conn->prepare("INSERT INTO document_files (employee_id, document_type, file_path, approved_by, approved_by_name, approved_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                            $insDf->bind_param('ississs', $employeeId, $documentType, $relativePath, $adminId, $adminName, $now, $now);
+                        }
+                        if (!$insDf->execute()) {
+                            $error = 'Failed to save issued document record.';
+                        }
                         $insDf->close();
                     }
                     if (empty($error)) {
@@ -136,6 +176,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php endif; ?>
 
                 <form method="POST" enctype="multipart/form-data" class="space-y-5">
+                    <?php if ($prefillDocumentRequestId > 0): ?>
+                    <input type="hidden" name="document_request_id" value="<?php echo (int)$prefillDocumentRequestId; ?>">
+                    <p class="text-xs text-amber-800 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">This upload will be linked to document request #<?php echo (int)$prefillDocumentRequestId; ?> (employee will see it on My Request).</p>
+                    <?php endif; ?>
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-2">Document Type <span class="text-red-500">*</span></label>
                         <select name="document_type" required class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d97706]/20 focus:border-[#d97706]">
