@@ -1,6 +1,6 @@
 <?php
 
-function ensureInventoryItemAllocationsTable(mysqli $conn): void
+function ensureInventoryItemAllocationsTable(mysqli $conn)
 {
     $conn->query("
         CREATE TABLE IF NOT EXISTS inventory_item_allocations (

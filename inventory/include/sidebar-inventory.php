@@ -53,7 +53,7 @@ $itemNavOpen = $isItemCollapsibleActive ? '' : ' hidden';
 $itemNavArrow = $isItemCollapsibleActive ? ' rotate-180' : '';
 $itemNavBtnActive = $isItemCollapsibleActive ? ' ' . $activeClass : '';
 
-require_once dirname(__DIR__, 2) . '/include/sidebar-scrollbar-once.php';
+require_once dirname(dirname(__DIR__)) . '/include/sidebar-scrollbar-once.php';
 ?>
 <!-- Mobile Top Bar for Inventory -->
 <header class="md:hidden fixed inset-x-0 top-0 z-30 bg-[#FA9800] text-white flex items-center justify-between px-4 py-3 shadow">

@@ -53,7 +53,7 @@ if (!function_exists('inventory_decommission_save_upload')) {
     /**
      * @return string|null Relative path like uploads/inventory_decommission/… or null if no file
      */
-    function inventory_decommission_save_upload(int $userId): ?string
+    function inventory_decommission_save_upload(int $userId)
     {
         if (empty($_FILES['attachment_proof']['name']) || (int)($_FILES['attachment_proof']['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
             return null;
@@ -89,7 +89,7 @@ if (!function_exists('inventory_decommission_format_datetime_manila')) {
      * Format a MySQL DATETIME/TIMESTAMP string for display as Philippine (Manila) civil time.
      * The value is treated as wall-clock time in Asia/Manila (matches DB session +08:00).
      */
-    function inventory_decommission_format_datetime_manila(?string $mysqlDatetime, string $format = 'M d, Y h:i A'): string
+    function inventory_decommission_format_datetime_manila($mysqlDatetime, string $format = 'M d, Y h:i A'): string
     {
         if ($mysqlDatetime === null || trim($mysqlDatetime) === '') {
             return '—';
@@ -110,7 +110,7 @@ if (!function_exists('inventory_decommission_format_date_manila')) {
     /**
      * Format a MySQL DATE string for display (calendar date; interpreted in Manila context).
      */
-    function inventory_decommission_format_date_manila(?string $mysqlDate, string $format = 'M d, Y'): string
+    function inventory_decommission_format_date_manila($mysqlDate, string $format = 'M d, Y'): string
     {
         if ($mysqlDate === null || trim($mysqlDate) === '') {
             return '—';
@@ -134,7 +134,7 @@ if (!function_exists('inventory_decommission_decode_attachment_paths_json')) {
     /**
      * @return list<string> Relative paths stored via inventory_decommission_save_multi_uploads()
      */
-    function inventory_decommission_decode_attachment_paths_json(?string $json): array
+    function inventory_decommission_decode_attachment_paths_json($json): array
     {
         if ($json === null || trim($json) === '') {
             return [];
@@ -179,7 +179,7 @@ if (!function_exists('inventory_decommission_format_attachments_html_from_paths'
 }
 
 if (!function_exists('inventory_decommission_format_attachments_html')) {
-    function inventory_decommission_format_attachments_html(?string $json, string $hrefPrefix = '../'): string
+    function inventory_decommission_format_attachments_html($json, string $hrefPrefix = '../'): string
     {
         return inventory_decommission_format_attachments_html_from_paths(
             inventory_decommission_decode_attachment_paths_json($json),
@@ -317,7 +317,10 @@ if (!function_exists('inventory_finalize_decommission_approved_request')) {
         $returnRemarks = 'Decommission approved (request #' . $requestId . ').';
         $trimRemark = trim($resolutionRemark);
         if ($trimRemark !== '') {
-            $returnRemarks .= ' Note: ' . mb_substr($trimRemark, 0, 400);
+            $noteSnippet = function_exists('mb_substr')
+                ? mb_substr($trimRemark, 0, 400, 'UTF-8')
+                : substr($trimRemark, 0, 400);
+            $returnRemarks .= ' Note: ' . $noteSnippet;
         }
 
         $u1 = $conn->prepare('UPDATE inventory_item_allocations SET date_return = CURDATE(), return_remarks = ? WHERE id = ? AND date_return IS NULL');

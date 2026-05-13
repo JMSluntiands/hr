@@ -12,6 +12,17 @@ if (strtolower((string)($_SESSION['role'] ?? '')) !== 'admin') {
     exit;
 }
 
+register_shutdown_function(function () {
+    $e = error_get_last();
+    if ($e === null) {
+        return;
+    }
+    $t = (int)($e['type'] ?? 0);
+    if (in_array($t, [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
+        error_log('[inventory/decommission-request.php fatal] ' . ($e['message'] ?? '') . ' @ ' . ($e['file'] ?? '') . ':' . ($e['line'] ?? ''));
+    }
+});
+
 include __DIR__ . '/../database/db.php';
 require_once __DIR__ . '/../include/inventory_decommission_helpers.php';
 require_once __DIR__ . '/database/setup_inventory_decommission_requests_table.php';

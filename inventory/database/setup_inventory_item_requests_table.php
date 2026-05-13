@@ -1,6 +1,6 @@
 <?php
 
-function ensureInventoryItemRequestsTable(mysqli $conn): void
+function ensureInventoryItemRequestsTable(mysqli $conn)
 {
     $conn->query("
         CREATE TABLE IF NOT EXISTS inventory_item_requests (

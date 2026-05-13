@@ -1,6 +1,6 @@
 <?php
 
-function ensureInventoryDecommissionRequestsTable(mysqli $conn): void
+function ensureInventoryDecommissionRequestsTable(mysqli $conn)
 {
     $conn->query("
         CREATE TABLE IF NOT EXISTS inventory_decommission_requests (
@@ -55,7 +55,7 @@ function ensureInventoryDecommissionRequestsTable(mysqli $conn): void
         ['test_3_attachment_paths', 'test_2_attachment_paths'],
     ];
     foreach ($decomAttachMigrations as $pair) {
-        [$newCol, $afterCol] = $pair;
+        list($newCol, $afterCol) = $pair;
         $c = $conn->query("SHOW COLUMNS FROM inventory_decommission_requests LIKE '" . $conn->real_escape_string($newCol) . "'");
         if ($c && $c->num_rows === 0) {
             $safeNew = preg_replace('/[^a-z0-9_]/i', '', $newCol);
