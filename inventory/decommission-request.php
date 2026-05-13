@@ -14,6 +14,19 @@ if ($sessionRole !== 'admin') {
     exit;
 }
 
+set_exception_handler(static function (Throwable $e) {
+    error_log('[inventory/decommission-request.php] ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine());
+    while (ob_get_level() > 0) {
+        ob_end_clean();
+    }
+    if (!headers_sent()) {
+        http_response_code(500);
+        header('Content-Type: text/plain; charset=UTF-8');
+    }
+    echo "Decommission page error (details in server log).\n";
+    exit;
+});
+
 register_shutdown_function(function () {
     $e = error_get_last();
     if ($e === null) {
@@ -26,14 +39,19 @@ register_shutdown_function(function () {
 });
 
 include __DIR__ . '/../database/db.php';
+if (isset($conn) && $conn instanceof mysqli && function_exists('mysqli_report')) {
+    mysqli_report(MYSQLI_REPORT_OFF);
+}
 require_once __DIR__ . '/../include/inventory_decommission_helpers.php';
 require_once __DIR__ . '/database/setup_inventory_decommission_requests_table.php';
 require_once __DIR__ . '/database/setup_inventory_items_table.php';
 require_once __DIR__ . '/include/inventory-activity-logger.php';
 require_once __DIR__ . '/../admin/include/activity-logger.php';
 
-$adminName = $_SESSION['name'] ?? 'Admin User';
-$role = $_SESSION['role'] ?? 'admin';
+$nameRaw = $_SESSION['name'] ?? 'Admin User';
+$adminName = is_string($nameRaw) ? $nameRaw : (is_scalar($nameRaw) ? (string)$nameRaw : 'Admin User');
+$roleRaw = $_SESSION['role'] ?? 'admin';
+$role = is_string($roleRaw) ? $roleRaw : (is_scalar($roleRaw) ? (string)$roleRaw : 'admin');
 
 ensureInventoryDecommissionRequestsTable($conn);
 ensureInventoryItemsTable($conn);

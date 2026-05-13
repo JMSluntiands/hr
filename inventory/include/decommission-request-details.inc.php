@@ -7,6 +7,12 @@ if (!isset($row) || !is_array($row)) {
     return;
 }
 $detailsHrefPrefix = isset($detailsHrefPrefix) ? (string)$detailsHrefPrefix : '../';
+if (!function_exists('inventory_decommission_html_escape')) {
+    function inventory_decommission_html_escape($value)
+    {
+        return htmlspecialchars((string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    }
+}
 ?>
 <?php if (trim((string)($row['company_name'] ?? '')) !== ''): ?>
     <div><span class="font-semibold text-slate-700">Company:</span> <?php echo inventory_decommission_html_escape((string)$row['company_name']); ?></div>

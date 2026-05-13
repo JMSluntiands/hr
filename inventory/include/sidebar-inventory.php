@@ -3,7 +3,13 @@ require_once __DIR__ . '/../database/setup_inventory_item_requests_table.php';
 require_once __DIR__ . '/../database/setup_inventory_decommission_requests_table.php';
 
 $adminName = $adminName ?? $_SESSION['name'] ?? 'Admin User';
+if (!is_string($adminName)) {
+    $adminName = is_scalar($adminName) ? (string)$adminName : 'Admin User';
+}
 $role = $role ?? $_SESSION['role'] ?? 'admin';
+if (!is_string($role)) {
+    $role = is_scalar($role) ? (string)$role : 'admin';
+}
 $currentPage = basename($_SERVER['PHP_SELF'], '.php');
 $itemTab = (string)($_GET['tab'] ?? 'add');
 
