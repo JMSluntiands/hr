@@ -11,16 +11,7 @@
  */
 function inventory_stmt_fetch_one_assoc(mysqli_stmt $stmt)
 {
-    if (method_exists($stmt, 'get_result')) {
-        $result = $stmt->get_result();
-        if (!$result) {
-            return null;
-        }
-        $row = $result->fetch_assoc();
-        $result->free();
-        return $row ?: null;
-    }
-
+    // Always use store_result + bind_result: avoids mysqlnd/get_result edge cases on shared hosts.
     if (!$stmt->store_result()) {
         return null;
     }
@@ -56,18 +47,6 @@ function inventory_stmt_fetch_one_assoc(mysqli_stmt $stmt)
 
 function inventory_stmt_fetch_all_assoc(mysqli_stmt $stmt): array
 {
-    if (method_exists($stmt, 'get_result')) {
-        $result = $stmt->get_result();
-        $rows = [];
-        if ($result) {
-            while ($row = $result->fetch_assoc()) {
-                $rows[] = $row;
-            }
-            $result->free();
-        }
-        return $rows;
-    }
-
     if (!$stmt->store_result()) {
         return [];
     }

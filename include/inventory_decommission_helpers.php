@@ -3,6 +3,16 @@
 require_once __DIR__ . '/../inventory/database/setup_inventory_decommission_requests_table.php';
 require_once __DIR__ . '/../inventory/database/mysqli-stmt-fetch.php';
 
+if (!function_exists('inventory_decommission_html_escape')) {
+    /**
+     * Escape for HTML output; ENT_SUBSTITUTE avoids ValueError on invalid UTF-8 (PHP 8.2+).
+     */
+    function inventory_decommission_html_escape($value)
+    {
+        return htmlspecialchars((string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    }
+}
+
 if (!function_exists('hr_employee_can_review_decommission_requests')) {
     /**
      * Supervisors: employment type name contains "supervisor", or performance_review_supervisor flag.
@@ -169,9 +179,9 @@ if (!function_exists('inventory_decommission_format_attachments_html_from_paths'
         $i = 0;
         foreach ($paths as $p) {
             $i++;
-            $safe = htmlspecialchars($p, ENT_QUOTES, 'UTF-8');
-            $bn = htmlspecialchars(basename($p), ENT_QUOTES, 'UTF-8');
-            $pref = htmlspecialchars($hrefPrefix, ENT_QUOTES, 'UTF-8');
+            $safe = inventory_decommission_html_escape($p);
+            $bn = inventory_decommission_html_escape(basename($p));
+            $pref = inventory_decommission_html_escape($hrefPrefix);
             $html .= '<div><a class="text-[#FA9800] underline font-medium" href="' . $pref . $safe . '" target="_blank" rel="noopener">Image ' . $i . ' — ' . $bn . '</a></div>';
         }
 

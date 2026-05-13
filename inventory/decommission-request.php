@@ -7,7 +7,9 @@ if (!isset($_SESSION['user_id'])) {
 }
 require_once __DIR__ . '/../controller/session_timeout.php';
 
-if (strtolower((string)($_SESSION['role'] ?? '')) !== 'admin') {
+$_role = $_SESSION['role'] ?? '';
+$sessionRole = is_string($_role) ? strtolower($_role) : '';
+if ($sessionRole !== 'admin') {
     header('Location: ../employee/index.php');
     exit;
 }
@@ -300,25 +302,25 @@ if ($pc && $prow = $pc->fetch_assoc()) {
                                             <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">Declined</span>
                                         <?php endif; ?>
                                     </td>
-                                    <td class="px-4 py-3 text-slate-700 align-top"><?php echo htmlspecialchars($employeeLabel); ?></td>
+                                    <td class="px-4 py-3 text-slate-700 align-top"><?php echo inventory_decommission_html_escape($employeeLabel); ?></td>
                                     <td class="px-4 py-3 text-slate-700 align-top">
-                                        <div class="font-medium"><?php echo htmlspecialchars((string)$row['equipment_name']); ?></div>
-                                        <div class="text-xs text-slate-500">ID: <?php echo htmlspecialchars((string)$row['item_code']); ?></div>
+                                        <div class="font-medium"><?php echo inventory_decommission_html_escape((string)$row['equipment_name']); ?></div>
+                                        <div class="text-xs text-slate-500">ID: <?php echo inventory_decommission_html_escape((string)$row['item_code']); ?></div>
                                     </td>
                                     <td class="px-4 py-3 text-slate-600 align-top whitespace-nowrap">
-                                        <?php echo htmlspecialchars(inventory_decommission_format_datetime_manila($created)); ?>
+                                        <?php echo inventory_decommission_html_escape(inventory_decommission_format_datetime_manila($created)); ?>
                                     </td>
                                     <td class="px-4 py-3 text-slate-600 text-xs align-top">
                                         <?php if (trim((string)($row['reviewed_by_name'] ?? '')) !== ''): ?>
-                                            <div class="text-slate-700 font-medium"><?php echo htmlspecialchars((string)$row['reviewed_by_name']); ?></div>
+                                            <div class="text-slate-700 font-medium"><?php echo inventory_decommission_html_escape((string)$row['reviewed_by_name']); ?></div>
                                         <?php else: ?>
                                             <span class="text-slate-400">—</span>
                                         <?php endif; ?>
                                         <?php if ($resolved !== ''): ?>
-                                            <div class="mt-1 text-slate-500"><?php echo htmlspecialchars(inventory_decommission_format_datetime_manila($resolved)); ?></div>
+                                            <div class="mt-1 text-slate-500"><?php echo inventory_decommission_html_escape(inventory_decommission_format_datetime_manila($resolved)); ?></div>
                                         <?php endif; ?>
                                         <?php if (trim((string)($row['resolution_remark'] ?? '')) !== ''): ?>
-                                            <div class="mt-1 text-slate-600"><?php echo nl2br(htmlspecialchars((string)$row['resolution_remark'])); ?></div>
+                                            <div class="mt-1 text-slate-600"><?php echo nl2br(inventory_decommission_html_escape((string)$row['resolution_remark'])); ?></div>
                                         <?php endif; ?>
                                     </td>
                                     <td class="px-4 py-3 text-slate-600 text-xs align-top max-w-xs">
@@ -397,22 +399,22 @@ if ($pc && $prow = $pc->fetch_assoc()) {
                                 $dispCond = trim((string)($ar['live_condition'] ?? '')) !== '' ? (string)$ar['live_condition'] : 'Decommissioned';
                                 $dispRem = trim((string)($ar['live_remarks'] ?? '')) !== '' ? (string)$ar['live_remarks'] : '—';
                                 $dispArrived = (string)($ar['live_date_arrived'] ?? '');
-                                $reqLabel = htmlspecialchars((string)($ar['full_name'] ?? '') . ' (' . (string)($ar['employee_code'] ?? '') . ')', ENT_QUOTES, 'UTF-8');
+                                $reqLabel = inventory_decommission_html_escape((string)($ar['full_name'] ?? '') . ' (' . (string)($ar['employee_code'] ?? '') . ')');
                                 $resolvedAt = (string)($ar['resolved_at'] ?? '');
                                 $row = $ar;
                                 ?>
                                 <tr class="bg-emerald-50/20">
-                                    <td class="px-4 py-3 text-slate-800 font-mono text-xs"><?php echo htmlspecialchars((string)$ar['item_code']); ?></td>
-                                    <td class="px-4 py-3 text-slate-800 font-medium"><?php echo htmlspecialchars($dispName); ?></td>
-                                    <td class="px-4 py-3 text-slate-600 text-xs max-w-[200px]"><?php echo nl2br(htmlspecialchars($dispDesc !== '' ? $dispDesc : '—')); ?></td>
-                                    <td class="px-4 py-3 text-slate-600 text-xs"><?php echo htmlspecialchars($dispType !== '' ? $dispType : '—'); ?></td>
-                                    <td class="px-4 py-3 text-slate-600 text-xs"><?php echo htmlspecialchars($dispBrand !== '' ? $dispBrand : '—'); ?></td>
-                                    <td class="px-4 py-3 text-slate-600 text-xs"><?php echo htmlspecialchars($dispCond); ?></td>
-                                    <td class="px-4 py-3 text-slate-600 text-xs max-w-[160px]"><?php echo nl2br(htmlspecialchars($dispRem)); ?></td>
-                                    <td class="px-4 py-3 text-slate-600 text-xs whitespace-nowrap"><?php echo htmlspecialchars(inventory_decommission_format_date_manila($dispArrived)); ?></td>
+                                    <td class="px-4 py-3 text-slate-800 font-mono text-xs"><?php echo inventory_decommission_html_escape((string)$ar['item_code']); ?></td>
+                                    <td class="px-4 py-3 text-slate-800 font-medium"><?php echo inventory_decommission_html_escape($dispName); ?></td>
+                                    <td class="px-4 py-3 text-slate-600 text-xs max-w-[200px]"><?php echo nl2br(inventory_decommission_html_escape($dispDesc !== '' ? $dispDesc : '—')); ?></td>
+                                    <td class="px-4 py-3 text-slate-600 text-xs"><?php echo inventory_decommission_html_escape($dispType !== '' ? $dispType : '—'); ?></td>
+                                    <td class="px-4 py-3 text-slate-600 text-xs"><?php echo inventory_decommission_html_escape($dispBrand !== '' ? $dispBrand : '—'); ?></td>
+                                    <td class="px-4 py-3 text-slate-600 text-xs"><?php echo inventory_decommission_html_escape($dispCond); ?></td>
+                                    <td class="px-4 py-3 text-slate-600 text-xs max-w-[160px]"><?php echo nl2br(inventory_decommission_html_escape($dispRem)); ?></td>
+                                    <td class="px-4 py-3 text-slate-600 text-xs whitespace-nowrap"><?php echo inventory_decommission_html_escape(inventory_decommission_format_date_manila($dispArrived)); ?></td>
                                     <td class="px-4 py-3 text-slate-700 text-xs"><?php echo $reqLabel; ?></td>
-                                    <td class="px-4 py-3 text-slate-600 text-xs whitespace-nowrap"><?php echo htmlspecialchars(inventory_decommission_format_datetime_manila($resolvedAt)); ?></td>
-                                    <td class="px-4 py-3 text-slate-600 text-xs"><?php echo htmlspecialchars(trim((string)($ar['reviewed_by_name'] ?? '')) !== '' ? (string)$ar['reviewed_by_name'] : '—'); ?></td>
+                                    <td class="px-4 py-3 text-slate-600 text-xs whitespace-nowrap"><?php echo inventory_decommission_html_escape(inventory_decommission_format_datetime_manila($resolvedAt)); ?></td>
+                                    <td class="px-4 py-3 text-slate-600 text-xs"><?php echo inventory_decommission_html_escape(trim((string)($ar['reviewed_by_name'] ?? '')) !== '' ? (string)$ar['reviewed_by_name'] : '—'); ?></td>
                                     <td class="px-4 py-3 text-slate-600 text-xs align-top max-w-xs">
                                         <details class="cursor-pointer">
                                             <summary class="text-[#FA9800] font-medium">View form</summary>
