@@ -141,10 +141,13 @@ $result = $conn->query($decomSelectSql . "
         r.created_at DESC,
         r.id DESC
 ");
-if ($result) {
+if ($result instanceof mysqli_result) {
     while ($row = $result->fetch_assoc()) {
         $requests[] = $row;
     }
+    $result->free();
+} elseif ($result === false) {
+    error_log('decommission-request.php pending/declined query failed: ' . $conn->error);
 }
 
 $approvedRes = $conn->query("
@@ -191,10 +194,13 @@ $approvedRes = $conn->query("
     WHERE r.status = 'approved'
     ORDER BY r.resolved_at DESC, r.id DESC
 ");
-if ($approvedRes) {
+if ($approvedRes instanceof mysqli_result) {
     while ($row = $approvedRes->fetch_assoc()) {
         $approvedDecommissionRows[] = $row;
     }
+    $approvedRes->free();
+} elseif ($approvedRes === false) {
+    error_log('decommission-request.php approved query failed: ' . $conn->error);
 }
 
 $pendingCount = 0;

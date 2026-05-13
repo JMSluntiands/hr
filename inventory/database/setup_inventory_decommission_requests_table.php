@@ -44,7 +44,7 @@ function ensureInventoryDecommissionRequestsTable(mysqli $conn): void
     $colSerial = $conn->query("SHOW COLUMNS FROM inventory_decommission_requests LIKE 'serial_number'");
     if ($colSerial && ($row = $colSerial->fetch_assoc())) {
         $type = strtolower((string)($row['Type'] ?? ''));
-        if ($type !== '' && str_contains($type, 'varchar')) {
+        if ($type !== '' && strpos($type, 'varchar') !== false) {
             $conn->query('ALTER TABLE inventory_decommission_requests MODIFY COLUMN serial_number TEXT NULL');
         }
     }
