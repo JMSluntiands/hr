@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/../inventory/database/setup_inventory_decommission_requests_table.php';
+require_once __DIR__ . '/../inventory/database/mysqli-stmt-fetch.php';
 
 if (!function_exists('hr_employee_can_review_decommission_requests')) {
     /**
@@ -34,7 +35,7 @@ if (!function_exists('hr_employee_can_review_decommission_requests')) {
         }
         $stmt->bind_param('i', $employeeDbId);
         $stmt->execute();
-        $row = $stmt->get_result()->fetch_assoc();
+        $row = inventory_stmt_fetch_one_assoc($stmt);
         $stmt->close();
 
         if (!$row) {
@@ -288,7 +289,7 @@ if (!function_exists('inventory_finalize_decommission_approved_request')) {
         }
         $st->bind_param('i', $requestId);
         $st->execute();
-        $row = $st->get_result()->fetch_assoc();
+        $row = inventory_stmt_fetch_one_assoc($st);
         $st->close();
         if (!$row) {
             return true;
@@ -304,7 +305,7 @@ if (!function_exists('inventory_finalize_decommission_approved_request')) {
         }
         $sa->bind_param('i', $allocId);
         $sa->execute();
-        $arow = $sa->get_result()->fetch_assoc();
+        $arow = inventory_stmt_fetch_one_assoc($sa);
         $sa->close();
         if (!$arow) {
             return true;

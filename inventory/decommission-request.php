@@ -77,9 +77,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         if ($q) {
                             $q->bind_param('i', $requestId);
                             $q->execute();
-                            $rw = $q->get_result()->fetch_assoc();
+                            $rw = inventory_stmt_fetch_one_assoc($q);
                             $q->close();
-                            $itemCode = trim((string)($rw['item_code'] ?? ''));
+                            $itemCode = is_array($rw) ? trim((string)($rw['item_code'] ?? '')) : '';
                         }
                         $desc = "{$label}d decommission request #{$requestId}" . ($itemCode !== '' ? " (Item ID: {$itemCode})" : '') . ' by ' . $reviewerName . '.';
                         logActivity($conn, $label . ' Decommission Request', 'decommission_request', $requestId, $desc);

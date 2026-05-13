@@ -34,7 +34,7 @@ if (!function_exists('inventoryLogActivity')) {
      * @param string|null $changeDetails Detailed field changes, e.g. "Item name: Laptop → Desktop\nDescription: old → new"
      * @param string|null $itemCode e.g. "LAP-0001" for display/filtering
      */
-    function inventoryLogActivity($conn, string $action, string $entityType, ?int $entityId = null, string $description = '', ?string $changeDetails = null, ?string $itemCode = null): bool
+    function inventoryLogActivity($conn, string $action, string $entityType, $entityId = null, string $description = '', $changeDetails = null, $itemCode = null): bool
     {
         if (!inventoryCanLogActivity($conn) || !isset($_SESSION['user_id'])) {
             return false;

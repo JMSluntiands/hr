@@ -6,7 +6,10 @@
  * These helpers work after $stmt->execute() on a SELECT.
  */
 
-function inventory_stmt_fetch_one_assoc(mysqli_stmt $stmt): ?array
+/**
+ * @return array|null
+ */
+function inventory_stmt_fetch_one_assoc(mysqli_stmt $stmt)
 {
     if (method_exists($stmt, 'get_result')) {
         $result = $stmt->get_result();
