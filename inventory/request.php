@@ -150,7 +150,7 @@ if ($pc && $prow = $pc->fetch_assoc()) {
                         <?php if (empty($requests)): ?>
                             <tr>
                                 <td colspan="7" class="px-4 py-8 text-center text-slate-500 text-sm">
-                                    Walang item requests pa.
+                                    No item requests yet.
                                 </td>
                             </tr>
                         <?php else: ?>

@@ -12,21 +12,29 @@ include 'include/employee_data.php';
 require_once __DIR__ . '/../inventory/database/setup_inventory_items_table.php';
 require_once __DIR__ . '/../inventory/database/setup_inventory_item_allocations_table.php';
 require_once __DIR__ . '/../inventory/database/setup_inventory_item_requests_table.php';
+require_once __DIR__ . '/../inventory/database/setup_inventory_decommission_requests_table.php';
 require_once __DIR__ . '/../inventory/database/mysqli-stmt-fetch.php';
 require_once __DIR__ . '/../inventory/include/inventory-activity-logger.php';
+require_once __DIR__ . '/../include/inventory_decommission_helpers.php';
+require_once __DIR__ . '/../admin/include/activity-logger.php';
 
 $allocatedItems = [];
 $myItemRequests = [];
+$myDecommissionRequests = [];
+$allDecommissionRequests = [];
+$canReviewDecommission = false;
 $tableMissing = false;
 $status = (string)($_GET['status'] ?? '');
 $message = (string)($_GET['message'] ?? '');
 $rawInvView = (string)($_GET['view'] ?? 'list');
-$inventoryView = in_array($rawInvView, ['list', 'request'], true) ? $rawInvView : 'list';
+$inventoryView = in_array($rawInvView, ['list', 'request', 'decommission', 'decommission_review'], true) ? $rawInvView : 'list';
 
 if ($conn && $employeeDbId) {
     ensureInventoryItemsTable($conn);
     ensureInventoryItemAllocationsTable($conn);
     ensureInventoryItemRequestsTable($conn);
+    ensureInventoryDecommissionRequestsTable($conn);
+    $canReviewDecommission = hr_employee_can_review_decommission_requests($conn, $employeeDbId);
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string)($_POST['action'] ?? '') === 'submit_item_request') {
         $reqItemName = trim((string)($_POST['requested_item_name'] ?? ''));
@@ -64,6 +72,223 @@ if ($conn && $employeeDbId) {
         }
 
         header('Location: inventory.php?view=request&status=error&message=' . rawurlencode('Could not submit your request. Please try again.'));
+        exit;
+    }
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string)($_POST['action'] ?? '') === 'submit_decommission') {
+        $allocId = (int)($_POST['inventory_item_allocation_id'] ?? 0);
+        $dateDecommissioning = trim((string)($_POST['date_decommissioning'] ?? ''));
+        $reason = trim((string)($_POST['reason_decommissioning'] ?? ''));
+        $t1n = trim((string)($_POST['test_1_notes'] ?? ''));
+        $t1d = trim((string)($_POST['test_1_date'] ?? ''));
+        $t2n = trim((string)($_POST['test_2_notes'] ?? ''));
+        $t2d = trim((string)($_POST['test_2_date'] ?? ''));
+        $t3n = trim((string)($_POST['test_3_notes'] ?? ''));
+        $t3d = trim((string)($_POST['test_3_date'] ?? ''));
+
+        if ($allocId <= 0 || $reason === '') {
+            header('Location: inventory.php?view=decommission&status=error&message=' . rawurlencode('Select an allocated item and enter the reason for decommissioning.'));
+            exit;
+        }
+
+        $requestEmployeeName = trim((string)$employeeName);
+        if ($requestEmployeeName === '') {
+            $requestEmployeeName = 'Employee';
+        }
+
+        $allocRow = null;
+        $v = $conn->prepare('
+            SELECT ia.id, ii.item_id, ii.item_name, ii.description, ii.`type` AS eq_type, ii.brand_manufacturer, ii.remarks AS item_remarks, ia.date_received
+            FROM inventory_item_allocations ia
+            INNER JOIN inventory_items ii ON ii.id = ia.inventory_item_id
+            WHERE ia.id = ? AND ia.employee_id = ? AND ia.date_return IS NULL
+            LIMIT 1
+        ');
+        if ($v) {
+            $v->bind_param('ii', $allocId, $employeeDbId);
+            $v->execute();
+            $allocRow = $v->get_result()->fetch_assoc();
+            $v->close();
+        }
+        if (!$allocRow) {
+            header('Location: inventory.php?view=decommission&status=error&message=' . rawurlencode('The selected item is invalid or no longer available.'));
+            exit;
+        }
+
+        $equipmentName = trim((string)($allocRow['item_name'] ?? ''));
+        $itemCode = trim((string)($allocRow['item_id'] ?? ''));
+        $equipmentType = trim((string)($allocRow['eq_type'] ?? ''));
+        $equipmentDescription = trim((string)($allocRow['description'] ?? ''));
+        $brandManufacturer = trim((string)($allocRow['brand_manufacturer'] ?? ''));
+        $itemRemarksSnap = trim((string)($allocRow['item_remarks'] ?? ''));
+        $recvRaw = (string)($allocRow['date_received'] ?? '');
+        $itemDateReceived = $recvRaw !== '' ? date('Y-m-d', strtotime($recvRaw)) : '';
+
+        if ($equipmentName === '' || $itemCode === '') {
+            header('Location: inventory.php?view=decommission&status=error&message=' . rawurlencode('Could not load item details from the allocation.'));
+            exit;
+        }
+
+        $userId = (int)$_SESSION['user_id'];
+        $up = inventory_decommission_save_upload($userId);
+        if ($up === '__error_upload__') {
+            header('Location: inventory.php?view=decommission&status=error&message=' . rawurlencode('Attachment upload failed.'));
+            exit;
+        }
+        if ($up === '__error_size__') {
+            header('Location: inventory.php?view=decommission&status=error&message=' . rawurlencode('Attachment must be 8MB or smaller.'));
+            exit;
+        }
+        if ($up === '__error_type__') {
+            header('Location: inventory.php?view=decommission&status=error&message=' . rawurlencode('Invalid attachment type.'));
+            exit;
+        }
+        if ($up === '__error_save__') {
+            header('Location: inventory.php?view=decommission&status=error&message=' . rawurlencode('Could not save attachment.'));
+            exit;
+        }
+
+        $normDate = static function (string $d): ?string {
+            $d = trim($d);
+            if ($d === '') {
+                return null;
+            }
+            $ts = strtotime($d);
+
+            return $ts ? date('Y-m-d', $ts) : null;
+        };
+
+        $companyDb = null;
+        $typeDb = $equipmentType === '' ? null : $equipmentType;
+        $serialDb = $itemRemarksSnap === '' ? null : $itemRemarksSnap;
+        $descDb = $equipmentDescription === '' ? null : $equipmentDescription;
+        $brandDb = $brandManufacturer === '' ? null : $brandManufacturer;
+        $recvDb = $normDate($itemDateReceived);
+        $decomDb = $normDate($dateDecommissioning);
+        $t1nDb = $t1n === '' ? null : $t1n;
+        $t1dDb = $normDate($t1d);
+        $t2nDb = $t2n === '' ? null : $t2n;
+        $t2dDb = $normDate($t2d);
+        $t3nDb = $t3n === '' ? null : $t3n;
+        $t3dDb = $normDate($t3d);
+        $allocDb = $allocId > 0 ? (string)$allocId : null;
+
+        $ins = $conn->prepare('
+            INSERT INTO inventory_decommission_requests (
+                employee_id, inventory_item_allocation_id, company_name, request_employee_name,
+                equipment_name, item_code, equipment_type, serial_number, equipment_description,
+                brand_manufacturer, item_date_received, date_decommissioning, reason_decommissioning,
+                test_1_notes, test_1_date, test_2_notes, test_2_date, test_3_notes, test_3_date,
+                attachment_path, status
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,\'pending\')
+        ');
+        if (!$ins) {
+            header('Location: inventory.php?view=decommission&status=error&message=' . rawurlencode('Database error.'));
+            exit;
+        }
+
+        $eidStr = (string)(int)$employeeDbId;
+        $attachDb = $up;
+        $ins->bind_param(
+            'ssssssssssssssssssss',
+            $eidStr,
+            $allocDb,
+            $companyDb,
+            $requestEmployeeName,
+            $equipmentName,
+            $itemCode,
+            $typeDb,
+            $serialDb,
+            $descDb,
+            $brandDb,
+            $recvDb,
+            $decomDb,
+            $reason,
+            $t1nDb,
+            $t1dDb,
+            $t2nDb,
+            $t2dDb,
+            $t3nDb,
+            $t3dDb,
+            $attachDb
+        );
+        $okIns = $ins->execute();
+        $newDecId = (int)$ins->insert_id;
+        $ins->close();
+
+        if ($okIns && $newDecId > 0) {
+            $logDesc = 'Submitted equipment decommission request #' . $newDecId . ' for item ' . $itemCode . ' (' . $equipmentName . ').';
+            logActivity($conn, 'Submit Decommission Request', 'decommission_request', $newDecId, $logDesc);
+            inventoryLogActivity(
+                $conn,
+                inventoryActionWithItemCode('Submit Decommission Request', $itemCode),
+                'DecommissionRequest',
+                $newDecId,
+                $logDesc,
+                null,
+                $itemCode
+            );
+            header('Location: inventory.php?view=decommission&status=decommission_sent');
+            exit;
+        }
+
+        header('Location: inventory.php?view=decommission&status=error&message=' . rawurlencode('Could not save your request.'));
+        exit;
+    }
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string)($_POST['action'] ?? '') === 'review_decommission_request') {
+        if (!$canReviewDecommission) {
+            header('Location: inventory.php?view=list&status=error&message=' . rawurlencode('You are not allowed to review decommission requests.'));
+            exit;
+        }
+        $requestId = (int)($_POST['request_id'] ?? 0);
+        $newStatus = (string)($_POST['new_status'] ?? '');
+        $remark = trim((string)($_POST['resolution_remark'] ?? ''));
+
+        if ($requestId > 0 && ($newStatus === 'approved' || $newStatus === 'declined')) {
+            $reviewerId = (int)$_SESSION['user_id'];
+            $reviewerName = (string)($_SESSION['name'] ?? 'Supervisor');
+            $stmt = $conn->prepare('
+                UPDATE inventory_decommission_requests
+                SET status = ?,
+                    resolution_remark = ?,
+                    reviewed_by_user_id = ?,
+                    reviewed_by_name = ?,
+                    resolved_at = NOW()
+                WHERE id = ? AND status = \'pending\'
+            ');
+            if ($stmt) {
+                $stmt->bind_param('ssisi', $newStatus, $remark, $reviewerId, $reviewerName, $requestId);
+                $stmt->execute();
+                $affected = $stmt->affected_rows;
+                $stmt->close();
+
+                if ($affected > 0) {
+                    $itemCodeLog = '';
+                    $q = $conn->prepare('SELECT item_code FROM inventory_decommission_requests WHERE id = ? LIMIT 1');
+                    if ($q) {
+                        $q->bind_param('i', $requestId);
+                        $q->execute();
+                        $rw = $q->get_result()->fetch_assoc();
+                        $q->close();
+                        $itemCodeLog = trim((string)($rw['item_code'] ?? ''));
+                    }
+                    $label = $newStatus === 'approved' ? 'Approve' : 'Decline';
+                    $desc = "{$label}d decommission request #{$requestId}" . ($itemCodeLog !== '' ? " (Item ID: {$itemCodeLog})" : '') . ' by ' . $reviewerName . '.';
+                    logActivity($conn, $label . ' Decommission Request', 'decommission_request', $requestId, $desc);
+                    inventoryLogActivity(
+                        $conn,
+                        inventoryActionWithItemCode($label . ' Decommission Request', $itemCodeLog !== '' ? $itemCodeLog : 'REQ-' . $requestId),
+                        'DecommissionRequest',
+                        $requestId,
+                        $desc,
+                        $remark !== '' ? 'Remark: ' . $remark : null,
+                        $itemCodeLog !== '' ? $itemCodeLog : null
+                    );
+                }
+            }
+        }
+        header('Location: inventory.php?view=decommission_review&status=review_updated');
         exit;
     }
 
@@ -117,8 +342,10 @@ if ($conn && $employeeDbId) {
                 ii.item_id,
                 ii.item_name,
                 ii.description,
+                ii.brand_manufacturer,
                 ii.`type` AS type,
                 ii.item_condition,
+                ii.remarks AS item_remarks,
                 ia.date_received,
                 ia.employee_appeal,
                 ia.employee_appeal_remarks,
@@ -154,6 +381,72 @@ if ($conn && $employeeDbId) {
     } else {
         $tableMissing = true;
     }
+
+    $dcCheck = $conn->query("SHOW TABLES LIKE 'inventory_decommission_requests'");
+    if ($dcCheck && $dcCheck->num_rows > 0) {
+        $myDStmt = $conn->prepare('
+            SELECT *
+            FROM inventory_decommission_requests
+            WHERE employee_id = ?
+            ORDER BY created_at DESC, id DESC
+        ');
+        if ($myDStmt) {
+            $myDStmt->bind_param('i', $employeeDbId);
+            $myDStmt->execute();
+            $myDecommissionRequests = inventory_stmt_fetch_all_assoc($myDStmt);
+            $myDStmt->close();
+        }
+
+        if ($canReviewDecommission) {
+            $allRes = $conn->query("
+                SELECT r.*, e.full_name AS requester_full_name, e.employee_id AS requester_code
+                FROM inventory_decommission_requests r
+                JOIN employees e ON e.id = r.employee_id
+                ORDER BY CASE r.status WHEN 'pending' THEN 0 ELSE 1 END ASC, r.created_at DESC, r.id DESC
+            ");
+            if ($allRes) {
+                while ($r = $allRes->fetch_assoc()) {
+                    $allDecommissionRequests[] = $r;
+                }
+            }
+        }
+    }
+}
+if ($inventoryView === 'decommission_review' && !$canReviewDecommission) {
+    header('Location: inventory.php?view=list');
+    exit;
+}
+
+$decomAllocJson = '[]';
+if (!$tableMissing) {
+    $decomAllocJson = json_encode(array_map(static function (array $row): array {
+        return [
+            'allocationId' => (int)$row['id'],
+            'itemId' => (string)($row['item_id'] ?? ''),
+            'itemName' => (string)($row['item_name'] ?? ''),
+            'description' => (string)($row['description'] ?? ''),
+            'type' => (string)($row['type'] ?? ''),
+            'brand' => (string)($row['brand_manufacturer'] ?? ''),
+            'dateReceived' => (string)($row['date_received'] ?? ''),
+            'itemRemarks' => (string)($row['item_remarks'] ?? ''),
+        ];
+    }, $allocatedItems), JSON_HEX_TAG | JSON_HEX_APOS | JSON_UNESCAPED_UNICODE);
+}
+
+switch ($inventoryView) {
+    case 'request':
+        $invSubtitle = 'View your request history and submit a new item request.';
+        break;
+    case 'decommission':
+        $invSubtitle = 'Decommission request history and form to submit a new request.';
+        break;
+    case 'decommission_review':
+        $invSubtitle = 'Review, approve, or decline employee decommission requests.';
+        break;
+    case 'list':
+    default:
+        $invSubtitle = 'Equipment and assets allocated to your account.';
+        break;
 }
 ?>
 <!DOCTYPE html>
@@ -165,6 +458,14 @@ if ($conn && $employeeDbId) {
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
+    <?php if ($inventoryView === 'decommission'): ?>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <style>
+      .select2-container--default .select2-selection--single { min-height: 42px; border-color: #cbd5e1; border-radius: 0.5rem; }
+      .select2-container--default .select2-selection--single .select2-selection__rendered { line-height: 2.25rem; padding-left: 12px; }
+      .select2-container { min-width: 0; width: 100% !important; }
+    </style>
+    <?php endif; ?>
     <script>
         tailwind.config = {
             theme: {
@@ -179,7 +480,7 @@ if ($conn && $employeeDbId) {
         }
     </script>
 </head>
-<body class="font-inter bg-[#f1f5f9] min-h-screen">
+<body class="font-inter bg-[#f1f5f9] min-h-screen" data-inventory-view="<?php echo htmlspecialchars($inventoryView, ENT_QUOTES, 'UTF-8'); ?>">
     <!-- Mobile Top Bar -->
     <header class="md:hidden fixed inset-x-0 top-0 z-30 bg-[#FA9800] text-white flex items-center justify-between px-4 py-3 shadow">
         <div class="flex items-center gap-2">
@@ -287,11 +588,11 @@ if ($conn && $employeeDbId) {
     <div id="employee-sidebar-backdrop" class="fixed inset-0 z-20 bg-black/40 hidden md:hidden"></div>
 
     <main class="min-h-screen p-8 space-y-6 overflow-y-auto md:ml-64 md:pt-8 pt-16">
-        <div id="main-inner">
+        <div id="main-inner" class="min-w-0 max-w-full">
             <div class="flex items-center justify-between mb-6">
                 <div>
                     <h1 class="text-2xl font-semibold text-slate-800">My Inventory</h1>
-                    <p class="text-sm text-slate-500 mt-1"><?php echo $inventoryView === 'request' ? 'Request an item or track your submitted requests.' : 'Items currently allocated to you.'; ?></p>
+                    <p class="text-sm text-slate-500 mt-1"><?php echo htmlspecialchars($invSubtitle); ?></p>
                 </div>
                 <div class="hidden md:flex items-center gap-3 text-sm text-slate-500">
                     <span><?php echo htmlspecialchars($department); ?></span>
@@ -300,17 +601,29 @@ if ($conn && $employeeDbId) {
                 </div>
             </div>
 
-            <section class="bg-white rounded-xl shadow-sm border border-slate-100">
+            <div class="space-y-6">
                 <?php if ($status === 'appeal_sent'): ?>
                     <div class="p-6 pb-0">
                         <div class="rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 text-sm">
-                            Appeal sent successfully. Makikita ito ni admin sa inventory messages.
+                            Appeal sent successfully. An admin will see it under inventory messages.
                         </div>
                     </div>
                 <?php elseif ($status === 'request_sent'): ?>
                     <div class="p-6 pb-0">
                         <div class="rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 text-sm">
                             Your item request was sent. An admin will review it under Inventory → Request.
+                        </div>
+                    </div>
+                <?php elseif ($status === 'decommission_sent'): ?>
+                    <div class="p-6 pb-0">
+                        <div class="rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 text-sm">
+                            Decommission request saved. A supervisor or inventory admin will review it.
+                        </div>
+                    </div>
+                <?php elseif ($status === 'review_updated'): ?>
+                    <div class="p-6 pb-0">
+                        <div class="rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 text-sm">
+                            Request status updated.
                         </div>
                     </div>
                 <?php elseif ($status === 'error'): ?>
@@ -328,172 +641,9 @@ if ($conn && $employeeDbId) {
                         </div>
                     </div>
                 <?php else: ?>
-                    <div class="p-4 md:p-6 space-y-4">
-                        <details class="inventory-collapsible group rounded-xl border border-slate-200 bg-white shadow-sm open:shadow"<?php echo $inventoryView === 'list' ? ' open' : ''; ?>>
-                            <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-4 py-3 font-semibold text-slate-800 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
-                                <span class="flex items-center gap-2">
-                                    <svg class="h-5 w-5 text-[#FA9800] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V7a2 2 0 00-2-2h-3V3H9v2H6a2 2 0 00-2 2v6m16 0v6a2 2 0 01-2 2H6a2 2 0 01-2-2v-6m16 0H4m4 0v2m8-2v2" />
-                                    </svg>
-                                    My Items
-                                </span>
-                                <svg class="h-5 w-5 text-slate-400 transition-transform group-open:rotate-180 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                </svg>
-                            </summary>
-                            <div class="border-t border-slate-100 px-4 pb-4 pt-2 overflow-x-auto">
-                                <table id="inventoryTable" class="min-w-full text-sm display w-full">
-                                    <thead class="bg-slate-50">
-                                        <tr>
-                                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Item ID</th>
-                                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Item Name</th>
-                                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Description</th>
-                                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Type</th>
-                                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Condition</th>
-                                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Date Received</th>
-                                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide no-sort">Appeal / Remarks</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="divide-y divide-slate-100">
-                                        <?php if (empty($allocatedItems)): ?>
-                                            <tr>
-                                                <td colspan="7" class="px-4 py-8 text-center text-slate-500 text-sm">
-                                                    Wala pang allocated items sa account mo.
-                                                </td>
-                                            </tr>
-                                        <?php else: ?>
-                                            <?php foreach ($allocatedItems as $item): ?>
-                                                <tr class="hover:bg-slate-50/80">
-                                                    <td class="px-4 py-3 text-slate-700"><?php echo htmlspecialchars((string)$item['item_id']); ?></td>
-                                                    <td class="px-4 py-3 text-slate-700"><?php echo htmlspecialchars((string)$item['item_name']); ?></td>
-                                                    <td class="px-4 py-3 text-slate-700"><?php echo htmlspecialchars((string)$item['description']); ?></td>
-                                                    <td class="px-4 py-3 text-slate-700"><?php echo htmlspecialchars((string)$item['type']); ?></td>
-                                                    <td class="px-4 py-3 text-slate-700"><?php echo htmlspecialchars((string)$item['item_condition']); ?></td>
-                                                    <td class="px-4 py-3 text-slate-700">
-                                                        <?php
-                                                        $receivedDate = (string)($item['date_received'] ?? '');
-                                                        echo $receivedDate !== '' ? htmlspecialchars(date('M d, Y', strtotime($receivedDate))) : '—';
-                                                        ?>
-                                                    </td>
-                                                    <td class="px-4 py-3 text-slate-700 min-w-[280px]">
-                                                        <?php
-                                                        $hasAppeal = trim((string)($item['employee_appeal'] ?? '')) !== '';
-                                                        $appealBtn = $hasAppeal ? 'Update Appeal' : 'Submit Appeal';
-                                                        ?>
-                                                        <?php if ($hasAppeal): ?>
-                                                            <div class="mb-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-800">
-                                                                <div class="font-semibold">Sent to Admin</div>
-                                                                <div class="mt-1"><?php echo htmlspecialchars((string)$item['employee_appeal']); ?></div>
-                                                                <?php if (trim((string)($item['employee_appeal_remarks'] ?? '')) !== ''): ?>
-                                                                    <div class="mt-1 text-amber-700">Remarks: <?php echo htmlspecialchars((string)$item['employee_appeal_remarks']); ?></div>
-                                                                <?php endif; ?>
-                                                            </div>
-                                                        <?php endif; ?>
-                                                        <button
-                                                            type="button"
-                                                            class="openAppealModal px-3 py-1.5 rounded-lg text-xs font-medium bg-[#FA9800] text-white hover:opacity-90"
-                                                            data-allocation-id="<?php echo (int)$item['id']; ?>"
-                                                            data-item-label="<?php echo htmlspecialchars((string)$item['item_id'] . ' - ' . (string)$item['item_name']); ?>"
-                                                            data-existing-appeal="<?php echo htmlspecialchars((string)($item['employee_appeal'] ?? '')); ?>"
-                                                            data-existing-remarks="<?php echo htmlspecialchars((string)($item['employee_appeal_remarks'] ?? '')); ?>"
-                                                        >
-                                                            <?php echo $appealBtn; ?>
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            <?php endforeach; ?>
-                                        <?php endif; ?>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </details>
-
-                        <details class="inventory-collapsible group rounded-xl border border-slate-200 bg-white shadow-sm open:shadow"<?php echo $inventoryView === 'request' ? ' open' : ''; ?>>
-                            <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-4 py-3 font-semibold text-slate-800 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
-                                <span class="flex items-center gap-2">
-                                    <svg class="h-5 w-5 text-[#FA9800] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                                    </svg>
-                                    Request Item
-                                </span>
-                                <svg class="h-5 w-5 text-slate-400 transition-transform group-open:rotate-180 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                </svg>
-                            </summary>
-                            <div class="border-t border-slate-100 px-4 pb-4 pt-4 space-y-6">
-                                <form method="POST" class="rounded-lg border border-slate-100 bg-slate-50/80 p-4 space-y-3">
-                                    <input type="hidden" name="action" value="submit_item_request">
-                                    <div>
-                                        <label for="requested_item_name" class="block text-sm font-medium text-slate-700 mb-1">Item name <span class="text-red-500">*</span></label>
-                                        <input type="text" name="requested_item_name" id="requested_item_name" required maxlength="255" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" placeholder="e.g. Laptop, Mouse, Monitor">
-                                    </div>
-                                    <div>
-                                        <label for="requested_item_details" class="block text-sm font-medium text-slate-700 mb-1">Details <span class="text-slate-400 font-normal">(optional)</span></label>
-                                        <textarea name="requested_item_details" id="requested_item_details" rows="3" maxlength="2000" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" placeholder="Specifications, quantity, or reason for the request"></textarea>
-                                    </div>
-                                    <div class="flex justify-end">
-                                        <button type="submit" class="px-4 py-2 rounded-lg text-sm font-medium bg-[#FA9800] text-white hover:opacity-90">
-                                            Submit request
-                                        </button>
-                                    </div>
-                                </form>
-
-                                <div>
-                                    <h3 class="text-sm font-semibold text-slate-700 mb-2">Your submitted requests</h3>
-                                    <div class="overflow-x-auto rounded-lg border border-slate-100">
-                                        <table class="min-w-full text-sm">
-                                            <thead class="bg-slate-50">
-                                                <tr>
-                                                    <th class="text-left px-3 py-2 text-xs font-semibold text-slate-500 uppercase">Item</th>
-                                                    <th class="text-left px-3 py-2 text-xs font-semibold text-slate-500 uppercase">Details</th>
-                                                    <th class="text-left px-3 py-2 text-xs font-semibold text-slate-500 uppercase">Status</th>
-                                                    <th class="text-left px-3 py-2 text-xs font-semibold text-slate-500 uppercase">Date</th>
-                                                    <th class="text-left px-3 py-2 text-xs font-semibold text-slate-500 uppercase">Admin response</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody class="divide-y divide-slate-100 bg-white">
-                                                <?php if (empty($myItemRequests)): ?>
-                                                    <tr>
-                                                        <td colspan="5" class="px-3 py-6 text-center text-slate-500 text-sm">
-                                                            You have not submitted any requests yet.
-                                                        </td>
-                                                    </tr>
-                                                <?php else: ?>
-                                                    <?php foreach ($myItemRequests as $req): ?>
-                                                        <?php
-                                                        $rs = (string)($req['status'] ?? '');
-                                                        $reqCreated = (string)($req['created_at'] ?? '');
-                                                        ?>
-                                                        <tr class="hover:bg-slate-50/80">
-                                                            <td class="px-3 py-2 text-slate-700"><?php echo htmlspecialchars((string)$req['item_name']); ?></td>
-                                                            <td class="px-3 py-2 text-slate-600"><?php echo nl2br(htmlspecialchars(trim((string)($req['details'] ?? '')) !== '' ? (string)$req['details'] : '—')); ?></td>
-                                                            <td class="px-3 py-2">
-                                                                <?php if ($rs === 'pending'): ?>
-                                                                    <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">Pending</span>
-                                                                <?php elseif ($rs === 'approved'): ?>
-                                                                    <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">Approved</span>
-                                                                <?php else: ?>
-                                                                    <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">Rejected</span>
-                                                                <?php endif; ?>
-                                                            </td>
-                                                            <td class="px-3 py-2 text-slate-600 whitespace-nowrap">
-                                                                <?php echo $reqCreated !== '' ? htmlspecialchars(date('M d, Y', strtotime($reqCreated))) : '—'; ?>
-                                                            </td>
-                                                            <td class="px-3 py-2 text-slate-600 text-xs">
-                                                                <?php echo trim((string)($req['admin_remark'] ?? '')) !== '' ? nl2br(htmlspecialchars((string)$req['admin_remark'])) : '—'; ?>
-                                                            </td>
-                                                        </tr>
-                                                    <?php endforeach; ?>
-                                                <?php endif; ?>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-                        </details>
-                    </div>
+                    <?php include __DIR__ . '/include/inventory_main_tabs.inc.php'; ?>
                 <?php endif; ?>
-            </section>
+            </div>
         </div>
     </main>
 
@@ -508,7 +658,7 @@ if ($conn && $employeeDbId) {
                 <input type="hidden" name="allocation_id" id="appealAllocationId">
                 <div>
                     <label class="block text-sm text-slate-600 mb-1">Appeal</label>
-                    <textarea name="employee_appeal" id="appealText" rows="3" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" placeholder="Hal. Hindi ito ang assigned item ko." required></textarea>
+                    <textarea name="employee_appeal" id="appealText" rows="3" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" placeholder="e.g. This is not the item assigned to me." required></textarea>
                 </div>
                 <div>
                     <label class="block text-sm text-slate-600 mb-1">Remarks (Optional)</label>
@@ -523,6 +673,9 @@ if ($conn && $employeeDbId) {
     </div>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <?php if ($inventoryView === 'decommission'): ?>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <?php endif; ?>
     <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
     <script src="include/sidebar-employee.js"></script>
     <style>
@@ -534,7 +687,8 @@ if ($conn && $employeeDbId) {
     </style>
     <script>
       $(function () {
-        if ($('#inventoryTable').length && $('#inventoryTable tbody tr').length > 0 && $('#inventoryTable tbody tr').first().find('td').length > 1) {
+        var invView = document.body.getAttribute('data-inventory-view') || 'list';
+        if (invView === 'list' && $('#inventoryTable').length && $('#inventoryTable tbody tr').length > 0 && $('#inventoryTable tbody tr').first().find('td').length > 1) {
           $('#inventoryTable').DataTable({
             order: [[5, 'desc']],
             pageLength: 10,
@@ -594,6 +748,42 @@ if ($conn && $employeeDbId) {
             closeAppealModal();
           }
         });
+
+        const decomDataEl = document.getElementById('decomAllocationData');
+        const decomSelect = document.getElementById('decom_item_select');
+        const remarksTa = document.getElementById('item_remarks_display');
+        function applyDecomPrefill() {
+          if (!decomDataEl || !decomSelect || !remarksTa) return;
+          var rows = [];
+          try { rows = JSON.parse(decomDataEl.textContent || '[]'); } catch (e) { return; }
+          var id = parseInt(decomSelect.value, 10) || 0;
+          if (!id) {
+            remarksTa.value = '';
+            return;
+          }
+          var row = null;
+          for (var i = 0; i < rows.length; i++) {
+            if (rows[i].allocationId === id) { row = rows[i]; break; }
+          }
+          if (!row) {
+            remarksTa.value = '';
+            return;
+          }
+          var r = row.itemRemarks != null ? String(row.itemRemarks) : '';
+          remarksTa.value = r.trim() !== '' ? r : "(No remarks on this item's inventory record.)";
+        }
+        if (decomSelect && window.jQuery && typeof $.fn.select2 === 'function') {
+          $('#decom_item_select').select2({
+            width: '100%',
+            placeholder: 'Search or select an item…',
+            allowClear: false
+          });
+          $('#decom_item_select').on('change select2:select', applyDecomPrefill);
+          applyDecomPrefill();
+        } else if (decomSelect) {
+          decomSelect.addEventListener('change', applyDecomPrefill);
+          applyDecomPrefill();
+        }
       });
     </script>
 </body>

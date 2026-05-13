@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../database/setup_inventory_item_requests_table.php';
+require_once __DIR__ . '/../database/setup_inventory_decommission_requests_table.php';
 
 $adminName = $adminName ?? $_SESSION['name'] ?? 'Admin User';
 $role = $role ?? $_SESSION['role'] ?? 'admin';
@@ -16,16 +17,24 @@ $isAllocation = ($currentPage === 'allocation');
 $isReport = ($currentPage === 'report');
 $isMessages = ($currentPage === 'messages');
 $isRequest = ($currentPage === 'request');
+$isDecommissionRequest = ($currentPage === 'decommission-request');
 $isActivityLog = ($currentPage === 'activity-log');
 $unreadMessageCount = 0;
 $pendingRequestCount = 0;
+$pendingDecommissionCount = 0;
 
 if (isset($conn) && $conn instanceof mysqli) {
     ensureInventoryItemRequestsTable($conn);
+    ensureInventoryDecommissionRequestsTable($conn);
 
     $pendingReqResult = $conn->query("SELECT COUNT(*) AS c FROM inventory_item_requests WHERE status = 'pending'");
     if ($pendingReqResult && $pr = $pendingReqResult->fetch_assoc()) {
         $pendingRequestCount = (int)($pr['c'] ?? 0);
+    }
+
+    $pendingDecomResult = $conn->query("SELECT COUNT(*) AS c FROM inventory_decommission_requests WHERE status = 'pending'");
+    if ($pendingDecomResult && $pd = $pendingDecomResult->fetch_assoc()) {
+        $pendingDecommissionCount = (int)($pd['c'] ?? 0);
     }
 
     $unreadResult = $conn->query("
@@ -131,6 +140,20 @@ require_once dirname(__DIR__, 2) . '/include/sidebar-scrollbar-once.php';
             <?php if ($pendingRequestCount > 0): ?>
                 <span class="inline-flex min-w-[22px] h-[22px] items-center justify-center rounded-full bg-red-600 text-white text-xs font-semibold px-1">
                     <?php echo $pendingRequestCount > 99 ? '99+' : $pendingRequestCount; ?>
+                </span>
+            <?php endif; ?>
+        </a>
+
+        <a href="decommission-request.php" class="flex items-center justify-between gap-3 px-3 py-2 rounded-lg font-medium text-white hover:bg-white/10 transition-colors<?php echo $isDecommissionRequest ? ' ' . $activeClass : ''; ?>">
+            <span class="flex items-center gap-3">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                <span>Decommission</span>
+            </span>
+            <?php if ($pendingDecommissionCount > 0): ?>
+                <span class="inline-flex min-w-[22px] h-[22px] items-center justify-center rounded-full bg-red-600 text-white text-xs font-semibold px-1">
+                    <?php echo $pendingDecommissionCount > 99 ? '99+' : $pendingDecommissionCount; ?>
                 </span>
             <?php endif; ?>
         </a>

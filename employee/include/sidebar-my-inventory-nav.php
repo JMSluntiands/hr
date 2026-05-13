@@ -1,13 +1,23 @@
 <?php
 $currentInvNav = basename($_SERVER['PHP_SELF'], '.php');
 $invViewRaw = (string)($_GET['view'] ?? 'list');
-$invViewNav = in_array($invViewRaw, ['list', 'request'], true) ? $invViewRaw : 'list';
+$invViewNav = in_array($invViewRaw, ['list', 'request', 'decommission', 'decommission_review'], true) ? $invViewRaw : 'list';
 $isInventoryNavPage = ($currentInvNav === 'inventory');
 $inventoryNavOpen = $isInventoryNavPage ? '' : ' hidden';
 $inventoryNavArrow = $isInventoryNavPage ? ' rotate-180' : '';
 $inventoryNavBtnActive = $isInventoryNavPage ? ' bg-white/20' : '';
 $isInvNavList = $isInventoryNavPage && $invViewNav === 'list';
 $isInvNavRequest = $isInventoryNavPage && $invViewNav === 'request';
+$isInvNavDecommission = $isInventoryNavPage && $invViewNav === 'decommission';
+$isInvNavDecommissionReview = $isInventoryNavPage && $invViewNav === 'decommission_review';
+if (!isset($canReviewDecommission)) {
+    $canReviewDecommission = false;
+}
+if (!$canReviewDecommission && isset($conn) && $conn instanceof mysqli && !empty($employeeDbId)) {
+    require_once __DIR__ . '/../../include/inventory_decommission_helpers.php';
+    $canReviewDecommission = hr_employee_can_review_decommission_requests($conn, (int)$employeeDbId);
+}
+$canReviewDecommissionNav = (bool)$canReviewDecommission;
 ?>
 <div class="dropdown-container relative z-10">
     <button type="button" id="employee-inv-dropdown-btn" class="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-left font-medium text-white transition-colors hover:bg-white/10<?php echo $inventoryNavBtnActive; ?>" aria-expanded="<?php echo $inventoryNavOpen === '' ? 'true' : 'false'; ?>" aria-controls="employee-inv-dropdown">
@@ -20,7 +30,11 @@ $isInvNavRequest = $isInventoryNavPage && $invViewNav === 'request';
         </svg>
     </button>
     <div id="employee-inv-dropdown" class="mb-2 ml-10 space-y-1<?php echo $inventoryNavOpen; ?>" role="region" aria-label="My inventory submenu">
-        <a href="inventory.php?view=list" data-url="inventory.php?view=list" class="js-side-link block rounded-lg px-3 py-1.5 text-xs font-medium text-white/90 transition-colors hover:bg-white/10<?php echo $isInvNavList ? ' bg-white/20' : ''; ?>">List of my item</a>
+        <a href="inventory.php?view=list" data-url="inventory.php?view=list" class="js-side-link block rounded-lg px-3 py-1.5 text-xs font-medium text-white/90 transition-colors hover:bg-white/10<?php echo $isInvNavList ? ' bg-white/20' : ''; ?>">List of my items</a>
         <a href="inventory.php?view=request" data-url="inventory.php?view=request" class="js-side-link block rounded-lg px-3 py-1.5 text-xs font-medium text-white/90 transition-colors hover:bg-white/10<?php echo $isInvNavRequest ? ' bg-white/20' : ''; ?>">Request item</a>
+        <a href="inventory.php?view=decommission" data-url="inventory.php?view=decommission" class="js-side-link block rounded-lg px-3 py-1.5 text-xs font-medium text-white/90 transition-colors hover:bg-white/10<?php echo $isInvNavDecommission ? ' bg-white/20' : ''; ?>">Decommission Request</a>
+        <?php if ($canReviewDecommissionNav): ?>
+            <a href="inventory.php?view=decommission_review" data-url="inventory.php?view=decommission_review" class="js-side-link block rounded-lg px-3 py-1.5 text-xs font-medium text-white/90 transition-colors hover:bg-white/10<?php echo $isInvNavDecommissionReview ? ' bg-white/20' : ''; ?>">Decommission review</a>
+        <?php endif; ?>
     </div>
 </div>
