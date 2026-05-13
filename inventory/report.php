@@ -36,6 +36,7 @@ function getInventoryReportRows(mysqli $conn): array
         FROM inventory_items ii
         LEFT JOIN inventory_item_allocations ia ON ia.inventory_item_id = ii.id AND ia.date_return IS NULL
         LEFT JOIN employees e ON e.id = ia.employee_id
+        WHERE ii.decommissioned_at IS NULL
         ORDER BY ii.item_name ASC, ii.item_id ASC
     ");
 

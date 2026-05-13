@@ -83,3 +83,263 @@ if (!function_exists('inventory_decommission_save_upload')) {
         return 'uploads/inventory_decommission/' . $basename;
     }
 }
+
+if (!function_exists('inventory_decommission_format_datetime_manila')) {
+    /**
+     * Format a MySQL DATETIME/TIMESTAMP string for display as Philippine (Manila) civil time.
+     * The value is treated as wall-clock time in Asia/Manila (matches DB session +08:00).
+     */
+    function inventory_decommission_format_datetime_manila(?string $mysqlDatetime, string $format = 'M d, Y h:i A'): string
+    {
+        if ($mysqlDatetime === null || trim($mysqlDatetime) === '') {
+            return '—';
+        }
+        $s = trim($mysqlDatetime);
+        try {
+            $tz = new DateTimeZone('Asia/Manila');
+            $dt = new DateTimeImmutable($s, $tz);
+
+            return $dt->format($format);
+        } catch (Throwable $e) {
+            return '—';
+        }
+    }
+}
+
+if (!function_exists('inventory_decommission_format_date_manila')) {
+    /**
+     * Format a MySQL DATE string for display (calendar date; interpreted in Manila context).
+     */
+    function inventory_decommission_format_date_manila(?string $mysqlDate, string $format = 'M d, Y'): string
+    {
+        if ($mysqlDate === null || trim($mysqlDate) === '') {
+            return '—';
+        }
+        $s = trim($mysqlDate);
+        if ($s === '') {
+            return '—';
+        }
+        try {
+            $tz = new DateTimeZone('Asia/Manila');
+            $dt = new DateTimeImmutable($s . ' 00:00:00', $tz);
+
+            return $dt->format($format);
+        } catch (Throwable $e) {
+            return '—';
+        }
+    }
+}
+
+if (!function_exists('inventory_decommission_decode_attachment_paths_json')) {
+    /**
+     * @return list<string> Relative paths stored via inventory_decommission_save_multi_uploads()
+     */
+    function inventory_decommission_decode_attachment_paths_json(?string $json): array
+    {
+        if ($json === null || trim($json) === '') {
+            return [];
+        }
+        $decoded = json_decode($json, true);
+        if (!is_array($decoded)) {
+            return [];
+        }
+        $out = [];
+        foreach ($decoded as $p) {
+            $s = trim((string)$p);
+            if ($s !== '') {
+                $out[] = $s;
+            }
+        }
+
+        return $out;
+    }
+}
+
+if (!function_exists('inventory_decommission_format_attachments_html_from_paths')) {
+    /**
+     * @param list<string> $paths
+     */
+    function inventory_decommission_format_attachments_html_from_paths(array $paths, string $hrefPrefix = '../'): string
+    {
+        if ($paths === []) {
+            return '—';
+        }
+        $html = '';
+        $i = 0;
+        foreach ($paths as $p) {
+            $i++;
+            $safe = htmlspecialchars($p, ENT_QUOTES, 'UTF-8');
+            $bn = htmlspecialchars(basename($p), ENT_QUOTES, 'UTF-8');
+            $pref = htmlspecialchars($hrefPrefix, ENT_QUOTES, 'UTF-8');
+            $html .= '<div><a class="text-[#FA9800] underline font-medium" href="' . $pref . $safe . '" target="_blank" rel="noopener">Image ' . $i . ' — ' . $bn . '</a></div>';
+        }
+
+        return $html;
+    }
+}
+
+if (!function_exists('inventory_decommission_format_attachments_html')) {
+    function inventory_decommission_format_attachments_html(?string $json, string $hrefPrefix = '../'): string
+    {
+        return inventory_decommission_format_attachments_html_from_paths(
+            inventory_decommission_decode_attachment_paths_json($json),
+            $hrefPrefix
+        );
+    }
+}
+
+if (!function_exists('inventory_decommission_save_multi_uploads')) {
+    /**
+     * Save multiple image uploads from a single form field (use name="test_1_attachments[]" multiple).
+     *
+     * @return array{ok: bool, paths?: list<string>, error?: string}
+     */
+    function inventory_decommission_save_multi_uploads(int $userId, string $inputName): array
+    {
+        $allowedExt = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+        $maxEachBytes = 8 * 1024 * 1024;
+        $maxFiles = 20;
+
+        if (!isset($_FILES[$inputName])) {
+            return ['ok' => true, 'paths' => []];
+        }
+
+        $f = $_FILES[$inputName];
+        $entries = [];
+        if (is_array($f['name'])) {
+            $n = count($f['name']);
+            for ($i = 0; $i < $n; $i++) {
+                if ((int)($f['error'][$i] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+                    continue;
+                }
+                $entries[] = [
+                    'name' => (string)($f['name'][$i] ?? ''),
+                    'type' => (string)($f['type'][$i] ?? ''),
+                    'tmp_name' => (string)($f['tmp_name'][$i] ?? ''),
+                    'error' => (int)($f['error'][$i] ?? UPLOAD_ERR_NO_FILE),
+                    'size' => (int)($f['size'][$i] ?? 0),
+                ];
+            }
+        } else {
+            if ((int)($f['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+                $entries[] = [
+                    'name' => (string)($f['name'] ?? ''),
+                    'type' => (string)($f['type'] ?? ''),
+                    'tmp_name' => (string)($f['tmp_name'] ?? ''),
+                    'error' => (int)($f['error'] ?? UPLOAD_ERR_NO_FILE),
+                    'size' => (int)($f['size'] ?? 0),
+                ];
+            }
+        }
+
+        if ($entries === []) {
+            return ['ok' => true, 'paths' => []];
+        }
+
+        if (count($entries) > $maxFiles) {
+            return ['ok' => false, 'error' => 'too_many'];
+        }
+
+        $dir = __DIR__ . '/../uploads/inventory_decommission/';
+        if (!is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+
+        $paths = [];
+        foreach ($entries as $file) {
+            if ($file['error'] === UPLOAD_ERR_NO_FILE) {
+                continue;
+            }
+            if ($file['error'] !== UPLOAD_ERR_OK) {
+                return ['ok' => false, 'error' => 'upload'];
+            }
+            if ($file['size'] > $maxEachBytes) {
+                return ['ok' => false, 'error' => 'size'];
+            }
+            $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+            if (!in_array($ext, $allowedExt, true)) {
+                return ['ok' => false, 'error' => 'type'];
+            }
+            $basename = 'decom_' . $userId . '_' . str_replace(['.', ' '], '', uniqid('', true)) . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+            $dest = $dir . $basename;
+            if (!move_uploaded_file($file['tmp_name'], $dest)) {
+                return ['ok' => false, 'error' => 'save'];
+            }
+            $paths[] = 'uploads/inventory_decommission/' . $basename;
+        }
+
+        return ['ok' => true, 'paths' => $paths];
+    }
+}
+
+if (!function_exists('inventory_finalize_decommission_approved_request')) {
+    /**
+     * After a decommission request is approved: close the employee allocation and mark the inventory item
+     * decommissioned so it is excluded from the main list and from new allocations.
+     */
+    function inventory_finalize_decommission_approved_request(mysqli $conn, int $requestId, string $resolutionRemark = ''): bool
+    {
+        require_once __DIR__ . '/../inventory/database/setup_inventory_items_table.php';
+        ensureInventoryItemsTable($conn);
+
+        $st = $conn->prepare("SELECT inventory_item_allocation_id FROM inventory_decommission_requests WHERE id = ? AND status = 'approved' LIMIT 1");
+        if (!$st) {
+            return false;
+        }
+        $st->bind_param('i', $requestId);
+        $st->execute();
+        $row = $st->get_result()->fetch_assoc();
+        $st->close();
+        if (!$row) {
+            return true;
+        }
+        $allocId = (int)($row['inventory_item_allocation_id'] ?? 0);
+        if ($allocId <= 0) {
+            return true;
+        }
+
+        $sa = $conn->prepare('SELECT inventory_item_id FROM inventory_item_allocations WHERE id = ? LIMIT 1');
+        if (!$sa) {
+            return false;
+        }
+        $sa->bind_param('i', $allocId);
+        $sa->execute();
+        $arow = $sa->get_result()->fetch_assoc();
+        $sa->close();
+        if (!$arow) {
+            return true;
+        }
+        $inventoryItemId = (int)($arow['inventory_item_id'] ?? 0);
+        if ($inventoryItemId <= 0) {
+            return true;
+        }
+
+        $returnRemarks = 'Decommission approved (request #' . $requestId . ').';
+        $trimRemark = trim($resolutionRemark);
+        if ($trimRemark !== '') {
+            $returnRemarks .= ' Note: ' . mb_substr($trimRemark, 0, 400);
+        }
+
+        $u1 = $conn->prepare('UPDATE inventory_item_allocations SET date_return = CURDATE(), return_remarks = ? WHERE id = ? AND date_return IS NULL');
+        if (!$u1) {
+            return false;
+        }
+        $u1->bind_param('si', $returnRemarks, $allocId);
+        if (!$u1->execute()) {
+            $u1->close();
+
+            return false;
+        }
+        $u1->close();
+
+        $u2 = $conn->prepare("UPDATE inventory_items SET decommissioned_at = COALESCE(decommissioned_at, NOW()), item_condition = 'Decommissioned' WHERE id = ?");
+        if (!$u2) {
+            return false;
+        }
+        $u2->bind_param('i', $inventoryItemId);
+        $ok2 = $u2->execute();
+        $u2->close();
+
+        return (bool)$ok2;
+    }
+}

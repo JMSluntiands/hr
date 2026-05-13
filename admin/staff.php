@@ -336,7 +336,7 @@ if ($conn) {
                                 }
                                 
                                 if (doc.created_at) {
-                                    html += '<p class="text-xs text-slate-400 mt-2">Uploaded: ' + new Date(doc.created_at).toLocaleDateString() + '</p>';
+                                    html += '<p class="text-xs text-slate-400 mt-2">Uploaded: ' + new Date(doc.created_at).toLocaleDateString('en-PH', { timeZone: 'Asia/Manila', month: 'short', day: 'numeric', year: 'numeric' }) + '</p>';
                                 }
                                 html += '</div>';
                             });

@@ -217,8 +217,8 @@ if ($conn) {
             $(document).on('click', '.view-leave-btn', function() {
                 var tr = $(this).closest('tr');
                 var iso = { start: tr.data('start'), end: tr.data('end') };
-                var start = iso.start ? new Date(iso.start).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
-                var end = iso.end ? new Date(iso.end).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+                var start = iso.start ? new Date(iso.start).toLocaleDateString('en-PH', { timeZone: 'Asia/Manila', month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+                var end = iso.end ? new Date(iso.end).toLocaleDateString('en-PH', { timeZone: 'Asia/Manila', month: 'short', day: 'numeric', year: 'numeric' }) : '—';
                 
                 // Calculate days properly - if start and end are same, it's 1 day
                 var days = parseInt(tr.data('days') || 0);

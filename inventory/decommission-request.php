@@ -13,7 +13,9 @@ if (strtolower((string)($_SESSION['role'] ?? '')) !== 'admin') {
 }
 
 include __DIR__ . '/../database/db.php';
+require_once __DIR__ . '/../include/inventory_decommission_helpers.php';
 require_once __DIR__ . '/database/setup_inventory_decommission_requests_table.php';
+require_once __DIR__ . '/database/setup_inventory_items_table.php';
 require_once __DIR__ . '/include/inventory-activity-logger.php';
 require_once __DIR__ . '/../admin/include/activity-logger.php';
 
@@ -21,6 +23,7 @@ $adminName = $_SESSION['name'] ?? 'Admin User';
 $role = $_SESSION['role'] ?? 'admin';
 
 ensureInventoryDecommissionRequestsTable($conn);
+ensureInventoryItemsTable($conn);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = (string)($_POST['action'] ?? '');
@@ -43,33 +46,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 WHERE id = ? AND status = 'pending'
             ");
             if ($stmt) {
-                $stmt->bind_param('ssisi', $newStatus, $remark, $reviewerId, $reviewerName, $requestId);
-                $stmt->execute();
-                $affected = $stmt->affected_rows;
-                $stmt->close();
+                $conn->begin_transaction();
+                try {
+                    $stmt->bind_param('ssisi', $newStatus, $remark, $reviewerId, $reviewerName, $requestId);
+                    $stmt->execute();
+                    $affected = $stmt->affected_rows;
+                    $stmt->close();
 
-                if ($affected > 0) {
-                    $label = $newStatus === 'approved' ? 'Approve' : 'Decline';
-                    $itemCode = '';
-                    $q = $conn->prepare('SELECT item_code FROM inventory_decommission_requests WHERE id = ? LIMIT 1');
-                    if ($q) {
-                        $q->bind_param('i', $requestId);
-                        $q->execute();
-                        $rw = $q->get_result()->fetch_assoc();
-                        $q->close();
-                        $itemCode = trim((string)($rw['item_code'] ?? ''));
+                    if ($affected > 0 && $newStatus === 'approved') {
+                        if (!inventory_finalize_decommission_approved_request($conn, $requestId, $remark)) {
+                            throw new RuntimeException('Could not finalize decommission for inventory item.');
+                        }
                     }
-                    $desc = "{$label}d decommission request #{$requestId}" . ($itemCode !== '' ? " (Item ID: {$itemCode})" : '') . ' by ' . $reviewerName . '.';
-                    logActivity($conn, $label . ' Decommission Request', 'decommission_request', $requestId, $desc);
-                    inventoryLogActivity(
-                        $conn,
-                        inventoryActionWithItemCode($label . ' Decommission Request', $itemCode !== '' ? $itemCode : 'REQ-' . $requestId),
-                        'DecommissionRequest',
-                        $requestId,
-                        $desc,
-                        $remark !== '' ? 'Remark: ' . $remark : null,
-                        $itemCode !== '' ? $itemCode : null
-                    );
+
+                    if ($affected > 0) {
+                        $label = $newStatus === 'approved' ? 'Approve' : 'Decline';
+                        $itemCode = '';
+                        $q = $conn->prepare('SELECT item_code FROM inventory_decommission_requests WHERE id = ? LIMIT 1');
+                        if ($q) {
+                            $q->bind_param('i', $requestId);
+                            $q->execute();
+                            $rw = $q->get_result()->fetch_assoc();
+                            $q->close();
+                            $itemCode = trim((string)($rw['item_code'] ?? ''));
+                        }
+                        $desc = "{$label}d decommission request #{$requestId}" . ($itemCode !== '' ? " (Item ID: {$itemCode})" : '') . ' by ' . $reviewerName . '.';
+                        logActivity($conn, $label . ' Decommission Request', 'decommission_request', $requestId, $desc);
+                        inventoryLogActivity(
+                            $conn,
+                            inventoryActionWithItemCode($label . ' Decommission Request', $itemCode !== '' ? $itemCode : 'REQ-' . $requestId),
+                            'DecommissionRequest',
+                            $requestId,
+                            $desc,
+                            $remark !== '' ? 'Remark: ' . $remark : null,
+                            $itemCode !== '' ? $itemCode : null
+                        );
+                    }
+
+                    $conn->commit();
+                } catch (Throwable $e) {
+                    $conn->rollback();
+                    error_log('Decommission approval transaction failed: ' . $e->getMessage());
                 }
             }
         }
@@ -80,8 +97,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $status = (string)($_GET['status'] ?? '');
 $requests = [];
+$approvedDecommissionRows = [];
 
-$result = $conn->query("
+$decomSelectSql = "
     SELECT
         r.id,
         r.company_name,
@@ -101,6 +119,9 @@ $result = $conn->query("
         r.test_2_date,
         r.test_3_notes,
         r.test_3_date,
+        r.test_1_attachment_paths,
+        r.test_2_attachment_paths,
+        r.test_3_attachment_paths,
         r.attachment_path,
         r.status,
         r.resolution_remark,
@@ -111,6 +132,10 @@ $result = $conn->query("
         e.employee_id AS employee_code
     FROM inventory_decommission_requests r
     JOIN employees e ON e.id = r.employee_id
+";
+
+$result = $conn->query($decomSelectSql . "
+    WHERE r.status IN ('pending', 'declined')
     ORDER BY
         CASE r.status WHEN 'pending' THEN 0 ELSE 1 END ASC,
         r.created_at DESC,
@@ -119,6 +144,56 @@ $result = $conn->query("
 if ($result) {
     while ($row = $result->fetch_assoc()) {
         $requests[] = $row;
+    }
+}
+
+$approvedRes = $conn->query("
+    SELECT
+        r.id,
+        r.company_name,
+        r.request_employee_name,
+        r.equipment_name,
+        r.item_code,
+        r.equipment_type,
+        r.serial_number,
+        r.equipment_description,
+        r.brand_manufacturer,
+        r.item_date_received,
+        r.date_decommissioning,
+        r.reason_decommissioning,
+        r.test_1_notes,
+        r.test_1_date,
+        r.test_2_notes,
+        r.test_2_date,
+        r.test_3_notes,
+        r.test_3_date,
+        r.test_1_attachment_paths,
+        r.test_2_attachment_paths,
+        r.test_3_attachment_paths,
+        r.attachment_path,
+        r.status,
+        r.resolution_remark,
+        r.reviewed_by_name,
+        r.resolved_at,
+        r.created_at,
+        e.full_name,
+        e.employee_id AS employee_code,
+        ii.item_name AS live_item_name,
+        ii.description AS live_description,
+        ii.`type` AS live_type,
+        ii.brand_manufacturer AS live_brand,
+        ii.item_condition AS live_condition,
+        ii.remarks AS live_remarks,
+        ii.date_arrived AS live_date_arrived
+    FROM inventory_decommission_requests r
+    JOIN employees e ON e.id = r.employee_id
+    LEFT JOIN inventory_items ii ON ii.item_id = r.item_code
+    WHERE r.status = 'approved'
+    ORDER BY r.resolved_at DESC, r.id DESC
+");
+if ($approvedRes) {
+    while ($row = $approvedRes->fetch_assoc()) {
+        $approvedDecommissionRows[] = $row;
     }
 }
 
@@ -153,7 +228,7 @@ if ($pc && $prow = $pc->fetch_assoc()) {
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
             <div>
                 <h1 class="text-2xl font-semibold text-slate-800">Equipment Decommissioning Requests</h1>
-                <p class="text-sm text-slate-500">Review employee submissions; approve or decline with an optional note.</p>
+                <p class="text-sm text-slate-500">Review employee submissions; approve or decline with an optional note. <span class="text-slate-600">Submitted and resolved times are Philippine Standard Time (Asia/Manila).</span></p>
             </div>
             <span class="inline-flex items-center rounded-full bg-amber-100 text-amber-800 text-xs font-semibold px-3 py-1 self-start">
                 Pending: <?php echo (int)$pendingCount; ?>
@@ -167,6 +242,10 @@ if ($pc && $prow = $pc->fetch_assoc()) {
         <?php endif; ?>
 
         <section class="bg-white rounded-xl shadow-sm border border-slate-100 p-6 space-y-6">
+            <div>
+                <h2 class="text-lg font-semibold text-slate-800">Pending and declined requests</h2>
+                <p class="text-sm text-slate-500">Approve pending requests to remove the item from active inventory and allocation.</p>
+            </div>
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
                     <thead class="bg-slate-50">
@@ -184,7 +263,7 @@ if ($pc && $prow = $pc->fetch_assoc()) {
                         <?php if (empty($requests)): ?>
                             <tr>
                                 <td colspan="7" class="px-4 py-8 text-center text-slate-500 text-sm">
-                                    No decommission requests yet.
+                                    No pending or declined decommission requests.
                                 </td>
                             </tr>
                         <?php else: ?>
@@ -200,8 +279,6 @@ if ($pc && $prow = $pc->fetch_assoc()) {
                                     <td class="px-4 py-3 align-top">
                                         <?php if ($st === 'pending'): ?>
                                             <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">Pending</span>
-                                        <?php elseif ($st === 'approved'): ?>
-                                            <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">Approved</span>
                                         <?php else: ?>
                                             <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">Declined</span>
                                         <?php endif; ?>
@@ -212,7 +289,7 @@ if ($pc && $prow = $pc->fetch_assoc()) {
                                         <div class="text-xs text-slate-500">ID: <?php echo htmlspecialchars((string)$row['item_code']); ?></div>
                                     </td>
                                     <td class="px-4 py-3 text-slate-600 align-top whitespace-nowrap">
-                                        <?php echo $created !== '' ? htmlspecialchars(date('M d, Y h:i A', strtotime($created))) : '—'; ?>
+                                        <?php echo htmlspecialchars(inventory_decommission_format_datetime_manila($created)); ?>
                                     </td>
                                     <td class="px-4 py-3 text-slate-600 text-xs align-top">
                                         <?php if (trim((string)($row['reviewed_by_name'] ?? '')) !== ''): ?>
@@ -221,7 +298,7 @@ if ($pc && $prow = $pc->fetch_assoc()) {
                                             <span class="text-slate-400">—</span>
                                         <?php endif; ?>
                                         <?php if ($resolved !== ''): ?>
-                                            <div class="mt-1 text-slate-500"><?php echo htmlspecialchars(date('M d, Y h:i A', strtotime($resolved))); ?></div>
+                                            <div class="mt-1 text-slate-500"><?php echo htmlspecialchars(inventory_decommission_format_datetime_manila($resolved)); ?></div>
                                         <?php endif; ?>
                                         <?php if (trim((string)($row['resolution_remark'] ?? '')) !== ''): ?>
                                             <div class="mt-1 text-slate-600"><?php echo nl2br(htmlspecialchars((string)$row['resolution_remark'])); ?></div>
@@ -231,30 +308,7 @@ if ($pc && $prow = $pc->fetch_assoc()) {
                                         <details class="cursor-pointer">
                                             <summary class="text-[#FA9800] font-medium">View form</summary>
                                             <div class="mt-2 space-y-1 border-t border-slate-100 pt-2">
-                                                <?php if (trim((string)($row['company_name'] ?? '')) !== ''): ?>
-                                                    <div><span class="font-semibold text-slate-700">Company:</span> <?php echo htmlspecialchars((string)$row['company_name']); ?></div>
-                                                <?php endif; ?>
-                                                <div><span class="font-semibold text-slate-700">Employee on form:</span> <?php echo htmlspecialchars((string)$row['request_employee_name']); ?></div>
-                                                <div><span class="font-semibold text-slate-700">Type:</span> <?php echo htmlspecialchars(trim((string)($row['equipment_type'] ?? '')) !== '' ? (string)$row['equipment_type'] : '—'); ?></div>
-                                                <div><span class="font-semibold text-slate-700">Item remarks (from inventory):</span> <?php echo htmlspecialchars(trim((string)($row['serial_number'] ?? '')) !== '' ? (string)$row['serial_number'] : '—'); ?></div>
-                                                <div><span class="font-semibold text-slate-700">Description:</span> <?php echo nl2br(htmlspecialchars(trim((string)($row['equipment_description'] ?? '')) !== '' ? (string)$row['equipment_description'] : '—')); ?></div>
-                                                <div><span class="font-semibold text-slate-700">Brand:</span> <?php echo htmlspecialchars(trim((string)($row['brand_manufacturer'] ?? '')) !== '' ? (string)$row['brand_manufacturer'] : '—'); ?></div>
-                                                <div><span class="font-semibold text-slate-700">Reason:</span> <?php echo nl2br(htmlspecialchars((string)$row['reason_decommissioning'])); ?></div>
-                                                <?php for ($ti = 1; $ti <= 3; $ti++): ?>
-                                                    <?php
-                                                    $tn = (string)($row['test_' . $ti . '_notes'] ?? '');
-                                                    $td = (string)($row['test_' . $ti . '_date'] ?? '');
-                                                    ?>
-                                                    <?php if (trim($tn) !== '' || trim($td) !== ''): ?>
-                                                        <div class="pt-1"><span class="font-semibold text-slate-700">Test <?php echo $ti; ?>:</span> <?php echo nl2br(htmlspecialchars(trim($tn) !== '' ? $tn : '—')); ?></div>
-                                                        <div><span class="font-semibold text-slate-700">Date of test <?php echo $ti; ?>:</span> <?php echo $td !== '' ? htmlspecialchars(date('M d, Y', strtotime($td))) : '—'; ?></div>
-                                                    <?php endif; ?>
-                                                <?php endfor; ?>
-                                                <?php
-                                                $att = trim((string)($row['attachment_path'] ?? ''));
-                                                if ($att !== ''): ?>
-                                                    <div class="pt-1"><a class="text-[#FA9800] underline" href="../<?php echo htmlspecialchars($att); ?>" target="_blank" rel="noopener">Attachment proof</a></div>
-                                                <?php endif; ?>
+                                                <?php $detailsHrefPrefix = '../'; include __DIR__ . '/include/decommission-request-details.inc.php'; ?>
                                             </div>
                                         </details>
                                     </td>
@@ -279,6 +333,76 @@ if ($pc && $prow = $pc->fetch_assoc()) {
                                         <?php else: ?>
                                             <span class="text-xs text-slate-400">—</span>
                                         <?php endif; ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="bg-white rounded-xl shadow-sm border border-slate-100 p-6 space-y-4 mt-8">
+            <div>
+                <h2 class="text-lg font-semibold text-slate-800">Approved decommissioning</h2>
+                <p class="text-sm text-slate-500">Same fields as List Item. These assets are removed from the main inventory list and cannot be allocated again.</p>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-sm">
+                    <thead class="bg-slate-50">
+                        <tr>
+                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Item ID</th>
+                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Item name</th>
+                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Description</th>
+                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Type</th>
+                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Brand / Mfr</th>
+                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Condition</th>
+                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Remarks</th>
+                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Date arrived</th>
+                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Requester</th>
+                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Approved at</th>
+                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Reviewer</th>
+                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Details</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        <?php if (empty($approvedDecommissionRows)): ?>
+                            <tr>
+                                <td colspan="12" class="px-4 py-8 text-center text-slate-500 text-sm">No approved decommissioning yet.</td>
+                            </tr>
+                        <?php else: ?>
+                            <?php foreach ($approvedDecommissionRows as $ar): ?>
+                                <?php
+                                $dispName = trim((string)($ar['live_item_name'] ?? '')) !== '' ? (string)$ar['live_item_name'] : (string)($ar['equipment_name'] ?? '');
+                                $dispDesc = trim((string)($ar['live_description'] ?? '')) !== '' ? (string)$ar['live_description'] : (string)($ar['equipment_description'] ?? '');
+                                $dispType = trim((string)($ar['live_type'] ?? '')) !== '' ? (string)$ar['live_type'] : (string)($ar['equipment_type'] ?? '');
+                                $dispBrand = trim((string)($ar['live_brand'] ?? '')) !== '' ? (string)$ar['live_brand'] : (string)($ar['brand_manufacturer'] ?? '');
+                                $dispCond = trim((string)($ar['live_condition'] ?? '')) !== '' ? (string)$ar['live_condition'] : 'Decommissioned';
+                                $dispRem = trim((string)($ar['live_remarks'] ?? '')) !== '' ? (string)$ar['live_remarks'] : '—';
+                                $dispArrived = (string)($ar['live_date_arrived'] ?? '');
+                                $reqLabel = htmlspecialchars((string)($ar['full_name'] ?? '') . ' (' . (string)($ar['employee_code'] ?? '') . ')', ENT_QUOTES, 'UTF-8');
+                                $resolvedAt = (string)($ar['resolved_at'] ?? '');
+                                $row = $ar;
+                                ?>
+                                <tr class="bg-emerald-50/20">
+                                    <td class="px-4 py-3 text-slate-800 font-mono text-xs"><?php echo htmlspecialchars((string)$ar['item_code']); ?></td>
+                                    <td class="px-4 py-3 text-slate-800 font-medium"><?php echo htmlspecialchars($dispName); ?></td>
+                                    <td class="px-4 py-3 text-slate-600 text-xs max-w-[200px]"><?php echo nl2br(htmlspecialchars($dispDesc !== '' ? $dispDesc : '—')); ?></td>
+                                    <td class="px-4 py-3 text-slate-600 text-xs"><?php echo htmlspecialchars($dispType !== '' ? $dispType : '—'); ?></td>
+                                    <td class="px-4 py-3 text-slate-600 text-xs"><?php echo htmlspecialchars($dispBrand !== '' ? $dispBrand : '—'); ?></td>
+                                    <td class="px-4 py-3 text-slate-600 text-xs"><?php echo htmlspecialchars($dispCond); ?></td>
+                                    <td class="px-4 py-3 text-slate-600 text-xs max-w-[160px]"><?php echo nl2br(htmlspecialchars($dispRem)); ?></td>
+                                    <td class="px-4 py-3 text-slate-600 text-xs whitespace-nowrap"><?php echo htmlspecialchars(inventory_decommission_format_date_manila($dispArrived)); ?></td>
+                                    <td class="px-4 py-3 text-slate-700 text-xs"><?php echo $reqLabel; ?></td>
+                                    <td class="px-4 py-3 text-slate-600 text-xs whitespace-nowrap"><?php echo htmlspecialchars(inventory_decommission_format_datetime_manila($resolvedAt)); ?></td>
+                                    <td class="px-4 py-3 text-slate-600 text-xs"><?php echo htmlspecialchars(trim((string)($ar['reviewed_by_name'] ?? '')) !== '' ? (string)$ar['reviewed_by_name'] : '—'); ?></td>
+                                    <td class="px-4 py-3 text-slate-600 text-xs align-top max-w-xs">
+                                        <details class="cursor-pointer">
+                                            <summary class="text-[#FA9800] font-medium">View form</summary>
+                                            <div class="mt-2 space-y-1 border-t border-slate-100 pt-2">
+                                                <?php $detailsHrefPrefix = '../'; include __DIR__ . '/include/decommission-request-details.inc.php'; ?>
+                                            </div>
+                                        </details>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>

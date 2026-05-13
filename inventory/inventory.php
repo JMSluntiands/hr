@@ -63,6 +63,7 @@ function getInventoryCardIconSvg(string $itemName): string
 $result = $conn->query("
     SELECT item_name, COUNT(*) AS total_count
     FROM inventory_items
+    WHERE decommissioned_at IS NULL
     GROUP BY item_name
 ");
 if ($result) {
@@ -104,6 +105,7 @@ $appealListResult = $conn->query("
     JOIN inventory_items ii ON ii.id = ia.inventory_item_id
     WHERE ia.employee_appeal IS NOT NULL
       AND TRIM(ia.employee_appeal) <> ''
+      AND ii.decommissioned_at IS NULL
     ORDER BY
       CASE WHEN ia.admin_viewed_at IS NULL THEN 0 ELSE 1 END ASC,
       ia.employee_appeal_at DESC,

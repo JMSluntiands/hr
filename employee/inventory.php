@@ -130,23 +130,47 @@ if ($conn && $employeeDbId) {
         }
 
         $userId = (int)$_SESSION['user_id'];
-        $up = inventory_decommission_save_upload($userId);
-        if ($up === '__error_upload__') {
-            header('Location: inventory.php?view=decommission&status=error&message=' . rawurlencode('Attachment upload failed.'));
-            exit;
+        $testUploads = [
+            1 => inventory_decommission_save_multi_uploads($userId, 'test_1_attachments'),
+            2 => inventory_decommission_save_multi_uploads($userId, 'test_2_attachments'),
+            3 => inventory_decommission_save_multi_uploads($userId, 'test_3_attachments'),
+        ];
+        $uploadErrMsg = static function (array $r): string {
+            if ($r['ok'] ?? false) {
+                return '';
+            }
+            $e = (string)($r['error'] ?? '');
+            switch ($e) {
+                case 'too_many':
+                    return 'Too many images in one test (maximum 20 per test).';
+                case 'upload':
+                    return 'Image upload failed. Please try again.';
+                case 'size':
+                    return 'Each image must be 8MB or smaller.';
+                case 'type':
+                    return 'Test attachments must be images only (JPG, PNG, GIF, or WebP).';
+                case 'save':
+                    return 'Could not save uploaded images.';
+                default:
+                    return 'Attachment upload failed.';
+            }
+        };
+        foreach ($testUploads as $tn => $r) {
+            if (!($r['ok'] ?? false)) {
+                header('Location: inventory.php?view=decommission&status=error&message=' . rawurlencode($uploadErrMsg($r)));
+                exit;
+            }
         }
-        if ($up === '__error_size__') {
-            header('Location: inventory.php?view=decommission&status=error&message=' . rawurlencode('Attachment must be 8MB or smaller.'));
-            exit;
+        foreach ([1, 2, 3] as $tn) {
+            if (count($testUploads[$tn]['paths'] ?? []) < 1) {
+                header('Location: inventory.php?view=decommission&status=error&message=' . rawurlencode("Test {$tn}: upload at least one image (you can select multiple files at once)."));
+                exit;
+            }
         }
-        if ($up === '__error_type__') {
-            header('Location: inventory.php?view=decommission&status=error&message=' . rawurlencode('Invalid attachment type.'));
-            exit;
-        }
-        if ($up === '__error_save__') {
-            header('Location: inventory.php?view=decommission&status=error&message=' . rawurlencode('Could not save attachment.'));
-            exit;
-        }
+
+        $t1PathsJson = json_encode($testUploads[1]['paths'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $t2PathsJson = json_encode($testUploads[2]['paths'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $t3PathsJson = json_encode($testUploads[3]['paths'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
         $normDate = static function (string $d): ?string {
             $d = trim($d);
@@ -179,8 +203,9 @@ if ($conn && $employeeDbId) {
                 equipment_name, item_code, equipment_type, serial_number, equipment_description,
                 brand_manufacturer, item_date_received, date_decommissioning, reason_decommissioning,
                 test_1_notes, test_1_date, test_2_notes, test_2_date, test_3_notes, test_3_date,
+                test_1_attachment_paths, test_2_attachment_paths, test_3_attachment_paths,
                 attachment_path, status
-            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,\'pending\')
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,\'pending\')
         ');
         if (!$ins) {
             header('Location: inventory.php?view=decommission&status=error&message=' . rawurlencode('Database error.'));
@@ -188,9 +213,9 @@ if ($conn && $employeeDbId) {
         }
 
         $eidStr = (string)(int)$employeeDbId;
-        $attachDb = $up;
+        $attachDb = null;
         $ins->bind_param(
-            'ssssssssssssssssssss',
+            'sssssssssssssssssssssss',
             $eidStr,
             $allocDb,
             $companyDb,
@@ -210,6 +235,9 @@ if ($conn && $employeeDbId) {
             $t2dDb,
             $t3nDb,
             $t3dDb,
+            $t1PathsJson,
+            $t2PathsJson,
+            $t3PathsJson,
             $attachDb
         );
         $okIns = $ins->execute();
@@ -258,33 +286,47 @@ if ($conn && $employeeDbId) {
                 WHERE id = ? AND status = \'pending\'
             ');
             if ($stmt) {
-                $stmt->bind_param('ssisi', $newStatus, $remark, $reviewerId, $reviewerName, $requestId);
-                $stmt->execute();
-                $affected = $stmt->affected_rows;
-                $stmt->close();
+                $conn->begin_transaction();
+                try {
+                    $stmt->bind_param('ssisi', $newStatus, $remark, $reviewerId, $reviewerName, $requestId);
+                    $stmt->execute();
+                    $affected = $stmt->affected_rows;
+                    $stmt->close();
 
-                if ($affected > 0) {
-                    $itemCodeLog = '';
-                    $q = $conn->prepare('SELECT item_code FROM inventory_decommission_requests WHERE id = ? LIMIT 1');
-                    if ($q) {
-                        $q->bind_param('i', $requestId);
-                        $q->execute();
-                        $rw = $q->get_result()->fetch_assoc();
-                        $q->close();
-                        $itemCodeLog = trim((string)($rw['item_code'] ?? ''));
+                    if ($affected > 0 && $newStatus === 'approved') {
+                        if (!inventory_finalize_decommission_approved_request($conn, $requestId, $remark)) {
+                            throw new RuntimeException('Could not finalize decommission for inventory item.');
+                        }
                     }
-                    $label = $newStatus === 'approved' ? 'Approve' : 'Decline';
-                    $desc = "{$label}d decommission request #{$requestId}" . ($itemCodeLog !== '' ? " (Item ID: {$itemCodeLog})" : '') . ' by ' . $reviewerName . '.';
-                    logActivity($conn, $label . ' Decommission Request', 'decommission_request', $requestId, $desc);
-                    inventoryLogActivity(
-                        $conn,
-                        inventoryActionWithItemCode($label . ' Decommission Request', $itemCodeLog !== '' ? $itemCodeLog : 'REQ-' . $requestId),
-                        'DecommissionRequest',
-                        $requestId,
-                        $desc,
-                        $remark !== '' ? 'Remark: ' . $remark : null,
-                        $itemCodeLog !== '' ? $itemCodeLog : null
-                    );
+
+                    if ($affected > 0) {
+                        $itemCodeLog = '';
+                        $q = $conn->prepare('SELECT item_code FROM inventory_decommission_requests WHERE id = ? LIMIT 1');
+                        if ($q) {
+                            $q->bind_param('i', $requestId);
+                            $q->execute();
+                            $rw = $q->get_result()->fetch_assoc();
+                            $q->close();
+                            $itemCodeLog = trim((string)($rw['item_code'] ?? ''));
+                        }
+                        $label = $newStatus === 'approved' ? 'Approve' : 'Decline';
+                        $desc = "{$label}d decommission request #{$requestId}" . ($itemCodeLog !== '' ? " (Item ID: {$itemCodeLog})" : '') . ' by ' . $reviewerName . '.';
+                        logActivity($conn, $label . ' Decommission Request', 'decommission_request', $requestId, $desc);
+                        inventoryLogActivity(
+                            $conn,
+                            inventoryActionWithItemCode($label . ' Decommission Request', $itemCodeLog !== '' ? $itemCodeLog : 'REQ-' . $requestId),
+                            'DecommissionRequest',
+                            $requestId,
+                            $desc,
+                            $remark !== '' ? 'Remark: ' . $remark : null,
+                            $itemCodeLog !== '' ? $itemCodeLog : null
+                        );
+                    }
+
+                    $conn->commit();
+                } catch (Throwable $e) {
+                    $conn->rollback();
+                    error_log('Employee decommission approval transaction failed: ' . $e->getMessage());
                 }
             }
         }
@@ -751,6 +793,7 @@ switch ($inventoryView) {
 
         const decomDataEl = document.getElementById('decomAllocationData');
         const decomSelect = document.getElementById('decom_item_select');
+        const descTa = document.getElementById('item_description_display');
         const remarksTa = document.getElementById('item_remarks_display');
         function applyDecomPrefill() {
           if (!decomDataEl || !decomSelect || !remarksTa) return;
@@ -758,6 +801,7 @@ switch ($inventoryView) {
           try { rows = JSON.parse(decomDataEl.textContent || '[]'); } catch (e) { return; }
           var id = parseInt(decomSelect.value, 10) || 0;
           if (!id) {
+            if (descTa) descTa.value = '';
             remarksTa.value = '';
             return;
           }
@@ -766,8 +810,13 @@ switch ($inventoryView) {
             if (rows[i].allocationId === id) { row = rows[i]; break; }
           }
           if (!row) {
+            if (descTa) descTa.value = '';
             remarksTa.value = '';
             return;
+          }
+          var d = row.description != null ? String(row.description) : '';
+          if (descTa) {
+            descTa.value = d.trim() !== '' ? d : "(No description on this item's inventory record.)";
           }
           var r = row.itemRemarks != null ? String(row.itemRemarks) : '';
           remarksTa.value = r.trim() !== '' ? r : "(No remarks on this item's inventory record.)";

@@ -275,16 +275,16 @@ include __DIR__ . '/../database/db.php';
 
                     if (fromVal === toVal) {
                         const date = new Date(fromVal);
-                        const options = { weekday: 'short', month: 'short', day: 'numeric' };
-                        const label = date.toLocaleDateString(undefined, options);
+                        const options = { timeZone: 'Asia/Manila', weekday: 'short', month: 'short', day: 'numeric' };
+                        const label = date.toLocaleDateString('en-PH', options);
                         dateRangeLabel.textContent = 'For ' + label;
                         dateHeaderLabel.textContent = label;
                     } else {
                         const fromDate = new Date(fromVal);
                         const toDate = new Date(toVal);
-                        const options = { month: 'short', day: 'numeric' };
-                        const fromLabel = fromDate.toLocaleDateString(undefined, options);
-                        const toLabel = toDate.toLocaleDateString(undefined, options);
+                        const options = { timeZone: 'Asia/Manila', month: 'short', day: 'numeric' };
+                        const fromLabel = fromDate.toLocaleDateString('en-PH', options);
+                        const toLabel = toDate.toLocaleDateString('en-PH', options);
                         dateRangeLabel.textContent = 'For ' + fromLabel + ' – ' + toLabel;
                         dateHeaderLabel.textContent = 'Selected Range';
                     }

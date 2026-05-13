@@ -45,6 +45,7 @@ function getAllocationRows(mysqli $conn, int $employeeId = 0): array
         JOIN employees e ON e.id = ia.employee_id
         JOIN inventory_items ii ON ii.id = ia.inventory_item_id
         WHERE ia.date_return IS NULL
+          AND ii.decommissioned_at IS NULL
     ";
 
     if ($employeeId > 0) {
@@ -129,9 +130,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         $checkStmt = $conn->prepare('
-            SELECT id
-            FROM inventory_item_allocations
-            WHERE inventory_item_id = ? AND date_return IS NULL
+            SELECT ia.id
+            FROM inventory_item_allocations ia
+            INNER JOIN inventory_items ii ON ii.id = ia.inventory_item_id
+            WHERE ia.inventory_item_id = ? AND ia.date_return IS NULL AND ii.decommissioned_at IS NULL
             LIMIT 1
         ');
         $checkStmt->bind_param('i', $inventoryItemId);
@@ -244,6 +246,7 @@ $itemResult = $conn->query("
     FROM inventory_items ii
     LEFT JOIN inventory_item_allocations ia ON ia.inventory_item_id = ii.id AND ia.date_return IS NULL
     WHERE ia.id IS NULL
+      AND ii.decommissioned_at IS NULL
     ORDER BY ii.item_name ASC, ii.item_id ASC
 ");
 if ($itemResult) {

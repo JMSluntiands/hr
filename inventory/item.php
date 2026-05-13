@@ -62,7 +62,7 @@ $role = $_SESSION['role'] ?? 'admin';
 
 $itemOptions = getInventoryItemOptions();
 $itemPrefixes = getInventoryItemPrefixes();
-$itemConditions = ['Working-Active', 'Need Repair', 'Decom - Stock', 'Stock'];
+$itemConditions = ['Working-Active', 'Need Repair', 'Decom - Stock', 'Stock', 'Decommissioned'];
 ensureInventoryItemsTable($conn);
 ensureInventoryItemAllocationsTable($conn);
 $activeTab = strtolower((string)($_GET['tab'] ?? 'add'));

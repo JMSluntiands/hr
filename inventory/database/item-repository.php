@@ -241,6 +241,7 @@ function listInventoryItems(mysqli $conn): array
                 LIMIT 1
             ) AS allocated_to_name
         FROM inventory_items ii
+        WHERE ii.decommissioned_at IS NULL
         ORDER BY ii.id DESC
     ");
     if ($result) {

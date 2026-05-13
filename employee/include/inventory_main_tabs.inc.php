@@ -170,7 +170,7 @@ $v = $inventoryView ?? 'list';
                             <script type="application/json" id="decomAllocationData"><?php echo $decomAllocJson; ?></script>
                             <div class="rounded-xl border border-slate-200 bg-white shadow-sm p-4 md:p-5">
                                 <h3 class="text-sm font-semibold text-slate-800 mb-2">Decommission history</h3>
-                                <p class="text-xs text-slate-500 mb-3">Who requested, who approved or declined, and when (date and time).</p>
+                                <p class="text-xs text-slate-500 mb-3">Who requested, who approved or declined, and when. <span class="text-slate-600">Date and time are Philippine Standard Time (Asia/Manila).</span></p>
                                 <div class="overflow-x-auto rounded-lg border border-slate-100">
                                     <table class="min-w-full text-sm">
                                         <thead class="bg-slate-50">
@@ -211,9 +211,9 @@ $v = $inventoryView ?? 'list';
                                                                 <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">Declined</span>
                                                             <?php endif; ?>
                                                         </td>
-                                                        <td class="px-3 py-2 text-slate-600 whitespace-nowrap text-xs"><?php echo $dc !== '' ? htmlspecialchars(date('M d, Y h:i A', strtotime($dc))) : '—'; ?></td>
+                                                        <td class="px-3 py-2 text-slate-600 whitespace-nowrap text-xs"><?php echo htmlspecialchars(inventory_decommission_format_datetime_manila($dc)); ?></td>
                                                         <td class="px-3 py-2 text-slate-600 text-xs"><?php echo $rv !== '' ? htmlspecialchars($rv) : '—'; ?></td>
-                                                        <td class="px-3 py-2 text-slate-600 whitespace-nowrap text-xs"><?php echo $ra !== '' ? htmlspecialchars(date('M d, Y h:i A', strtotime($ra))) : '—'; ?></td>
+                                                        <td class="px-3 py-2 text-slate-600 whitespace-nowrap text-xs"><?php echo htmlspecialchars(inventory_decommission_format_datetime_manila($ra)); ?></td>
                                                         <td class="px-3 py-2 text-slate-600 text-xs align-top max-w-xs">
                                                             <details class="cursor-pointer group">
                                                                 <summary class="text-[#FA9800] font-medium list-none flex items-center gap-1 [&::-webkit-details-marker]:hidden">
@@ -228,25 +228,37 @@ $v = $inventoryView ?? 'list';
                                                                     <div><span class="font-semibold text-slate-700">Equipment:</span> <?php echo htmlspecialchars((string)($dr['equipment_name'] ?? '')); ?></div>
                                                                     <div><span class="font-semibold text-slate-700">Item ID:</span> <?php echo htmlspecialchars((string)($dr['item_code'] ?? '')); ?></div>
                                                                     <div><span class="font-semibold text-slate-700">Type:</span> <?php echo htmlspecialchars(trim((string)($dr['equipment_type'] ?? '')) !== '' ? (string)$dr['equipment_type'] : '—'); ?></div>
-                                                                    <div><span class="font-semibold text-slate-700">Item remarks (from inventory):</span> <?php echo htmlspecialchars(trim((string)($dr['serial_number'] ?? '')) !== '' ? (string)$dr['serial_number'] : '—'); ?></div>
-                                                                    <div><span class="font-semibold text-slate-700">Description:</span> <?php echo nl2br(htmlspecialchars(trim((string)($dr['equipment_description'] ?? '')) !== '' ? (string)$dr['equipment_description'] : '—')); ?></div>
+                                                                    <div><span class="font-semibold text-slate-700">Description (from inventory):</span> <?php echo nl2br(htmlspecialchars(trim((string)($dr['equipment_description'] ?? '')) !== '' ? (string)$dr['equipment_description'] : '—')); ?></div>
+                                                                    <div><span class="font-semibold text-slate-700">Remarks (from inventory):</span> <?php echo htmlspecialchars(trim((string)($dr['serial_number'] ?? '')) !== '' ? (string)$dr['serial_number'] : '—'); ?></div>
                                                                     <div><span class="font-semibold text-slate-700">Brand:</span> <?php echo htmlspecialchars(trim((string)($dr['brand_manufacturer'] ?? '')) !== '' ? (string)$dr['brand_manufacturer'] : '—'); ?></div>
                                                                     <?php
                                                                     $idrRecv = trim((string)($dr['item_date_received'] ?? ''));
                                                                     $idrDecom = trim((string)($dr['date_decommissioning'] ?? ''));
                                                                     ?>
-                                                                    <div><span class="font-semibold text-slate-700">Item date received:</span> <?php echo $idrRecv !== '' ? htmlspecialchars(date('M d, Y', strtotime($idrRecv))) : '—'; ?></div>
-                                                                    <div><span class="font-semibold text-slate-700">Date of decommissioning:</span> <?php echo $idrDecom !== '' ? htmlspecialchars(date('M d, Y', strtotime($idrDecom))) : '—'; ?></div>
+                                                                    <div><span class="font-semibold text-slate-700">Item date received:</span> <?php echo htmlspecialchars(inventory_decommission_format_date_manila($idrRecv)); ?></div>
+                                                                    <div><span class="font-semibold text-slate-700">Date of decommissioning:</span> <?php echo htmlspecialchars(inventory_decommission_format_date_manila($idrDecom)); ?></div>
                                                                     <div><span class="font-semibold text-slate-700">Reason:</span> <?php echo nl2br(htmlspecialchars((string)($dr['reason_decommissioning'] ?? ''))); ?></div>
                                                                     <?php for ($ti = 1; $ti <= 3; $ti++): ?>
                                                                         <?php
                                                                         $tn = (string)($dr['test_' . $ti . '_notes'] ?? '');
                                                                         $td = (string)($dr['test_' . $ti . '_date'] ?? '');
+                                                                        $tpj = (string)($dr['test_' . $ti . '_attachment_paths'] ?? '');
+                                                                        $tpaths = inventory_decommission_decode_attachment_paths_json($tpj);
+                                                                        if (trim($tn) === '' && trim($td) === '' && $tpaths === []) {
+                                                                            continue;
+                                                                        }
                                                                         ?>
-                                                                        <?php if (trim($tn) !== '' || trim($td) !== ''): ?>
-                                                                            <div class="pt-1"><span class="font-semibold text-slate-700">Test <?php echo $ti; ?>:</span> <?php echo nl2br(htmlspecialchars(trim($tn) !== '' ? $tn : '—')); ?></div>
-                                                                            <div><span class="font-semibold text-slate-700">Date of test (<?php echo $ti; ?>):</span> <?php echo $td !== '' ? htmlspecialchars(date('M d, Y', strtotime($td))) : '—'; ?></div>
-                                                                        <?php endif; ?>
+                                                                        <div class="pt-2 mt-1 border-t border-slate-100 space-y-1">
+                                                                            <div class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Test <?php echo $ti; ?></div>
+                                                                            <?php if (trim($tn) !== '' || trim($td) !== ''): ?>
+                                                                                <div><span class="font-semibold text-slate-700">Notes:</span> <?php echo nl2br(htmlspecialchars(trim($tn) !== '' ? $tn : '—')); ?></div>
+                                                                                <div><span class="font-semibold text-slate-700">Date of test:</span> <?php echo htmlspecialchars(inventory_decommission_format_date_manila($td)); ?></div>
+                                                                            <?php endif; ?>
+                                                                            <?php if ($tpaths !== []): ?>
+                                                                                <div><span class="font-semibold text-slate-700">Images:</span></div>
+                                                                                <div class="pl-0 space-y-0.5"><?php echo inventory_decommission_format_attachments_html_from_paths($tpaths, '../'); ?></div>
+                                                                            <?php endif; ?>
+                                                                        </div>
                                                                     <?php endfor; ?>
                                                                     <?php if (trim((string)($dr['resolution_remark'] ?? '')) !== ''): ?>
                                                                         <div class="pt-1 border-t border-slate-100"><span class="font-semibold text-slate-700">Reviewer remark:</span> <?php echo nl2br(htmlspecialchars((string)$dr['resolution_remark'])); ?></div>
@@ -290,6 +302,9 @@ $v = $inventoryView ?? 'list';
                                         <label class="text-slate-600 font-medium lg:pt-2" for="request_employee_name">Employee name</label>
                                         <input type="text" id="request_employee_name" readonly maxlength="255" value="<?php echo htmlspecialchars($employeeName); ?>" class="w-full border border-slate-200 rounded-lg px-3 py-2 bg-slate-100 text-slate-700 cursor-not-allowed" aria-readonly="true">
 
+                                        <label class="text-slate-600 font-medium lg:pt-2" for="item_description_display">Description <span class="text-slate-400 font-normal">(from inventory record for this item)</span></label>
+                                        <textarea id="item_description_display" rows="3" readonly class="w-full border border-slate-200 rounded-lg px-3 py-2 bg-slate-50 text-slate-700 text-sm cursor-default resize-none" aria-readonly="true" placeholder="Select an item in the dropdown first."></textarea>
+
                                         <label class="text-slate-600 font-medium lg:pt-2" for="item_remarks_display">Remarks <span class="text-slate-400 font-normal">(from inventory record for this item)</span></label>
                                         <textarea id="item_remarks_display" rows="3" readonly class="w-full border border-slate-200 rounded-lg px-3 py-2 bg-slate-50 text-slate-700 text-sm cursor-default resize-none" aria-readonly="true" placeholder="Select an item in the dropdown first."></textarea>
 
@@ -303,19 +318,31 @@ $v = $inventoryView ?? 'list';
                                         <textarea name="test_1_notes" id="test_1_notes" rows="2" maxlength="4000" class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white" placeholder="Example: times the equipment failed to function."></textarea>
                                         <label class="text-slate-600 font-medium lg:pt-2" for="test_1_date">Date of test (Test 1)</label>
                                         <input type="date" name="test_1_date" id="test_1_date" class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white">
+                                        <label class="text-slate-600 font-medium lg:pt-2" for="test_1_attachments">Test 1 — images <span class="text-red-500">*</span></label>
+                                        <div class="min-w-0">
+                                            <input type="file" name="test_1_attachments[]" id="test_1_attachments" multiple required accept="image/jpeg,image/png,image/gif,image/webp,.jpg,.jpeg,.png,.gif,.webp" class="w-full text-sm text-slate-600">
+                                            <p class="text-xs text-slate-500 mt-1">At least one image required. Hold Ctrl (Windows) or ⌘ (Mac) to select multiple files.</p>
+                                        </div>
 
                                         <label class="text-slate-600 font-medium lg:pt-2" for="test_2_notes">Test 2</label>
                                         <textarea name="test_2_notes" id="test_2_notes" rows="2" maxlength="4000" class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white" placeholder="Example: times the equipment failed to function."></textarea>
                                         <label class="text-slate-600 font-medium lg:pt-2" for="test_2_date">Date of test (Test 2)</label>
                                         <input type="date" name="test_2_date" id="test_2_date" class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white">
+                                        <label class="text-slate-600 font-medium lg:pt-2" for="test_2_attachments">Test 2 — images <span class="text-red-500">*</span></label>
+                                        <div class="min-w-0">
+                                            <input type="file" name="test_2_attachments[]" id="test_2_attachments" multiple required accept="image/jpeg,image/png,image/gif,image/webp,.jpg,.jpeg,.png,.gif,.webp" class="w-full text-sm text-slate-600">
+                                            <p class="text-xs text-slate-500 mt-1">At least one image required. Multiple files allowed.</p>
+                                        </div>
 
                                         <label class="text-slate-600 font-medium lg:pt-2" for="test_3_notes">Test 3</label>
                                         <textarea name="test_3_notes" id="test_3_notes" rows="2" maxlength="4000" class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white" placeholder="Example: times the equipment failed to function."></textarea>
                                         <label class="text-slate-600 font-medium lg:pt-2" for="test_3_date">Date of test (Test 3)</label>
                                         <input type="date" name="test_3_date" id="test_3_date" class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white">
-
-                                        <label class="text-slate-600 font-medium lg:pt-2" for="attachment_proof">Attachment proof</label>
-                                        <input type="file" name="attachment_proof" id="attachment_proof" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" class="w-full text-sm text-slate-600">
+                                        <label class="text-slate-600 font-medium lg:pt-2" for="test_3_attachments">Test 3 — images <span class="text-red-500">*</span></label>
+                                        <div class="min-w-0">
+                                            <input type="file" name="test_3_attachments[]" id="test_3_attachments" multiple required accept="image/jpeg,image/png,image/gif,image/webp,.jpg,.jpeg,.png,.gif,.webp" class="w-full text-sm text-slate-600">
+                                            <p class="text-xs text-slate-500 mt-1">At least one image required. Multiple files allowed.</p>
+                                        </div>
                                     </div>
                                     <div class="flex flex-wrap gap-3 justify-end pt-4 border-t border-slate-200">
                                         <a href="inventory.php?view=decommission" class="px-4 py-2 rounded-lg text-sm font-medium bg-slate-200 text-slate-800 hover:bg-slate-300">Cancel</a>
@@ -335,7 +362,7 @@ $v = $inventoryView ?? 'list';
                             <h2 class="text-base font-semibold text-slate-800">Decommission requests (supervisor)</h2>
                         </div>
                         <div class="px-4 md:px-6 pb-5 pt-4 space-y-4">
-                            <p class="text-xs text-slate-500">Approve or decline employee decommission requests. Actions are logged in the activity log.</p>
+                            <p class="text-xs text-slate-500">Approve or decline employee decommission requests. Actions are logged in the activity log. <span class="text-slate-600">Submitted / resolved times are Philippine Standard Time (Asia/Manila).</span></p>
                             <div class="overflow-x-auto rounded-lg border border-slate-100">
                                 <table class="min-w-full text-sm">
                                     <thead class="bg-slate-50">
@@ -373,11 +400,14 @@ $v = $inventoryView ?? 'list';
                                                         <div class="font-medium text-slate-800"><?php echo htmlspecialchars((string)$ar['equipment_name']); ?></div>
                                                         <div class="text-slate-500">ID: <?php echo htmlspecialchars((string)$ar['item_code']); ?></div>
                                                     </td>
-                                                    <td class="px-3 py-2 text-slate-600 align-top whitespace-nowrap text-xs"><?php echo $subAt !== '' ? htmlspecialchars(date('M d, Y h:i A', strtotime($subAt))) : '—'; ?></td>
+                                                    <td class="px-3 py-2 text-slate-600 align-top whitespace-nowrap text-xs"><?php echo htmlspecialchars(inventory_decommission_format_datetime_manila($subAt)); ?></td>
                                                     <td class="px-3 py-2 text-xs text-slate-600 align-top max-w-[200px]">
                                                         <?php if (trim((string)($ar['reviewed_by_name'] ?? '')) !== ''): ?>
                                                             <div><span class="font-semibold text-slate-700">By:</span> <?php echo htmlspecialchars((string)$ar['reviewed_by_name']); ?></div>
-                                                            <div class="text-slate-500"><?php $rat = (string)($ar['resolved_at'] ?? ''); echo $rat !== '' ? htmlspecialchars(date('M d, Y h:i A', strtotime($rat))) : ''; ?></div>
+                                                            <?php $rat = trim((string)($ar['resolved_at'] ?? '')); ?>
+                                                            <?php if ($rat !== ''): ?>
+                                                                <div class="text-slate-500"><?php echo htmlspecialchars(inventory_decommission_format_datetime_manila($rat)); ?></div>
+                                                            <?php endif; ?>
                                                         <?php else: ?>—<?php endif; ?>
                                                     </td>
                                                     <td class="px-3 py-2 text-slate-600 text-xs align-top max-w-xs">
@@ -394,25 +424,37 @@ $v = $inventoryView ?? 'list';
                                                                 <div><span class="font-semibold text-slate-700">Equipment:</span> <?php echo htmlspecialchars((string)($ar['equipment_name'] ?? '')); ?></div>
                                                                 <div><span class="font-semibold text-slate-700">Item ID:</span> <?php echo htmlspecialchars((string)($ar['item_code'] ?? '')); ?></div>
                                                                 <div><span class="font-semibold text-slate-700">Type:</span> <?php echo htmlspecialchars(trim((string)($ar['equipment_type'] ?? '')) !== '' ? (string)$ar['equipment_type'] : '—'); ?></div>
-                                                                <div><span class="font-semibold text-slate-700">Item remarks (from inventory):</span> <?php echo htmlspecialchars(trim((string)($ar['serial_number'] ?? '')) !== '' ? (string)$ar['serial_number'] : '—'); ?></div>
-                                                                <div><span class="font-semibold text-slate-700">Description:</span> <?php echo nl2br(htmlspecialchars(trim((string)($ar['equipment_description'] ?? '')) !== '' ? (string)$ar['equipment_description'] : '—')); ?></div>
+                                                                <div><span class="font-semibold text-slate-700">Description (from inventory):</span> <?php echo nl2br(htmlspecialchars(trim((string)($ar['equipment_description'] ?? '')) !== '' ? (string)$ar['equipment_description'] : '—')); ?></div>
+                                                                <div><span class="font-semibold text-slate-700">Remarks (from inventory):</span> <?php echo htmlspecialchars(trim((string)($ar['serial_number'] ?? '')) !== '' ? (string)$ar['serial_number'] : '—'); ?></div>
                                                                 <div><span class="font-semibold text-slate-700">Brand:</span> <?php echo htmlspecialchars(trim((string)($ar['brand_manufacturer'] ?? '')) !== '' ? (string)$ar['brand_manufacturer'] : '—'); ?></div>
                                                                 <?php
                                                                 $arRecv = trim((string)($ar['item_date_received'] ?? ''));
                                                                 $arDecom = trim((string)($ar['date_decommissioning'] ?? ''));
                                                                 ?>
-                                                                <div><span class="font-semibold text-slate-700">Item date received:</span> <?php echo $arRecv !== '' ? htmlspecialchars(date('M d, Y', strtotime($arRecv))) : '—'; ?></div>
-                                                                <div><span class="font-semibold text-slate-700">Date of decommissioning:</span> <?php echo $arDecom !== '' ? htmlspecialchars(date('M d, Y', strtotime($arDecom))) : '—'; ?></div>
+                                                                <div><span class="font-semibold text-slate-700">Item date received:</span> <?php echo htmlspecialchars(inventory_decommission_format_date_manila($arRecv)); ?></div>
+                                                                <div><span class="font-semibold text-slate-700">Date of decommissioning:</span> <?php echo htmlspecialchars(inventory_decommission_format_date_manila($arDecom)); ?></div>
                                                                 <div><span class="font-semibold text-slate-700">Reason:</span> <?php echo nl2br(htmlspecialchars((string)($ar['reason_decommissioning'] ?? ''))); ?></div>
                                                                 <?php for ($ti = 1; $ti <= 3; $ti++): ?>
                                                                     <?php
                                                                     $tn = (string)($ar['test_' . $ti . '_notes'] ?? '');
                                                                     $td = (string)($ar['test_' . $ti . '_date'] ?? '');
+                                                                    $tpj = (string)($ar['test_' . $ti . '_attachment_paths'] ?? '');
+                                                                    $tpaths = inventory_decommission_decode_attachment_paths_json($tpj);
+                                                                    if (trim($tn) === '' && trim($td) === '' && $tpaths === []) {
+                                                                        continue;
+                                                                    }
                                                                     ?>
-                                                                    <?php if (trim($tn) !== '' || trim($td) !== ''): ?>
-                                                                        <div class="pt-1"><span class="font-semibold text-slate-700">Test <?php echo $ti; ?>:</span> <?php echo nl2br(htmlspecialchars(trim($tn) !== '' ? $tn : '—')); ?></div>
-                                                                        <div><span class="font-semibold text-slate-700">Date of test (<?php echo $ti; ?>):</span> <?php echo $td !== '' ? htmlspecialchars(date('M d, Y', strtotime($td))) : '—'; ?></div>
-                                                                    <?php endif; ?>
+                                                                    <div class="pt-2 mt-1 border-t border-slate-100 space-y-1">
+                                                                        <div class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Test <?php echo $ti; ?></div>
+                                                                        <?php if (trim($tn) !== '' || trim($td) !== ''): ?>
+                                                                            <div><span class="font-semibold text-slate-700">Notes:</span> <?php echo nl2br(htmlspecialchars(trim($tn) !== '' ? $tn : '—')); ?></div>
+                                                                            <div><span class="font-semibold text-slate-700">Date of test:</span> <?php echo htmlspecialchars(inventory_decommission_format_date_manila($td)); ?></div>
+                                                                        <?php endif; ?>
+                                                                        <?php if ($tpaths !== []): ?>
+                                                                            <div><span class="font-semibold text-slate-700">Images:</span></div>
+                                                                            <div class="pl-0 space-y-0.5"><?php echo inventory_decommission_format_attachments_html_from_paths($tpaths, '../'); ?></div>
+                                                                        <?php endif; ?>
+                                                                    </div>
                                                                 <?php endfor; ?>
                                                                 <?php if (trim((string)($ar['resolution_remark'] ?? '')) !== ''): ?>
                                                                     <div class="pt-1 border-t border-slate-100"><span class="font-semibold text-slate-700">Reviewer remark:</span> <?php echo nl2br(htmlspecialchars((string)$ar['resolution_remark'])); ?></div>

@@ -24,6 +24,9 @@ function ensureInventoryDecommissionRequestsTable(mysqli $conn): void
             test_2_date DATE NULL,
             test_3_notes TEXT NULL,
             test_3_date DATE NULL,
+            test_1_attachment_paths TEXT NULL,
+            test_2_attachment_paths TEXT NULL,
+            test_3_attachment_paths TEXT NULL,
             attachment_path VARCHAR(500) NULL,
             status ENUM('pending','approved','declined') NOT NULL DEFAULT 'pending',
             resolution_remark TEXT NULL,
@@ -43,6 +46,23 @@ function ensureInventoryDecommissionRequestsTable(mysqli $conn): void
         $type = strtolower((string)($row['Type'] ?? ''));
         if ($type !== '' && str_contains($type, 'varchar')) {
             $conn->query('ALTER TABLE inventory_decommission_requests MODIFY COLUMN serial_number TEXT NULL');
+        }
+    }
+
+    $decomAttachMigrations = [
+        ['test_1_attachment_paths', 'test_3_date'],
+        ['test_2_attachment_paths', 'test_1_attachment_paths'],
+        ['test_3_attachment_paths', 'test_2_attachment_paths'],
+    ];
+    foreach ($decomAttachMigrations as $pair) {
+        [$newCol, $afterCol] = $pair;
+        $c = $conn->query("SHOW COLUMNS FROM inventory_decommission_requests LIKE '" . $conn->real_escape_string($newCol) . "'");
+        if ($c && $c->num_rows === 0) {
+            $safeNew = preg_replace('/[^a-z0-9_]/i', '', $newCol);
+            $safeAfter = preg_replace('/[^a-z0-9_]/i', '', $afterCol);
+            if ($safeNew !== '' && $safeAfter !== '') {
+                $conn->query("ALTER TABLE inventory_decommission_requests ADD COLUMN `{$safeNew}` TEXT NULL AFTER `{$safeAfter}`");
+            }
         }
     }
 }

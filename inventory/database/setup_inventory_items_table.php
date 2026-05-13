@@ -15,6 +15,7 @@ function ensureInventoryItemsTable(mysqli $conn): void
             item_image_path VARCHAR(255) NULL,
             item_image_paths TEXT NULL,
             date_arrived DATE NULL,
+            decommissioned_at DATETIME NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
@@ -42,5 +43,10 @@ function ensureInventoryItemsTable(mysqli $conn): void
     $checkImagePaths = $conn->query("SHOW COLUMNS FROM inventory_items LIKE 'item_image_paths'");
     if ($checkImagePaths && $checkImagePaths->num_rows === 0) {
         $conn->query("ALTER TABLE inventory_items ADD COLUMN item_image_paths TEXT NULL AFTER item_image_path");
+    }
+
+    $checkDecommissionedAt = $conn->query("SHOW COLUMNS FROM inventory_items LIKE 'decommissioned_at'");
+    if ($checkDecommissionedAt && $checkDecommissionedAt->num_rows === 0) {
+        $conn->query('ALTER TABLE inventory_items ADD COLUMN decommissioned_at DATETIME NULL AFTER date_arrived');
     }
 }
