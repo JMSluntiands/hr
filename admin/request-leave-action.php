@@ -7,6 +7,7 @@ if (!isset($_SESSION['user_id'])) {
 
 include '../database/db.php';
 include 'include/activity-logger.php';
+require_once __DIR__ . '/../include/admin-permissions.php';
 
 $msg = '';
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
@@ -44,6 +45,10 @@ $empName = $lrData['full_name'] ?? 'Unknown';
 $leaveType = $lrData['leave_type'] ?? 'Unknown';
 $employeeId = (int)($lrData['employee_id'] ?? 0);
 $leaveDays = (int)($lrData['calculated_days'] ?? 0);
+
+if (!adminCanApproveEmployee($conn, $adminId, 'approve_leave', $employeeId)) {
+    adminDenyApprovalRedirect('request_leaves_msg', 'request-leaves.php');
+}
 
 if ($action === 'approve') {
     // Start transaction

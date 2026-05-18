@@ -14,6 +14,8 @@ if (strtolower($role) !== 'admin') {
 }
 
 include '../database/db.php';
+require_once __DIR__ . '/../include/admin-permissions.php';
+$currentAdminId = (int)($_SESSION['user_id'] ?? 0);
 
 $msg = '';
 if (isset($_SESSION['document_archive_msg'])) {
@@ -113,6 +115,7 @@ if ($conn) {
                             <td class="px-4 py-3 text-slate-600"><?php echo !empty($p['deletion_requested_at']) ? date('M d, Y H:i', strtotime($p['deletion_requested_at'])) : '—'; ?></td>
                             <td class="px-4 py-3">
                                 <div class="flex flex-wrap items-center gap-2">
+                                    <?php if (adminCanApproveEmployee($conn, $currentAdminId, 'approve_document_removal', (int)($p['employee_id'] ?? 0))): ?>
                                     <a href="document-archive-action.php?action=approve&amp;id=<?php echo (int)$p['id']; ?>"
                                        onclick="return confirm('Approve removal? File will be kept in archive only.');"
                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-sm transition-colors">
@@ -129,6 +132,9 @@ if ($conn) {
                                         </svg>
                                         <span>Reject</span>
                                     </a>
+                                    <?php else: ?>
+                                    <span class="text-xs text-slate-400" title="No department permission">No access</span>
+                                    <?php endif; ?>
                                 </div>
                             </td>
                         </tr>

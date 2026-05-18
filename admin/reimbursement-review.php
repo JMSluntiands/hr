@@ -7,6 +7,8 @@ if (!isset($_SESSION['user_id'])) {
 $adminName = $_SESSION['name'] ?? 'Admin User';
 $role = $_SESSION['role'] ?? 'admin';
 include __DIR__ . '/../database/db.php';
+require_once __DIR__ . '/../include/admin-permissions.php';
+$currentAdminId = (int)($_SESSION['user_id'] ?? 0);
 
 $msg = $_SESSION['reimbursement_msg'] ?? '';
 unset($_SESSION['reimbursement_msg']);
@@ -87,8 +89,12 @@ if ($conn) {
                         </td>
                         <td class="px-4 py-3">
                             <div class="flex items-center gap-2">
+                                <?php if (adminCanApproveEmployee($conn, $currentAdminId, 'approve_reimbursement', (int)($r['employee_id'] ?? 0))): ?>
                                 <a href="reimbursement-action.php?action=approve&id=<?php echo (int)$r['id']; ?>" class="px-3 py-1.5 rounded bg-emerald-600 text-white text-xs">Approve</a>
                                 <button type="button" class="declineBtn px-3 py-1.5 rounded bg-red-600 text-white text-xs" data-id="<?php echo (int)$r['id']; ?>">Decline</button>
+                                <?php else: ?>
+                                <span class="text-xs text-slate-400" title="No department permission">No access</span>
+                                <?php endif; ?>
                             </div>
                         </td>
                     </tr>

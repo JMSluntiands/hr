@@ -7,6 +7,7 @@ if (!isset($_SESSION['user_id'])) {
 
 include '../database/db.php';
 include 'include/activity-logger.php';
+require_once __DIR__ . '/../include/admin-permissions.php';
 
 $userRole = strtolower($_SESSION['role'] ?? '');
 if ($userRole !== 'admin') {
@@ -51,6 +52,10 @@ $empName = $docData['full_name'] ?? 'Unknown';
 $docType = $docData['document_type'] ?? 'Unknown';
 $employeeId = (int)$docData['employee_id'];
 $filePathRel = $docData['file_path'] ?? '';
+
+if (!adminCanApproveEmployee($conn, $adminId, 'approve_document_removal', $employeeId)) {
+    adminDenyApprovalRedirect('document_archive_msg', 'document-archive.php');
+}
 
 if ($action === 'reject') {
     $stmt = $conn->prepare("UPDATE employee_document_uploads SET deletion_requested_at = NULL WHERE id = ?");

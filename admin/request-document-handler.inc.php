@@ -19,6 +19,7 @@ if ($conn) {
 }
 
 require_once __DIR__ . '/include/activity-logger.php';
+require_once __DIR__ . '/../include/admin-permissions.php';
 
 $rawAction = (string)($_POST['req_action'] ?? $_GET['req_action'] ?? $_POST['action'] ?? $_GET['action'] ?? '');
 $action = strtolower(trim($rawAction));
@@ -64,6 +65,11 @@ if (!$drData) {
 
 $empName = $drData['full_name'] ?? 'Unknown';
 $docType = $drData['document_type'] ?? 'Unknown';
+$employeeId = (int)($drData['employee_id'] ?? 0);
+
+if (!adminCanApproveEmployee($conn, $adminId, 'approve_document_request', $employeeId)) {
+    adminDenyApprovalRedirect('request_document_msg', 'request-document.php');
+}
 
 if ($action === 'approve') {
     $conn->begin_transaction();

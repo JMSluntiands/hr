@@ -64,6 +64,14 @@ $inventoryUrl = '../inventory/index.php';
                 <span class="block text-base font-semibold text-slate-800">Inventory Management</span>
                 <span class="block text-sm text-slate-500">Open the inventory system for stocks and item tracking.</span>
             </a>
+
+            <a
+                href="../permission/index.php"
+                class="block w-full text-left p-4 rounded-xl border border-slate-200 hover:border-amber-400 hover:bg-amber-50 transition"
+            >
+                <span class="block text-base font-semibold text-slate-800">Permission</span>
+                <span class="block text-sm text-slate-500">Manage user roles, module access, and account permissions.</span>
+            </a>
         </div>
     </div>
 </body>

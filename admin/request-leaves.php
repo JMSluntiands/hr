@@ -9,6 +9,8 @@ $adminName = $_SESSION['name'] ?? 'Admin User';
 $role      = $_SESSION['role'] ?? 'admin';
 
 include '../database/db.php';
+require_once __DIR__ . '/../include/admin-permissions.php';
+$currentAdminId = (int)($_SESSION['user_id'] ?? 0);
 
 $msg = '';
 if (isset($_SESSION['request_leaves_msg'])) {
@@ -142,7 +144,10 @@ if ($conn) {
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                         </svg>
                                     </button>
-                                    <?php if ($status === 'Pending'): ?>
+                                    <?php
+                                    $canApproveLeave = ($status === 'Pending') && adminCanApproveEmployee($conn, $currentAdminId, 'approve_leave', (int)($r['employee_id'] ?? 0));
+                                    if ($canApproveLeave):
+                                    ?>
                                     <a href="request-leave-action.php?action=approve&id=<?php echo (int)$r['id']; ?>" class="p-2 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors" title="Approve">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
@@ -153,6 +158,8 @@ if ($conn) {
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                                         </svg>
                                     </button>
+                                    <?php elseif ($status === 'Pending'): ?>
+                                    <span class="text-xs text-slate-400" title="No department permission">No access</span>
                                     <?php endif; ?>
                                 </div>
                             </td>

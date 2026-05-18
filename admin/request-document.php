@@ -9,6 +9,8 @@ $adminName = $_SESSION['name'] ?? 'Admin User';
 $role      = $_SESSION['role'] ?? 'admin';
 
 include '../database/db.php';
+require_once __DIR__ . '/../include/admin-permissions.php';
+$currentAdminId = (int)($_SESSION['user_id'] ?? 0);
 require_once __DIR__ . '/../include/ensure_document_requests_coe_columns.php';
 require_once __DIR__ . '/../include/ensure_document_files_request_link.php';
 if ($conn) {
@@ -113,7 +115,10 @@ if ($conn) {
                                 <span class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium <?php echo $statusClass; ?>"><?php echo $status; ?></span>
                             </td>
                             <td class="px-4 py-3">
-                                <?php if ($status === 'Pending'): ?>
+                                <?php
+                                $canApproveDocReq = ($status === 'Pending') && adminCanApproveEmployee($conn, $currentAdminId, 'approve_document_request', (int)($r['employee_id'] ?? 0));
+                                if ($canApproveDocReq):
+                                ?>
                                 <div class="flex items-center gap-2">
                                     <form method="post" action="" class="inline" onsubmit="return confirm('Approve this document request?');">
                                         <input type="hidden" name="req_action" value="approve">
@@ -123,6 +128,8 @@ if ($conn) {
                                     </form>
                                     <button type="button" class="decline-doc-btn text-red-600 hover:text-red-700" data-id="<?php echo (int)($r['id'] ?? 0); ?>">Decline</button>
                                 </div>
+                                <?php elseif ($status === 'Pending'): ?>
+                                <span class="text-xs text-slate-400" title="No department permission">No access</span>
                                 <?php else: ?>
                                 <span class="text-xs text-slate-400">—</span>
                                 <?php endif; ?>

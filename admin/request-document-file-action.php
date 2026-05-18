@@ -7,6 +7,7 @@ if (!isset($_SESSION['user_id'])) {
 
 include '../database/db.php';
 include 'include/activity-logger.php';
+require_once __DIR__ . '/../include/admin-permissions.php';
 
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
 $id = (int)($_GET['id'] ?? $_POST['id'] ?? 0);
@@ -30,6 +31,11 @@ $docStmt->close();
 
 $empName = $docData['full_name'] ?? 'Unknown';
 $docType = $docData['document_type'] ?? 'Unknown';
+$employeeId = (int)($docData['employee_id'] ?? 0);
+
+if (!adminCanApproveEmployee($conn, $adminId, 'approve_document_upload', $employeeId)) {
+    adminDenyApprovalRedirect('request_document_msg', 'request-upload.php');
+}
 
 if ($action === 'approve') {
     // Start transaction

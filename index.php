@@ -19,6 +19,8 @@
             header('Location: inventory/index.php');
           } elseif ($selectedModule === 'workforce') {
             header('Location: workforce/index.php');
+          } elseif ($selectedModule === 'permission') {
+            header('Location: permission/index.php');
           } elseif ($selectedModule === 'hr') {
             header('Location: admin/index.php');
           } else {

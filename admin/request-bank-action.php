@@ -7,6 +7,7 @@ if (!isset($_SESSION['user_id'])) {
 
 include '../database/db.php';
 include 'include/activity-logger.php';
+require_once __DIR__ . '/../include/admin-permissions.php';
 
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
 $id = (int)($_GET['id'] ?? $_POST['id'] ?? 0);
@@ -36,6 +37,10 @@ if (!$req) {
 
 $employeeId = (int)$req['employee_id'];
 $empName = $req['full_name'] ?? 'Unknown';
+
+if (!adminCanApproveEmployee($conn, $adminId, 'approve_bank_change', $employeeId)) {
+    adminDenyApprovalRedirect('request_bank_msg', 'request-bank.php');
+}
 
 if ($action === 'approve') {
     $conn->begin_transaction();
