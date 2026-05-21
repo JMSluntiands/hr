@@ -23,7 +23,7 @@ if ($conn) {
     // Check if leave_requests table exists
     $checkTable = $conn->query("SHOW TABLES LIKE 'leave_requests'");
     if ($checkTable && $checkTable->num_rows > 0) {
-        $sql = "SELECT lr.*, e.full_name, e.employee_id,
+        $sql = "SELECT lr.*, e.full_name, e.employee_id AS employee_badge,
                 CASE 
                     WHEN lr.start_date = lr.end_date THEN 1
                     ELSE COALESCE(lr.days, DATEDIFF(lr.end_date, lr.start_date) + 1)
@@ -126,7 +126,7 @@ if ($conn) {
                             data-rejection="<?php echo htmlspecialchars($r['rejection_reason'] ?? ''); ?>">
                             <td class="px-4 py-3">
                                 <div class="font-medium text-slate-700"><?php echo htmlspecialchars($r['full_name'] ?? ''); ?></div>
-                                <div class="text-xs text-slate-500"><?php echo htmlspecialchars($r['employee_id'] ?? ''); ?></div>
+                                <div class="text-xs text-slate-500"><?php echo htmlspecialchars($r['employee_badge'] ?? ''); ?></div>
                             </td>
                             <td class="px-4 py-3 text-slate-700"><?php echo htmlspecialchars($r['leave_type'] ?? ''); ?></td>
                             <td class="px-4 py-3 text-slate-600"><?php echo !empty($r['start_date']) ? date('M d, Y', strtotime($r['start_date'])) : '—'; ?></td>

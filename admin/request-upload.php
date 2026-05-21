@@ -22,7 +22,7 @@ $uploadList = [];
 if ($conn) {
     $checkDocUpload = $conn->query("SHOW TABLES LIKE 'employee_document_uploads'");
     if ($checkDocUpload && $checkDocUpload->num_rows > 0) {
-        $uploadSql = "SELECT edu.*, e.full_name, e.employee_id 
+        $uploadSql = "SELECT edu.*, e.full_name, e.employee_id AS employee_badge 
                       FROM employee_document_uploads edu 
                       JOIN employees e ON edu.employee_id = e.id 
                       WHERE edu.status = 'Pending'
@@ -87,7 +87,7 @@ if ($conn) {
                         <tr class="border-b border-slate-100 hover:bg-slate-50">
                             <td class="px-4 py-3">
                                 <div class="font-medium text-slate-700"><?php echo htmlspecialchars($u['full_name'] ?? ''); ?></div>
-                                <div class="text-xs text-slate-500"><?php echo htmlspecialchars($u['employee_id'] ?? ''); ?></div>
+                                <div class="text-xs text-slate-500"><?php echo htmlspecialchars($u['employee_badge'] ?? ''); ?></div>
                             </td>
                             <td class="px-4 py-3 text-slate-700"><?php echo htmlspecialchars($u['document_type'] ?? ''); ?></td>
                             <td class="px-4 py-3 text-slate-600"><?php echo !empty($u['created_at']) ? date('M d, Y H:i', strtotime($u['created_at'])) : '—'; ?></td>
