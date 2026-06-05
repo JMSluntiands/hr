@@ -4,12 +4,19 @@ header('Content-Type: application/json');
 
 if (!isset($_SESSION['user_id']) || strtolower((string)($_SESSION['role'] ?? '')) !== 'admin') {
     http_response_code(403);
-    echo json_encode(['ok' => false, 'message' => 'Unauthorized']);
+    echo json_encode(['ok' => false, 'message' => 'Admin access only.']);
     exit;
 }
 
 require_once __DIR__ . '/../database/db.php';
+require_once __DIR__ . '/../include/mysqli-stmt-fetch.php';
 require_once __DIR__ . '/../include/admin-permissions.php';
+
+if (!$conn) {
+    http_response_code(500);
+    echo json_encode(['ok' => false, 'message' => 'Database connection failed. Check database/db.php on the server.']);
+    exit;
+}
 
 $action = (string)($_GET['action'] ?? $_POST['action'] ?? '');
 
@@ -43,7 +50,7 @@ if ($action === 'save' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     $stmt->bind_param('i', $userId);
     $stmt->execute();
-    $userRow = $stmt->get_result()->fetch_assoc();
+    $userRow = hr_stmt_fetch_one_assoc($stmt);
     $stmt->close();
     if (!$userRow) {
         echo json_encode(['ok' => false, 'message' => 'Selected user is not an admin account.']);
@@ -73,7 +80,7 @@ if ($action === 'save' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!adminSaveUserPermissions($conn, $userId, $permissionsByDept)) {
-        echo json_encode(['ok' => false, 'message' => 'Failed to save permissions.']);
+        echo json_encode(['ok' => false, 'message' => 'Failed to save permissions. Check database connection and admin_user_permissions table.']);
         exit;
     }
 

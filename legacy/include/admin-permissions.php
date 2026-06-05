@@ -4,6 +4,8 @@
  * If a user has no rows in admin_user_permissions, they retain full approve access (legacy).
  */
 
+require_once __DIR__ . '/mysqli-stmt-fetch.php';
+
 if (!function_exists('adminPermissionGroupLabels')) {
     /** @return array<string, string> */
     function adminPermissionGroupLabels(): array
@@ -203,7 +205,7 @@ if (!function_exists('adminUserHasConfiguredPermissions')) {
         }
         $stmt->bind_param('i', $userId);
         $stmt->execute();
-        $row = $stmt->get_result()->fetch_assoc();
+        $row = hr_stmt_fetch_one_assoc($stmt);
         $stmt->close();
         return !empty($row);
     }
@@ -390,8 +392,7 @@ if (!function_exists('adminGetUserPermissionsMatrix')) {
         }
         $stmt->bind_param('i', $userId);
         $stmt->execute();
-        $res = $stmt->get_result();
-        while ($row = $res->fetch_assoc()) {
+        foreach (hr_stmt_fetch_all_assoc($stmt) as $row) {
             $deptId = (int)$row['department_id'];
             $key = (string)$row['permission_key'];
             if (!isset($matrix[$deptId])) {

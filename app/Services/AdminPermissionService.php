@@ -2,64 +2,28 @@
 
 namespace App\Services;
 
-use App\Support\AdminPermissionRegistry;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 class AdminPermissionService
 {
-    /** @var array<string, string[]> */
-    private const SIDEBAR_LEGACY_ALIASES = [
-        'hr_nav_leave_requests' => ['approve_leave'],
-        'hr_nav_documents' => ['approve_document_request'],
-        'hr_nav_document_uploads' => ['approve_document_upload'],
-        'hr_nav_bank_requests' => ['approve_bank_change'],
-        'hr_nav_reimbursements' => ['approve_reimbursement'],
-        'hr_nav_document_archive' => ['approve_document_removal'],
-        'inventory_nav_requests' => ['inventory_approve_request'],
-        'inventory_nav_decommission' => ['inventory_approve_decommission'],
-    ];
-
+    /**
+     * Department permissions control approve actions per department only.
+     * Admin navigation stays full access by default.
+     */
     public function canAccessSidebar(int $adminUserId, string $permissionKey): bool
     {
-        if ($adminUserId <= 0 || $permissionKey === '') {
-            return false;
-        }
-
-        if (! $this->hasConfiguredPermissions($adminUserId)) {
-            return true;
-        }
-
-        if (! AdminPermissionRegistry::isSidebarKey($permissionKey)) {
-            return false;
-        }
-
-        if ($this->hasPermissionInAnyDepartment($adminUserId, $permissionKey)) {
-            return true;
-        }
-
-        foreach (self::SIDEBAR_LEGACY_ALIASES[$permissionKey] ?? [] as $legacyKey) {
-            if ($this->hasPermissionInAnyDepartment($adminUserId, $legacyKey)) {
-                return true;
-            }
-        }
-
-        return false;
+        return true;
     }
 
     public function isSidebarRestricted(int $adminUserId): bool
     {
-        return $this->hasConfiguredPermissions($adminUserId);
+        return false;
     }
 
     public function canAccessRoute(int $adminUserId, ?string $routeName, ?string $tab = null): bool
     {
-        $key = AdminPermissionRegistry::resolveRoutePermissionKey($routeName, $tab);
-        if ($key === null) {
-            return true;
-        }
-
-        return $this->canAccessSidebar($adminUserId, $key);
+        return true;
     }
 
     public function hasPermissionInAnyDepartment(int $adminUserId, string $permissionKey): bool

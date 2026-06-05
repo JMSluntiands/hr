@@ -27,7 +27,7 @@ class HomeController extends Controller
                 'inventory' => $this->redirectInventoryHome($userId),
                 'workforce' => redirect()->route('admin.workforce.building'),
                 'permission' => redirect('/permission/index.php'),
-                'hr' => $this->redirectHrHome($userId),
+                'hr' => redirect()->route('admin.dashboard'),
                 default => redirect()->route('admin.module-select'),
             };
         }
@@ -64,30 +64,5 @@ class HomeController extends Controller
 
         return redirect()->route('admin.module-select')
             ->with('error', 'Walang inventory page na naka-assign sa account mo.');
-    }
-
-    private function redirectHrHome(int $userId): RedirectResponse
-    {
-        if (! $this->permissions->isSidebarRestricted($userId)) {
-            return redirect()->route('admin.dashboard');
-        }
-
-        $candidates = [
-            ['hr_nav_leave_requests', fn () => route('admin.leave-requests.index')],
-            ['hr_nav_reimbursements', fn () => route('admin.reimbursements.index')],
-            ['hr_nav_documents', fn () => route('admin.documents.index')],
-            ['hr_nav_document_uploads', fn () => route('admin.document-uploads.index')],
-            ['hr_nav_document_archive', fn () => route('admin.document-archive.index')],
-            ['hr_nav_bank_requests', fn () => route('admin.bank-requests.index')],
-        ];
-
-        foreach ($candidates as [$key, $url]) {
-            if ($this->permissions->canAccessSidebar($userId, $key)) {
-                return redirect($url());
-            }
-        }
-
-        return redirect()->route('admin.module-select')
-            ->with('error', 'Walang HR page na naka-assign sa account mo.');
     }
 }

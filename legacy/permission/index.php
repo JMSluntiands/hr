@@ -114,7 +114,7 @@ $firstDeptId = !empty($departments) ? (int)$departments[0]['id'] : 0;
     <main class="min-h-screen overflow-y-auto p-4 pt-16 md:pt-8 md:ml-64 md:p-8">
         <div class="mb-6">
             <h1 class="text-2xl font-semibold text-slate-800">Department Permissions</h1>
-            <p class="text-sm text-slate-500 mt-1 max-w-2xl">Piliin ang admin at department, tapos i-set ang Sidebar, Card, at Actions per module (Inventory at HR).</p>
+            <p class="text-sm text-slate-500 mt-1 max-w-2xl">Piliin ang department at admin user, tapos i-set ang Sidebar, Card, at Actions per module. <strong>Admin lang</strong> ang may access dito.</p>
         </div>
 
         <?php if ($flashMessage): ?>
@@ -130,27 +130,40 @@ $firstDeptId = !empty($departments) ? (int)$departments[0]['id'] : 0;
             <div class="h-1 bg-gradient-to-r from-[#FA9800] via-amber-400 to-orange-300"></div>
 
             <!-- Top bar -->
-            <div class="px-4 py-4 md:px-6 md:py-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-4 bg-slate-50/50">
+            <div class="px-4 py-4 md:px-6 md:py-5 border-b border-slate-100 flex flex-wrap items-end justify-between gap-4 bg-slate-50/50">
                 <div class="text-sm space-y-1">
                     <div class="text-xs font-medium text-slate-500 uppercase tracking-wide">Permission editor</div>
                     <div class="text-slate-600">Your role: <span class="font-medium text-slate-800"><?php echo htmlspecialchars($role); ?></span></div>
-                    <div id="editingLabel" class="text-slate-500">Editing: <span class="text-slate-400">— select admin —</span></div>
+                    <div id="editingLabel" class="text-slate-500">Setup: <span class="text-slate-400">— select department at admin —</span></div>
                 </div>
-                <div class="w-full md:w-auto md:min-w-[300px]">
-                    <label for="adminUserSelect" class="block text-sm font-medium text-slate-700 mb-1.5">Select user</label>
-                    <select id="adminUserSelect" class="w-full">
-                        <option value="">— Select admin —</option>
-                        <?php foreach ($adminUsers as $u): ?>
-                        <option value="<?php echo (int)$u['id']; ?>" data-label="<?php echo htmlspecialchars($u['display_name'] . ' (' . $u['email'] . ') — ' . $role, ENT_QUOTES); ?>">
-                            <?php echo htmlspecialchars($u['display_name']); ?> (<?php echo htmlspecialchars($u['email']); ?>) — <?php echo htmlspecialchars($role); ?>
-                        </option>
-                        <?php endforeach; ?>
-                    </select>
+                <div class="w-full md:w-auto flex flex-col sm:flex-row gap-3 md:min-w-[520px]">
+                    <div class="flex-1 min-w-[200px]">
+                        <label for="deptSelect" class="block text-sm font-medium text-slate-700 mb-1.5">Select department</label>
+                        <select id="deptSelect" class="w-full">
+                            <option value="">— Select department —</option>
+                            <?php foreach ($departments as $dept): ?>
+                            <option value="<?php echo (int)$dept['id']; ?>">
+                                <?php echo htmlspecialchars($dept['name']); ?>
+                            </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="flex-1 min-w-[200px]">
+                        <label for="adminUserSelect" class="block text-sm font-medium text-slate-700 mb-1.5">Select admin</label>
+                        <select id="adminUserSelect" class="w-full">
+                            <option value="">— Select admin —</option>
+                            <?php foreach ($adminUsers as $u): ?>
+                            <option value="<?php echo (int)$u['id']; ?>" data-label="<?php echo htmlspecialchars($u['display_name'] . ' (' . $u['email'] . ')', ENT_QUOTES); ?>">
+                                <?php echo htmlspecialchars($u['display_name']); ?> (<?php echo htmlspecialchars($u['email']); ?>)
+                            </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
                 </div>
             </div>
 
             <p id="legacyNote" class="hidden mx-4 md:mx-6 mt-4 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
-                Walang saved permissions — <strong>full access</strong> muna. Pumili ng department, i-check ang permissions, tapos Save.
+                Walang saved permissions — <strong>full access</strong> muna ang admin na ito. I-check ang permissions para sa napiling department, tapos Save.
             </p>
 
             <div id="permissionsPanel" class="hidden p-4 md:p-6 space-y-6">
@@ -160,18 +173,11 @@ $firstDeptId = !empty($departments) ? (int)$departments[0]['id'] : 0;
                 </p>
                 <?php else: ?>
 
-                <div class="rounded-lg border border-slate-100 bg-slate-50/80 px-4 py-4">
-                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Department</p>
-                    <div id="deptTabs" class="flex flex-wrap gap-2">
-                        <?php foreach ($departments as $i => $dept): ?>
-                        <button type="button"
-                            class="dept-tab px-3.5 py-1.5 rounded-lg text-sm font-medium transition-colors<?php echo $i === 0 ? ' active' : ''; ?>"
-                            data-dept="<?php echo (int)$dept['id']; ?>">
-                            <?php echo htmlspecialchars($dept['name']); ?>
-                        </button>
-                        <?php endforeach; ?>
-                    </div>
-                    <p class="text-xs text-slate-500 mt-2">Ang mga checkbox sa baba ay para sa napiling department.</p>
+                <div class="rounded-lg border border-slate-100 bg-slate-50/80 px-4 py-3">
+                    <p class="text-xs text-slate-500">
+                        Ang mga checkbox sa baba ay para sa <strong id="activeDeptLabel" class="text-slate-700">napiling department</strong>.
+                        I-save para ma-apply ang approval access ng admin na ito sa department na iyon.
+                    </p>
                 </div>
 
                 <?php foreach ($permissionModules as $moduleKey => $module):
@@ -249,27 +255,80 @@ $firstDeptId = !empty($departments) ? (int)$departments[0]['id'] : 0;
                 <div class="inline-flex w-14 h-14 rounded-full bg-orange-50 text-[#FA9800] items-center justify-center mb-3">
                     <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                 </div>
-                <p class="text-sm text-slate-500">Pumili ng admin user sa taas para makita ang Inventory at HR permissions.</p>
+                <p class="text-sm text-slate-500">Pumili ng <strong>department</strong> at <strong>admin</strong> sa taas para i-set ang permissions.</p>
             </div>
         </div>
     </main>
 
-    <script>
-    window.__firstDeptId = <?php echo (int)$firstDeptId; ?>;
-    </script>
     <script src="../admin/include/sidebar-dropdown.js"></script>
     <script>
     (function () {
         var selectedUserId = 0;
-        var activeDeptId = window.__firstDeptId || 0;
+        var activeDeptId = 0;
         var permMatrix = {};
 
-        $('#adminUserSelect').select2({
-            placeholder: 'Select user…',
+        $('#deptSelect').select2({
+            placeholder: 'Select department…',
             allowClear: true,
             width: '100%',
             dropdownParent: $('body')
         });
+
+        $('#adminUserSelect').select2({
+            placeholder: 'Select admin…',
+            allowClear: true,
+            width: '100%',
+            dropdownParent: $('body')
+        });
+
+        function updateEditingLabel() {
+            var editing = document.getElementById('editingLabel');
+            var deptOpt = $('#deptSelect').find('option:selected');
+            var userOpt = $('#adminUserSelect').find('option:selected');
+            var deptName = deptOpt.val() ? deptOpt.text() : '';
+            var userLabel = userOpt.val() ? (userOpt.data('label') || userOpt.text()) : '';
+
+            if (!deptName && !userLabel) {
+                editing.innerHTML = 'Setup: <span class="text-slate-400">— select department at admin —</span>';
+                return;
+            }
+            if (deptName && userLabel) {
+                editing.innerHTML = 'Department: <span class="font-medium text-slate-800">' + deptName + '</span> · Admin: <span class="font-medium text-slate-800">' + userLabel + '</span>';
+                return;
+            }
+            if (deptName) {
+                editing.innerHTML = 'Department: <span class="font-medium text-slate-800">' + deptName + '</span> · <span class="text-slate-400">pumili ng admin</span>';
+                return;
+            }
+            editing.innerHTML = '<span class="text-slate-400">Pumili ng department</span> · Admin: <span class="font-medium text-slate-800">' + userLabel + '</span>';
+        }
+
+        function updateActiveDeptLabel() {
+            var label = document.getElementById('activeDeptLabel');
+            if (!label) return;
+            var deptOpt = $('#deptSelect').find('option:selected');
+            label.textContent = deptOpt.val() ? deptOpt.text() : 'napiling department';
+        }
+
+        function panelReady() {
+            return selectedUserId > 0 && activeDeptId > 0;
+        }
+
+        function syncPanelVisibility() {
+            var panel = document.getElementById('permissionsPanel');
+            var empty = document.getElementById('emptyState');
+            var legacy = document.getElementById('legacyNote');
+            if (panelReady()) {
+                panel.classList.remove('hidden');
+                empty.classList.add('hidden');
+                legacy.classList.remove('hidden');
+                applyActiveDeptToUI();
+                return;
+            }
+            panel.classList.add('hidden');
+            empty.classList.remove('hidden');
+            legacy.classList.add('hidden');
+        }
 
         function showStatus(msg, ok) {
             var el = document.getElementById('statusAlert');
@@ -340,17 +399,6 @@ $firstDeptId = !empty($departments) ? (int)$departments[0]['id'] : 0;
             });
         }
 
-        document.querySelectorAll('.dept-tab').forEach(function (tab) {
-            tab.addEventListener('click', function () {
-                flushUIToActiveDept();
-                activeDeptId = parseInt(tab.getAttribute('data-dept'), 10) || 0;
-                document.querySelectorAll('.dept-tab').forEach(function (t) {
-                    t.classList.toggle('active', t === tab);
-                });
-                applyActiveDeptToUI();
-            });
-        });
-
         document.querySelectorAll('.perm-item').forEach(function (cb) {
             cb.addEventListener('change', syncGroupCheckAllStates);
         });
@@ -365,73 +413,88 @@ $firstDeptId = !empty($departments) ? (int)$departments[0]['id'] : 0;
             });
         });
 
+        $('#deptSelect').on('change', function () {
+            flushUIToActiveDept();
+            activeDeptId = parseInt($(this).val(), 10) || 0;
+            updateEditingLabel();
+            updateActiveDeptLabel();
+            syncPanelVisibility();
+        });
+
         $('#adminUserSelect').on('change', function () {
             var opt = $(this).find('option:selected');
             selectedUserId = parseInt($(this).val(), 10) || 0;
-            var panel = document.getElementById('permissionsPanel');
-            var empty = document.getElementById('emptyState');
-            var legacy = document.getElementById('legacyNote');
-            var editing = document.getElementById('editingLabel');
             document.getElementById('statusAlert').classList.add('hidden');
+            permMatrix = {};
+            updateEditingLabel();
+            syncPanelVisibility();
 
             if (!selectedUserId) {
-                panel.classList.add('hidden');
-                empty.classList.remove('hidden');
-                legacy.classList.add('hidden');
-                editing.innerHTML = 'Editing: <span class="text-slate-500">— select admin —</span>';
-                permMatrix = {};
                 applyActiveDeptToUI();
                 return;
             }
 
-            editing.innerHTML = 'Editing: <span class="font-medium text-slate-800">' + (opt.data('label') || opt.text()) + '</span>';
-            panel.classList.remove('hidden');
-            empty.classList.add('hidden');
-            permMatrix = {};
-
-            fetch('action.php?action=load&user_id=' + selectedUserId)
-                .then(function (r) { return r.json(); })
+            fetch('/permission/action.php?action=load&user_id=' + selectedUserId, { credentials: 'same-origin' })
+                .then(function (r) {
+                    if (!r.ok) {
+                        throw new Error('Server returned ' + r.status);
+                    }
+                    return r.json();
+                })
                 .then(function (data) {
                     if (!data.ok) {
                         showStatus(data.message || 'Failed to load', false);
                         return;
                     }
                     normalizeLoadedMatrix(data.permissions || {});
-                    if (activeDeptId && !permMatrix[String(activeDeptId)]) {
-                        activeDeptId = window.__firstDeptId || activeDeptId;
-                    }
                     applyActiveDeptToUI();
-                    legacy.classList.toggle('hidden', !!data.configured);
+                    document.getElementById('legacyNote').classList.toggle('hidden', !!data.configured);
                 })
                 .catch(function () { showStatus('Could not load permissions.', false); });
         });
 
         document.getElementById('savePermsBtn')?.addEventListener('click', function () {
-            if (!selectedUserId) return;
+            if (!panelReady()) {
+                showStatus('Pumili muna ng department at admin.', false);
+                return;
+            }
             var fd = new FormData();
             fd.append('action', 'save');
             fd.append('user_id', String(selectedUserId));
             fd.append('permissions', JSON.stringify(collectMatrixForSave()));
 
-            fetch('action.php', { method: 'POST', body: fd })
-                .then(function (r) { return r.json(); })
+            fetch('/permission/action.php', { method: 'POST', body: fd, credentials: 'same-origin' })
+                .then(function (r) {
+                    if (!r.ok) {
+                        throw new Error('Server returned ' + r.status);
+                    }
+                    return r.json();
+                })
                 .then(function (data) {
                     showStatus(data.message || (data.ok ? 'Saved.' : 'Error'), !!data.ok);
                     if (data.ok) document.getElementById('legacyNote').classList.add('hidden');
                 })
-                .catch(function () { showStatus('Save failed.', false); });
+                .catch(function (err) { showStatus(err.message || 'Save failed.', false); });
         });
 
         document.getElementById('clearUserPermsBtn')?.addEventListener('click', function () {
-            if (!selectedUserId) return;
+            if (!selectedUserId) {
+                showStatus('Pumili muna ng admin.', false);
+                return;
+            }
             if (!confirm('Alisin lahat ng restrictions? Full access ulit ang admin.')) return;
             var fd = new FormData();
             fd.append('action', 'save');
             fd.append('user_id', String(selectedUserId));
             fd.append('permissions', JSON.stringify({}));
 
-            fetch('action.php', { method: 'POST', body: fd })
-                .then(function (r) { return r.json(); })
+            fetch('/permission/action.php', { method: 'POST', body: fd, credentials: 'same-origin' })
+                .then(function (r) {
+                    if (!r.ok) {
+                        throw new Error('Server returned ' + r.status);
+                    }
+                    return r.json();
+                })
                 .then(function (data) {
                     showStatus(data.message || (data.ok ? 'Cleared.' : 'Error'), !!data.ok);
                     if (data.ok) {
