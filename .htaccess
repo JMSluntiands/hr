@@ -1,9 +1,19 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
-    # inventory/ folder on disk must not bypass Laravel.
-    RewriteRule ^inventory/?$ public/index.php [L,QSA]
-    RewriteRule ^inventory/.+ public/index.php [L,QSA]
+    # Physical inventory/ folder on some hosts.
+    RewriteRule ^inventory(/.*)?$ public/index.php [L,QSA]
 
-    RewriteRule ^(.*)$ public/$1 [L]
+    # Home and /public — Laravel directly (prevents / ↔ /public/ redirect loop).
+    RewriteRule ^$ public/index.php [L]
+    RewriteRule ^public/?$ public/index.php [L,QSA]
+
+    # Static assets that live under public/.
+    RewriteCond %{DOCUMENT_ROOT}/public/$1 -f
+    RewriteRule ^(.+)$ public/$1 [L]
+
+    # Everything else → Laravel.
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ public/index.php [L,QSA]
 </IfModule>
