@@ -6,7 +6,7 @@
         <h1 class="text-2xl font-semibold text-slate-800">List of Employees</h1>
         <p class="text-sm text-slate-500 mt-1">Manage employee records</p>
     </div>
-    <a href="{{ route('admin.staff.create') }}" class="px-4 py-2 bg-[#FA9800] text-white rounded-lg text-sm font-medium hover:bg-[#d18a15]">Add Employee</a>
+    <x-hr-btn-link href="{{ route('admin.staff.create') }}">Add Employee</x-hr-btn-link>
 </div>
 <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-x-auto">
     <table id="staffTable" class="min-w-full text-sm">
@@ -31,8 +31,10 @@
                     <span class="px-2 py-0.5 rounded-full text-xs {{ strtolower($emp->status) === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600' }}">{{ $emp->status }}</span>
                 </td>
                 <td class="px-4 py-3">
-                    <a href="{{ route('admin.staff.edit', $emp->id) }}" class="text-[#FA9800] hover:underline">Edit</a>
-                    <a href="{{ route('admin.staff.show', $emp->id) }}" class="text-slate-600 hover:underline ml-2">View</a>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <x-hr-btn-link href="{{ route('admin.staff.edit', $emp->id) }}">Edit</x-hr-btn-link>
+                        <x-hr-btn-link href="{{ route('admin.staff.show', $emp->id) }}" variant="view">View</x-hr-btn-link>
+                    </div>
                 </td>
             </tr>
             @endforeach

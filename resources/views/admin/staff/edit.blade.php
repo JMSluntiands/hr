@@ -13,9 +13,9 @@
         <h1 class="text-2xl font-semibold text-slate-800">Edit Employee</h1>
         <p class="text-sm text-slate-500 mt-1">{{ $employee->full_name }} · {{ $employee->employee_id }}</p>
     </div>
-    <div class="flex items-center gap-3">
-        <a href="{{ route('admin.staff.show', $employee->id) }}" class="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-200">View Profile</a>
-        <a href="{{ route('admin.staff.index') }}" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-300">Back to List</a>
+    <div class="flex flex-wrap items-center gap-2">
+        <x-hr-btn-link href="{{ route('admin.staff.show', $employee->id) }}" variant="view">View Profile</x-hr-btn-link>
+        <x-hr-btn-link href="{{ route('admin.staff.index') }}" variant="secondary">Back to List</x-hr-btn-link>
     </div>
 </div>
 

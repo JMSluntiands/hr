@@ -6,12 +6,7 @@
         <h1 class="text-2xl font-semibold text-slate-800">Add New Employee</h1>
         <p class="text-sm text-slate-500 mt-1">Create a new employee account in the system</p>
     </div>
-    <a href="{{ route('admin.staff.index') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 font-medium text-sm">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-        </svg>
-        Back to List
-    </a>
+    <x-hr-btn-link href="{{ route('admin.staff.index') }}" variant="secondary">Back to List</x-hr-btn-link>
 </div>
 
 @if(session('error'))

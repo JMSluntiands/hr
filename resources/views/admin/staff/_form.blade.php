@@ -339,11 +339,7 @@
                 </div>
 
                 <div class="p-6 md:p-8 flex flex-col sm:flex-row justify-end gap-3 bg-slate-50/80 border-t border-slate-200">
-                    <a href="{{ route('admin.staff.index') }}" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 border border-slate-300 text-slate-700 rounded-lg hover:bg-white hover:border-slate-400 font-medium transition-colors">
-                        Cancel
-                    </a>
-                    <button type="submit" class="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-amber-500 text-white rounded-lg hover:bg-amber-600 font-medium shadow-sm hover:shadow transition-all">
-                        Add Employee
-                    </button>
+                    <x-hr-btn-link href="{{ route('admin.staff.index') }}" variant="secondary">Cancel</x-hr-btn-link>
+                    <x-hr-btn type="submit">Add Employee</x-hr-btn>
                 </div>
             </form>
