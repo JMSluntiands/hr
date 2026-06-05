@@ -83,7 +83,7 @@ require_once dirname(__DIR__, 2) . '/include/sidebar-scrollbar-once.php';
                     <?php echo htmlspecialchars($role); ?>
                 </span>
             </div>
-            <a href="../logout.php" class="block text-xs font-medium text-white/80 hover:text-white">Logout</a>
+            <a href="/logout" class="block text-xs font-medium text-white/80 hover:text-white">Logout</a>
             <a href="../admin/module-select.php" class="block text-xs font-medium text-white/80 hover:text-white mt-2">Select Module (Workforce)</a>
         </div>
     </aside>
