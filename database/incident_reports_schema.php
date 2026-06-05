@@ -69,6 +69,54 @@ function incidentReportAllowedTypes(): array
     return array_keys(incidentReportTypeDescriptions());
 }
 
+/**
+ * True when the logged-in user may submit an incident from the employee portal.
+ */
+function incidentReportEmployeeCanSubmit(): bool
+{
+    if (!isset($_SESSION['user_id'])) {
+        return false;
+    }
+    $role = strtolower(trim((string) ($_SESSION['role'] ?? 'employee')));
+
+    return $role !== 'admin';
+}
+
+/**
+ * SQL fragment: join submitter account (fixes utf8mb4 collation mix across tables).
+ */
+function incidentReportSubmitterJoinSql(): string
+{
+    return 'LEFT JOIN user_login ul ON ul.id = ir.submitted_by_user_id
+            LEFT JOIN employees e ON e.email COLLATE utf8mb4_unicode_ci = ul.email COLLATE utf8mb4_unicode_ci';
+}
+
+/**
+ * SQL expression for normalized review_status (Pending / Approved / Declined).
+ */
+function incidentReportReviewStatusExpr(string $alias = 'ir'): string
+{
+    return "COALESCE(NULLIF(TRIM({$alias}.review_status), ''), 'Pending')";
+}
+
+/**
+ * Count employee submissions awaiting admin review.
+ */
+function incidentReportCountPending(mysqli $conn): int
+{
+    if (!$conn) {
+        return 0;
+    }
+    $expr = incidentReportReviewStatusExpr('incident_reports');
+    $res = $conn->query("SELECT COUNT(*) AS c FROM incident_reports WHERE {$expr} = 'Pending'");
+    if (!$res) {
+        return 0;
+    }
+    $row = $res->fetch_assoc();
+
+    return (int) ($row['c'] ?? 0);
+}
+
 function incidentReportTypeDescriptions(): array
 {
     return [

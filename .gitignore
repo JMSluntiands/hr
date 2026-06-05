@@ -1,7 +1,54 @@
+# Local / secrets
+.env
+.env.*
+!.env.example
 database/db.php
-.htaccess
-document/
-vendor
-database/vendor
 config/google-oauth.php
 config/slack.php
+legacy/config/google-oauth.php
+legacy/config/slack.php
+
+# Dependencies
+/vendor/
+/node_modules/
+/database/vendor/
+
+# Laravel runtime
+/storage/*.key
+/storage/logs/*
+!/storage/logs/.gitignore
+/storage/framework/cache/*
+!/storage/framework/cache/.gitignore
+/storage/framework/sessions/*
+!/storage/framework/sessions/.gitignore
+/storage/framework/views/*
+!/storage/framework/views/.gitignore
+/bootstrap/cache/*
+!/bootstrap/cache/.gitignore
+/public/hot
+/public/storage
+
+# Build / IDE
+.phpunit.result.cache
+.phpunit.cache
+Homestead.json
+Homestead.yaml
+npm-debug.log
+yarn-error.log
+/.fleet
+/.idea
+/.nova
+/.vscode
+/.zed
+
+# User uploads (keep folder structure only)
+/uploads/**/*
+!/uploads/**/.gitkeep
+
+# Legacy / misc
+.htaccess
+document/
+.env.laravel.new
+composer.laravel.json
+composer.laravel.lock
+laravel-build/

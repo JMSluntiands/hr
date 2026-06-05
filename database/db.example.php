@@ -16,8 +16,7 @@ $db_pass = 'your_mysql_password';
 $db_name = 'your_database_name';
 $db_port = 3306;
 
-// Philippine time for PHP and DB timestamps (activity logs, NOW(), etc.)
-date_default_timezone_set('Asia/Manila');
+require_once __DIR__ . '/../include/datetime_helpers.php';
 
 mysqli_report(MYSQLI_REPORT_OFF);
 
@@ -28,7 +27,5 @@ if ($conn->connect_errno) {
     $conn = false;
 } else {
     $conn->set_charset('utf8mb4');
-    if (!$conn->query("SET time_zone = '+08:00'")) {
-        error_log('MySQL SET time_zone failed: ' . $conn->error);
-    }
+    hr_mysql_set_timezone($conn);
 }
