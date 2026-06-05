@@ -1,0 +1,9 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # inventory/ folder on disk must not bypass Laravel.
+    RewriteRule ^inventory/?$ public/index.php [L,QSA]
+    RewriteRule ^inventory/.+ public/index.php [L,QSA]
+
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>

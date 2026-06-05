@@ -45,8 +45,11 @@ yarn-error.log
 /uploads/**/*
 !/uploads/**/.gitkeep
 
-# Legacy / misc
-.htaccess
+# Legacy / misc (track Laravel routing htaccess; ignore legacy copies)
+**/.htaccess
+!/.htaccess
+!public/.htaccess
+!public/inventory/.htaccess
 document/
 .env.laravel.new
 composer.laravel.json
