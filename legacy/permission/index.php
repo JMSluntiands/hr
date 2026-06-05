@@ -56,12 +56,17 @@ $moduleMeta = [
         'icon' => 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z',
     ],
 ];
+
+$csrfToken = function_exists('csrf_token') ? csrf_token() : '';
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <?php if ($csrfToken !== ''): ?>
+    <meta name="csrf-token" content="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
+    <?php endif; ?>
     <title>Department Permissions</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -244,6 +249,22 @@ $moduleMeta = [
         var activeDeptId = 0;
         var permissionKeys = [];
 
+        function csrfToken() {
+            return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+        }
+
+        function postPermissionAction(fd) {
+            var token = csrfToken();
+            if (token) {
+                fd.append('_token', token);
+            }
+            var opts = { method: 'POST', body: fd, credentials: 'same-origin' };
+            if (token) {
+                opts.headers = { 'X-CSRF-TOKEN': token };
+            }
+            return fetch('/permission/action', opts);
+        }
+
         $('#deptSelect').select2({
             placeholder: 'Select department…',
             allowClear: true,
@@ -375,7 +396,7 @@ $moduleMeta = [
             fd.append('department_id', String(activeDeptId));
             fd.append('permissions', JSON.stringify(collectPermissionKeys()));
 
-            fetch('/permission/action', { method: 'POST', body: fd, credentials: 'same-origin' })
+            postPermissionAction(fd)
                 .then(function (r) {
                     if (!r.ok) throw new Error('Server returned ' + r.status);
                     return r.json();
@@ -401,7 +422,7 @@ $moduleMeta = [
             fd.append('department_id', String(activeDeptId));
             fd.append('permissions', JSON.stringify([]));
 
-            fetch('/permission/action', { method: 'POST', body: fd, credentials: 'same-origin' })
+            postPermissionAction(fd)
                 .then(function (r) {
                     if (!r.ok) throw new Error('Server returned ' + r.status);
                     return r.json();

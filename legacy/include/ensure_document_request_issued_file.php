@@ -85,9 +85,9 @@ function document_request_auto_issued_relative_path(
  */
 function sync_missing_template_links_for_employee(mysqli $conn, int $employeeId): int
 {
-    $checkTable = $conn->query("SHOW TABLES LIKE 'document_files'");
-    $colLink = @$conn->query("SHOW COLUMNS FROM document_files LIKE 'document_request_id'");
-    if (!$checkTable || $checkTable->num_rows === 0 || !$colLink || $colLink->num_rows === 0) {
+    require_once __DIR__ . '/ensure_document_files_request_link.php';
+    ensure_document_files_request_link($conn);
+    if (! document_files_has_request_link_column($conn)) {
         return 0;
     }
     $tchk = $conn->query("SHOW TABLES LIKE 'document_requests'");
@@ -189,9 +189,9 @@ function coe_register_generated_file_for_request(
     $relativePathUnderUploads = preg_replace('#^uploads/#i', '', $relativePathUnderUploads);
     $relativePathUnderUploads = ltrim($relativePathUnderUploads, '/');
 
-    $checkTable = $conn->query("SHOW TABLES LIKE 'document_files'");
-    $colLink = @$conn->query("SHOW COLUMNS FROM document_files LIKE 'document_request_id'");
-    if (!$checkTable || $checkTable->num_rows === 0 || !$colLink || $colLink->num_rows === 0) {
+    require_once __DIR__ . '/ensure_document_files_request_link.php';
+    ensure_document_files_request_link($conn);
+    if (! document_files_has_request_link_column($conn)) {
         return;
     }
 
@@ -268,9 +268,9 @@ function ensure_issued_file_for_document_request(
     int $adminId,
     string $adminName
 ): void {
-    $checkTable = $conn->query("SHOW TABLES LIKE 'document_files'");
-    $colLink = @$conn->query("SHOW COLUMNS FROM document_files LIKE 'document_request_id'");
-    if (!$checkTable || $checkTable->num_rows === 0 || !$colLink || $colLink->num_rows === 0) {
+    require_once __DIR__ . '/ensure_document_files_request_link.php';
+    ensure_document_files_request_link($conn);
+    if (! document_files_has_request_link_column($conn)) {
         return;
     }
 

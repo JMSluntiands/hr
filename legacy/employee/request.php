@@ -229,14 +229,10 @@ if ($employeeDbId && $conn) {
                 }
             }
 
-            $hasReqLinkCol = false;
+            $hasReqLinkCol = document_files_has_request_link_column($conn);
             $fileByReqStmt = null;
-            if ($tf && $tf->num_rows > 0) {
-                $crq = @$conn->query("SHOW COLUMNS FROM document_files LIKE 'document_request_id'");
-                if ($crq && $crq->num_rows > 0) {
-                    $hasReqLinkCol = true;
-                    $fileByReqStmt = $conn->prepare('SELECT id, file_path FROM document_files WHERE document_request_id = ? ORDER BY id DESC LIMIT 25');
-                }
+            if ($hasReqLinkCol) {
+                $fileByReqStmt = $conn->prepare('SELECT id, file_path FROM document_files WHERE document_request_id = ? ORDER BY id DESC LIMIT 25');
             }
 
             while ($row = $hr->fetch_assoc()) {

@@ -111,13 +111,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         }
                         $ins->close();
                     }
-                    $checkDf = $conn->query("SHOW TABLES LIKE 'document_files'");
-                    if ($checkDf && $checkDf->num_rows > 0 && empty($error)) {
-                        $hasReqCol = false;
-                        $cc = @$conn->query("SHOW COLUMNS FROM document_files LIKE 'document_request_id'");
-                        if ($cc && $cc->num_rows > 0) {
-                            $hasReqCol = true;
-                        }
+                    require_once __DIR__ . '/../include/ensure_document_files_request_link.php';
+                    ensure_document_files_request_link($conn);
+                    if (empty($error)) {
+                        $hasReqCol = document_files_has_request_link_column($conn);
                         if ($hasReqCol && $documentRequestId > 0) {
                             $insDf = $conn->prepare(
                                 'INSERT INTO document_files (employee_id, document_request_id, document_type, file_path, approved_by, approved_by_name, approved_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
