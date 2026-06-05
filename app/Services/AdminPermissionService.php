@@ -121,26 +121,28 @@ class AdminPermissionService
             return false;
         }
 
-        if ($employeeId <= 0) {
-            return $this->can($adminUserId, $permissionKey);
-        }
-
         if (! Schema::hasTable('department_permissions')) {
             return true;
         }
 
-        $deptName = DB::table('employees')->where('id', $employeeId)->value('department');
-        $deptName = trim((string) $deptName);
+        // Find the employee's department.
+        $deptName = $employeeId > 0
+            ? trim((string) DB::table('employees')->where('id', $employeeId)->value('department'))
+            : '';
+
         if ($deptName === '') {
-            return false;
+            // No employee record or no department — grant access (no restriction possible).
+            return true;
         }
 
         $departmentId = DB::table('departments')->where('name', $deptName)->value('id');
         if (! $departmentId) {
-            return false;
+            // Department name exists on employee but not in departments table — grant access.
+            return true;
         }
 
         if (! $this->departmentHasConfiguredPermissions((int) $departmentId)) {
+            // No saved permissions for this department — full access.
             return true;
         }
 
