@@ -4,6 +4,7 @@
  * $myDecommissionRequests, $allDecommissionRequests, $canReviewDecommission, $employeeName, $decomAllocJson
  */
 $v = $inventoryView ?? 'list';
+$employeeInventoryUrl = defined('HR_APP_URL') ? HR_APP_URL.'/employee/inventory' : 'inventory.php';
 ?>
 <?php if ($v === 'list'): ?>
                     <article class="rounded-2xl border border-slate-200 bg-white shadow-md ring-1 ring-slate-900/5 min-w-0 overflow-hidden">
@@ -139,7 +140,8 @@ $v = $inventoryView ?? 'list';
                                     </table>
                                 </div>
                             </div>
-                            <form method="POST" class="rounded-xl border border-slate-100 bg-slate-50/80 p-4 space-y-3">
+                            <form method="POST" action="<?php echo htmlspecialchars($employeeInventoryUrl); ?>" class="rounded-xl border border-slate-100 bg-slate-50/80 p-4 space-y-3">
+                                <?php require_once __DIR__.'/../../include/laravel_csrf_field.php'; ?>
                                 <input type="hidden" name="action" value="submit_item_request">
                                 <h3 class="text-sm font-semibold text-slate-800 mb-1">New request</h3>
                                 <div>
@@ -304,7 +306,8 @@ $v = $inventoryView ?? 'list';
                                     </p>
                                 <?php else: ?>
                                 <div class="rounded-xl border border-slate-200 bg-white shadow-sm p-4 md:p-6 lg:p-8">
-                                <form method="POST" enctype="multipart/form-data" class="w-full max-w-none space-y-5">
+                                <form method="POST" action="<?php echo htmlspecialchars($employeeInventoryUrl); ?>" enctype="multipart/form-data" class="w-full max-w-none space-y-5">
+                                    <?php require_once __DIR__.'/../../include/laravel_csrf_field.php'; ?>
                                     <input type="hidden" name="action" value="submit_decommission">
                                     <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,220px)_1fr] gap-x-6 gap-y-4 text-sm items-start w-full">
                                         <label class="text-slate-600 font-medium lg:pt-2" for="decom_item_select">Item <span class="text-red-500">*</span></label>
@@ -364,7 +367,7 @@ $v = $inventoryView ?? 'list';
                                         </div>
                                     </div>
                                     <div class="flex flex-wrap gap-3 justify-end pt-4 border-t border-slate-200">
-                                        <a href="inventory.php?view=decommission" class="px-4 py-2 rounded-lg text-sm font-medium bg-slate-200 text-slate-800 hover:bg-slate-300">Cancel</a>
+                                        <a href="<?php echo htmlspecialchars($employeeInventoryUrl); ?>?view=decommission" class="px-4 py-2 rounded-lg text-sm font-medium bg-slate-200 text-slate-800 hover:bg-slate-300">Cancel</a>
                                         <button type="submit" class="px-4 py-2 rounded-lg text-sm font-medium bg-[#FA9800] text-white hover:opacity-90">Save</button>
                                     </div>
                                 </form>
@@ -489,14 +492,16 @@ $v = $inventoryView ?? 'list';
                                                     </td>
                                                     <td class="px-3 py-2 align-top min-w-[200px]">
                                                         <?php if ($ap): ?>
-                                                            <form method="POST" class="space-y-1 mb-2">
+                                                            <form method="POST" action="<?php echo htmlspecialchars($employeeInventoryUrl); ?>" class="space-y-1 mb-2">
+                                                                <?php require_once __DIR__.'/../../include/laravel_csrf_field.php'; ?>
                                                                 <input type="hidden" name="action" value="review_decommission_request">
                                                                 <input type="hidden" name="request_id" value="<?php echo (int)$ar['id']; ?>">
                                                                 <input type="hidden" name="new_status" value="approved">
                                                                 <textarea name="resolution_remark" rows="2" class="w-full border border-slate-300 rounded px-2 py-1 text-xs" placeholder="Optional note"></textarea>
                                                                 <button type="submit" class="w-full px-2 py-1.5 rounded text-xs font-medium bg-emerald-600 text-white">Approve</button>
                                                             </form>
-                                                            <form method="POST" class="space-y-1">
+                                                            <form method="POST" action="<?php echo htmlspecialchars($employeeInventoryUrl); ?>" class="space-y-1">
+                                                                <?php require_once __DIR__.'/../../include/laravel_csrf_field.php'; ?>
                                                                 <input type="hidden" name="action" value="review_decommission_request">
                                                                 <input type="hidden" name="request_id" value="<?php echo (int)$ar['id']; ?>">
                                                                 <input type="hidden" name="new_status" value="declined">

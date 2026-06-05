@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Employee;
+use App\Services\ActivityLogger;
 use App\Services\HrSession;
 use App\Services\StaffOnboardingService;
 use App\Services\StaffProfileService;
@@ -20,6 +21,7 @@ class StaffController extends Controller
         private readonly StaffProfileService $profile,
         private readonly StaffUpdateService $updateService,
         private readonly HrSession $hrSession,
+        private readonly ActivityLogger $activityLogger,
     ) {}
 
     public function index(): View
@@ -123,5 +125,26 @@ class StaffController extends Controller
             ->route('admin.staff.index')
             ->with('success', $result['message'])
             ->with('staff_updated', true);
+    }
+
+    public function destroyDocument(int $employee, int $document): RedirectResponse
+    {
+        if (! $this->profile->deleteDocument($employee, $document)) {
+            return redirect()
+                ->route('admin.staff.show', $employee)
+                ->with('error', 'Could not delete document. It may have already been removed.');
+        }
+
+        $this->activityLogger->log(
+            (int) ($this->hrSession->userId() ?? 0),
+            (string) session(HrSession::NAME, 'Admin'),
+            'Delete Employee Document',
+            "Deleted document upload #{$document} for employee #{$employee}",
+            'Document',
+        );
+
+        return redirect()
+            ->route('admin.staff.show', $employee)
+            ->with('success', 'Document deleted successfully.');
     }
 }

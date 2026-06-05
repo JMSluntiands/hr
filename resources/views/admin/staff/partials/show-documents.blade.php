@@ -124,6 +124,10 @@
                         <p class="text-xs text-slate-500">File not found</p>
                     </div>
                     @endif
+                    <form method="POST" action="{{ route('admin.staff.documents.destroy', ['employee' => $employeeId, 'document' => $doc->id]) }}" class="mt-3" onsubmit="return confirm('Delete this document? This cannot be undone.');">
+                        @csrf
+                        <x-hr-btn type="submit" variant="danger">Delete</x-hr-btn>
+                    </form>
                     @if(!empty($doc->created_at))
                     <p class="text-xs text-slate-400 mt-2">Uploaded: {{ \Carbon\Carbon::parse($doc->created_at)->format('M d, Y') }}</p>
                     @endif

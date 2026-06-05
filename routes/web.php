@@ -77,6 +77,7 @@ Route::middleware(['hr.session', 'hr.auth'])->group(function () {
         Route::get('/staff/{employee}/edit', [StaffController::class, 'edit'])->name('staff.edit')->whereNumber('employee');
         Route::put('/staff/{employee}', [StaffController::class, 'update'])->name('staff.update')->whereNumber('employee');
         Route::get('/staff/{employee}', [StaffController::class, 'show'])->name('staff.show')->whereNumber('employee');
+        Route::post('/staff/{employee}/documents/{document}/delete', [StaffController::class, 'destroyDocument'])->name('staff.documents.destroy')->whereNumber(['employee', 'document']);
         Route::get('/leave-requests', [AdminLeaveRequestController::class, 'index'])->name('leave-requests.index');
         Route::get('/leaves/history', [AdminLeaveRequestController::class, 'history'])->name('leaves.history.index');
         Route::post('/leave-requests/{id}/approve', [AdminLeaveRequestController::class, 'approve'])->name('leave-requests.approve');
@@ -230,7 +231,7 @@ Route::middleware(['hr.session', 'hr.auth'])->group(function () {
         Route::get('/requests', [RequestHubController::class, 'index'])->name('requests.index');
         Route::get('/compensation', [LegacyPageController::class, 'compensation'])->name('compensation');
         Route::get('/settings', [LegacyPageController::class, 'settings'])->name('settings');
-        Route::get('/inventory', [LegacyPageController::class, 'inventory'])->name('inventory');
+        Route::match(['get', 'post'], '/inventory', [LegacyPageController::class, 'inventory'])->name('inventory');
         Route::get('/progressive-discipline', [LegacyPageController::class, 'progressiveDiscipline'])->name('progressive-discipline');
         Route::get('/performance', [LegacyPageController::class, 'performance'])->name('performance');
         Route::get('/performance/my-reviews', [LegacyPageController::class, 'performanceMyReviews'])->name('performance.my-reviews');

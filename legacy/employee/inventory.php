@@ -29,6 +29,11 @@ $message = (string)($_GET['message'] ?? '');
 $rawInvView = (string)($_GET['view'] ?? 'list');
 $inventoryView = in_array($rawInvView, ['list', 'request', 'decommission', 'decommission_review'], true) ? $rawInvView : 'list';
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && (! $conn || ! $employeeDbId)) {
+    header('Location: inventory.php?view=list&status=error&message='.rawurlencode('Your account is not linked to an employee record. Please contact HR.'));
+    exit;
+}
+
 if ($conn && $employeeDbId) {
     ensureInventoryItemsTable($conn);
     ensureInventoryItemAllocationsTable($conn);
@@ -475,6 +480,8 @@ if (!$tableMissing) {
     }, $allocatedItems), JSON_HEX_TAG | JSON_HEX_APOS | JSON_UNESCAPED_UNICODE);
 }
 
+$employeeInventoryUrl = defined('HR_APP_URL') ? HR_APP_URL.'/employee/inventory' : 'inventory.php';
+
 switch ($inventoryView) {
     case 'request':
         $invSubtitle = 'View your request history and submit a new item request.';
@@ -496,6 +503,7 @@ switch ($inventoryView) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <?php require_once __DIR__.'/../include/laravel_csrf_meta.php'; ?>
     <title>My Inventory</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -593,7 +601,8 @@ switch ($inventoryView) {
                 <h3 class="text-lg font-semibold text-slate-800">Appeal Wrong Allocation</h3>
                 <p id="appealItemLabel" class="text-sm text-slate-500 mt-1"></p>
             </div>
-            <form method="POST" class="p-5 space-y-4">
+            <form method="POST" action="<?php echo htmlspecialchars($employeeInventoryUrl); ?>" class="p-5 space-y-4">
+                <?php require_once __DIR__.'/../include/laravel_csrf_field.php'; ?>
                 <input type="hidden" name="action" value="submit_appeal">
                 <input type="hidden" name="allocation_id" id="appealAllocationId">
                 <div>

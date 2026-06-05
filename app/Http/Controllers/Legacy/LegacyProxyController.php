@@ -141,6 +141,10 @@ class LegacyProxyController extends Controller
             return url('/employee/requests');
         }
 
+        if ($url === 'inventory.php' || str_starts_with($url, 'inventory.php?')) {
+            return url('/employee/inventory'.(str_contains($url, '?') ? substr($url, strpos($url, '?')) : ''));
+        }
+
         $inventoryRedirects = [
             'inventory.php' => '/inventory',
             'index.php' => '/inventory',

@@ -141,4 +141,42 @@ class StaffProfileService
 
         return is_file(base_path('uploads/'.ltrim($relativePath, '/')));
     }
+
+    public function deleteDocument(int $employeeId, int $documentId): bool
+    {
+        if (! Schema::hasTable('employee_document_uploads')) {
+            return false;
+        }
+
+        $doc = DB::table('employee_document_uploads')
+            ->where('id', $documentId)
+            ->where('employee_id', $employeeId)
+            ->first(['id', 'file_path', 'document_type']);
+
+        if (! $doc) {
+            return false;
+        }
+
+        $filePath = (string) ($doc->file_path ?? '');
+        if ($filePath !== '') {
+            $fullPath = base_path('uploads/'.ltrim($filePath, '/'));
+            if (is_file($fullPath)) {
+                @unlink($fullPath);
+            }
+
+            if (Schema::hasTable('document_files')) {
+                DB::table('document_files')
+                    ->where('employee_id', $employeeId)
+                    ->where('file_path', $filePath)
+                    ->delete();
+            }
+        }
+
+        DB::table('employee_document_uploads')
+            ->where('id', $documentId)
+            ->where('employee_id', $employeeId)
+            ->delete();
+
+        return true;
+    }
 }
