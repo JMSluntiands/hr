@@ -26,25 +26,13 @@ class AdminPermissionService
         return true;
     }
 
-    public function hasPermissionInAnyDepartment(int $adminUserId, string $permissionKey): bool
-    {
-        if (! Schema::hasTable('admin_user_permissions')) {
-            return true;
-        }
-
-        return DB::table('admin_user_permissions')
-            ->where('user_id', $adminUserId)
-            ->where('permission_key', $permissionKey)
-            ->exists();
-    }
-
     public function canApprove(int $adminUserId, string $permissionKey, int $employeeId): bool
     {
-        if ($adminUserId <= 0 || $employeeId <= 0 || ! Schema::hasTable('admin_user_permissions')) {
-            return true;
+        if ($employeeId <= 0 || $permissionKey === '') {
+            return false;
         }
 
-        if (! $this->hasConfiguredPermissions($adminUserId)) {
+        if (! Schema::hasTable('department_permissions')) {
             return true;
         }
 
@@ -59,20 +47,18 @@ class AdminPermissionService
             return false;
         }
 
-        return DB::table('admin_user_permissions')
-            ->where('user_id', $adminUserId)
+        $hasConfigured = DB::table('department_permissions')
+            ->where('department_id', $departmentId)
+            ->exists();
+
+        if (! $hasConfigured) {
+            return true;
+        }
+
+        return DB::table('department_permissions')
             ->where('department_id', $departmentId)
             ->where('permission_key', $permissionKey)
             ->exists();
-    }
-
-    public function hasConfiguredPermissions(int $adminUserId): bool
-    {
-        if (! Schema::hasTable('admin_user_permissions')) {
-            return false;
-        }
-
-        return DB::table('admin_user_permissions')->where('user_id', $adminUserId)->exists();
     }
 
     public function pendingCounts(): array

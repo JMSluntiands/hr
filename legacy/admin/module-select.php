@@ -66,7 +66,7 @@ $inventoryUrl = '../inventory/index.php';
             </a>
 
             <a
-                href="../permission/index.php"
+                href="/permission"
                 class="block w-full text-left p-4 rounded-xl border border-slate-200 hover:border-amber-400 hover:bg-amber-50 transition"
             >
                 <span class="block text-base font-semibold text-slate-800">Permission</span>

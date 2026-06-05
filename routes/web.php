@@ -49,6 +49,8 @@ use Illuminate\Support\Facades\Route;
 Route::get('/login', [LoginController::class, 'show'])->name('login');
 Route::redirect('/legacy/index.php', '/login');
 Route::redirect('/logout.php', '/logout');
+Route::redirect('/permission/index.php', '/permission');
+Route::redirect('/permission/action.php', '/permission/action');
 Route::post('/login/process', [LoginController::class, 'process'])->name('login.process');
 Route::get('/auth/google', [GoogleAuthController::class, 'redirect'])->name('auth.google');
 Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->name('auth.google.callback');

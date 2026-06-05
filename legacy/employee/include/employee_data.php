@@ -3,6 +3,8 @@
  * Fetches current employee from DB (user_login -> employees).
  * Sets: $employeeData, $employeeName, $employeePhoto, $position, $department, $employeeId, $dateHired, $employeeDbId
  */
+require_once dirname(__DIR__, 2) . '/include/datetime_helpers.php';
+
 $employeeData = null;
 $employeeDbId = null;
 $employeeName = 'Employee';

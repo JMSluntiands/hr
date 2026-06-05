@@ -21,7 +21,7 @@
           } elseif ($selectedModule === 'workforce') {
             header('Location: ' . ($embedded ? '/admin/workforce' : 'workforce/index.php'));
           } elseif ($selectedModule === 'permission') {
-            header('Location: ' . ($embedded ? '/permission/index.php' : 'permission/index.php'));
+            header('Location: ' . ($embedded ? '/permission' : 'permission/index.php'));
           } elseif ($selectedModule === 'hr') {
             header('Location: ' . ($embedded ? '/admin/dashboard' : 'admin/index.php'));
           } else {

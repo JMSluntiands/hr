@@ -22,25 +22,17 @@ $role = $_SESSION['role'] ?? 'admin';
 require_once __DIR__ . '/../database/db.php';
 require_once __DIR__ . '/../include/admin-permissions.php';
 
-ensureAdminUserPermissionsTable($conn);
+ensureDepartmentPermissionsTable($conn);
 
 $permissionModules = adminPermissionModules();
 $groupOrder = ['sidebar', 'card', 'actions'];
 $departments = [];
-$adminUsers = [];
 
 if ($conn) {
     $deptRes = $conn->query('SELECT id, name FROM departments ORDER BY name');
     if ($deptRes) {
         while ($row = $deptRes->fetch_assoc()) {
             $departments[] = $row;
-        }
-    }
-
-    $userRes = $conn->query("SELECT id, email, email AS display_name FROM user_login WHERE LOWER(role) = 'admin' ORDER BY email");
-    if ($userRes) {
-        while ($row = $userRes->fetch_assoc()) {
-            $adminUsers[] = $row;
         }
     }
 }
@@ -64,7 +56,6 @@ $moduleMeta = [
         'icon' => 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z',
     ],
 ];
-$firstDeptId = !empty($departments) ? (int)$departments[0]['id'] : 0;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -114,7 +105,7 @@ $firstDeptId = !empty($departments) ? (int)$departments[0]['id'] : 0;
     <main class="min-h-screen overflow-y-auto p-4 pt-16 md:pt-8 md:ml-64 md:p-8">
         <div class="mb-6">
             <h1 class="text-2xl font-semibold text-slate-800">Department Permissions</h1>
-            <p class="text-sm text-slate-500 mt-1 max-w-2xl">Piliin ang department at admin user, tapos i-set ang Sidebar, Card, at Actions per module. <strong>Admin lang</strong> ang may access dito.</p>
+            <p class="text-sm text-slate-500 mt-1 max-w-2xl">Piliin ang department, tapos i-set ang approval permissions para sa buong department na iyon. <strong>Admin lang</strong> ang may access dito.</p>
         </div>
 
         <?php if ($flashMessage): ?>
@@ -134,36 +125,23 @@ $firstDeptId = !empty($departments) ? (int)$departments[0]['id'] : 0;
                 <div class="text-sm space-y-1">
                     <div class="text-xs font-medium text-slate-500 uppercase tracking-wide">Permission editor</div>
                     <div class="text-slate-600">Your role: <span class="font-medium text-slate-800"><?php echo htmlspecialchars($role); ?></span></div>
-                    <div id="editingLabel" class="text-slate-500">Setup: <span class="text-slate-400">— select department at admin —</span></div>
+                    <div id="editingLabel" class="text-slate-500">Department: <span class="text-slate-400">— pumili ng department —</span></div>
                 </div>
-                <div class="w-full md:w-auto flex flex-col sm:flex-row gap-3 md:min-w-[520px]">
-                    <div class="flex-1 min-w-[200px]">
-                        <label for="deptSelect" class="block text-sm font-medium text-slate-700 mb-1.5">Select department</label>
-                        <select id="deptSelect" class="w-full">
-                            <option value="">— Select department —</option>
-                            <?php foreach ($departments as $dept): ?>
-                            <option value="<?php echo (int)$dept['id']; ?>">
-                                <?php echo htmlspecialchars($dept['name']); ?>
-                            </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div class="flex-1 min-w-[200px]">
-                        <label for="adminUserSelect" class="block text-sm font-medium text-slate-700 mb-1.5">Select admin</label>
-                        <select id="adminUserSelect" class="w-full">
-                            <option value="">— Select admin —</option>
-                            <?php foreach ($adminUsers as $u): ?>
-                            <option value="<?php echo (int)$u['id']; ?>" data-label="<?php echo htmlspecialchars($u['display_name'] . ' (' . $u['email'] . ')', ENT_QUOTES); ?>">
-                                <?php echo htmlspecialchars($u['display_name']); ?> (<?php echo htmlspecialchars($u['email']); ?>)
-                            </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
+                <div class="w-full md:w-auto md:min-w-[300px]">
+                    <label for="deptSelect" class="block text-sm font-medium text-slate-700 mb-1.5">Select department</label>
+                    <select id="deptSelect" class="w-full">
+                        <option value="">— Select department —</option>
+                        <?php foreach ($departments as $dept): ?>
+                        <option value="<?php echo (int)$dept['id']; ?>">
+                            <?php echo htmlspecialchars($dept['name']); ?>
+                        </option>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
             </div>
 
             <p id="legacyNote" class="hidden mx-4 md:mx-6 mt-4 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
-                Walang saved permissions — <strong>full access</strong> muna ang admin na ito. I-check ang permissions para sa napiling department, tapos Save.
+                Walang saved permissions para sa department na ito — <strong>full access</strong> ang lahat ng admin. I-check ang permissions, tapos Save.
             </p>
 
             <div id="permissionsPanel" class="hidden p-4 md:p-6 space-y-6">
@@ -176,7 +154,7 @@ $firstDeptId = !empty($departments) ? (int)$departments[0]['id'] : 0;
                 <div class="rounded-lg border border-slate-100 bg-slate-50/80 px-4 py-3">
                     <p class="text-xs text-slate-500">
                         Ang mga checkbox sa baba ay para sa <strong id="activeDeptLabel" class="text-slate-700">napiling department</strong>.
-                        I-save para ma-apply ang approval access ng admin na ito sa department na iyon.
+                        I-save para ma-apply ang approval access sa lahat ng admin para sa department na ito.
                     </p>
                 </div>
 
@@ -238,10 +216,10 @@ $firstDeptId = !empty($departments) ? (int)$departments[0]['id'] : 0;
                 <?php endforeach; ?>
 
                 <div class="flex flex-wrap justify-between items-center gap-3 pt-4 border-t border-slate-100">
-                    <p class="text-xs text-slate-500">Isang save para sa lahat ng departments na na-configure.</p>
+                    <p class="text-xs text-slate-500">Isang save per department.</p>
                     <div class="flex flex-wrap gap-3">
-                        <button type="button" id="clearUserPermsBtn" class="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 text-sm bg-white">
-                            Clear all (full access)
+                        <button type="button" id="clearDeptPermsBtn" class="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 text-sm bg-white">
+                            Clear department (full access)
                         </button>
                         <button type="button" id="savePermsBtn" class="px-5 py-2 bg-[#FA9800] text-white rounded-lg hover:bg-[#e88a00] text-sm font-medium shadow-sm">
                             Save Permissions
@@ -255,7 +233,7 @@ $firstDeptId = !empty($departments) ? (int)$departments[0]['id'] : 0;
                 <div class="inline-flex w-14 h-14 rounded-full bg-orange-50 text-[#FA9800] items-center justify-center mb-3">
                     <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                 </div>
-                <p class="text-sm text-slate-500">Pumili ng <strong>department</strong> at <strong>admin</strong> sa taas para i-set ang permissions.</p>
+                <p class="text-sm text-slate-500">Pumili ng <strong>department</strong> sa taas para i-set ang permissions.</p>
             </div>
         </div>
     </main>
@@ -263,9 +241,8 @@ $firstDeptId = !empty($departments) ? (int)$departments[0]['id'] : 0;
     <script src="../admin/include/sidebar-dropdown.js"></script>
     <script>
     (function () {
-        var selectedUserId = 0;
         var activeDeptId = 0;
-        var permMatrix = {};
+        var permissionKeys = [];
 
         $('#deptSelect').select2({
             placeholder: 'Select department…',
@@ -274,33 +251,13 @@ $firstDeptId = !empty($departments) ? (int)$departments[0]['id'] : 0;
             dropdownParent: $('body')
         });
 
-        $('#adminUserSelect').select2({
-            placeholder: 'Select admin…',
-            allowClear: true,
-            width: '100%',
-            dropdownParent: $('body')
-        });
-
         function updateEditingLabel() {
             var editing = document.getElementById('editingLabel');
             var deptOpt = $('#deptSelect').find('option:selected');
-            var userOpt = $('#adminUserSelect').find('option:selected');
             var deptName = deptOpt.val() ? deptOpt.text() : '';
-            var userLabel = userOpt.val() ? (userOpt.data('label') || userOpt.text()) : '';
-
-            if (!deptName && !userLabel) {
-                editing.innerHTML = 'Setup: <span class="text-slate-400">— select department at admin —</span>';
-                return;
-            }
-            if (deptName && userLabel) {
-                editing.innerHTML = 'Department: <span class="font-medium text-slate-800">' + deptName + '</span> · Admin: <span class="font-medium text-slate-800">' + userLabel + '</span>';
-                return;
-            }
-            if (deptName) {
-                editing.innerHTML = 'Department: <span class="font-medium text-slate-800">' + deptName + '</span> · <span class="text-slate-400">pumili ng admin</span>';
-                return;
-            }
-            editing.innerHTML = '<span class="text-slate-400">Pumili ng department</span> · Admin: <span class="font-medium text-slate-800">' + userLabel + '</span>';
+            editing.innerHTML = deptName
+                ? 'Department: <span class="font-medium text-slate-800">' + deptName + '</span>'
+                : 'Department: <span class="text-slate-400">— pumili ng department —</span>';
         }
 
         function updateActiveDeptLabel() {
@@ -310,19 +267,14 @@ $firstDeptId = !empty($departments) ? (int)$departments[0]['id'] : 0;
             label.textContent = deptOpt.val() ? deptOpt.text() : 'napiling department';
         }
 
-        function panelReady() {
-            return selectedUserId > 0 && activeDeptId > 0;
-        }
-
         function syncPanelVisibility() {
             var panel = document.getElementById('permissionsPanel');
             var empty = document.getElementById('emptyState');
             var legacy = document.getElementById('legacyNote');
-            if (panelReady()) {
+            if (activeDeptId > 0) {
                 panel.classList.remove('hidden');
                 empty.classList.add('hidden');
                 legacy.classList.remove('hidden');
-                applyActiveDeptToUI();
                 return;
             }
             panel.classList.add('hidden');
@@ -338,54 +290,21 @@ $firstDeptId = !empty($departments) ? (int)$departments[0]['id'] : 0;
             el.classList.remove('hidden');
         }
 
-        function matrixKeysForDept(deptId) {
-            var raw = permMatrix[deptId] || permMatrix[String(deptId)] || {};
-            if (Array.isArray(raw)) return raw.slice();
-            return Object.keys(raw).filter(function (k) { return raw[k]; });
-        }
-
-        function setDeptKeys(deptId, keys) {
-            var map = {};
-            keys.forEach(function (k) { map[k] = true; });
-            permMatrix[String(deptId)] = map;
-        }
-
-        function flushUIToActiveDept() {
-            if (!activeDeptId) return;
+        function collectPermissionKeys() {
             var keys = [];
             document.querySelectorAll('.perm-item:checked').forEach(function (cb) {
                 keys.push(cb.getAttribute('data-perm'));
             });
-            setDeptKeys(activeDeptId, keys);
+            return keys;
         }
 
-        function applyActiveDeptToUI() {
+        function applyPermissionsToUI() {
             document.querySelectorAll('.perm-item').forEach(function (cb) { cb.checked = false; });
-            var keys = matrixKeysForDept(activeDeptId);
-            keys.forEach(function (key) {
+            permissionKeys.forEach(function (key) {
                 var cb = document.querySelector('.perm-item[data-perm="' + key + '"]');
                 if (cb) cb.checked = true;
             });
             syncGroupCheckAllStates();
-        }
-
-        function normalizeLoadedMatrix(apiMatrix) {
-            permMatrix = {};
-            Object.keys(apiMatrix || {}).forEach(function (deptId) {
-                var perms = apiMatrix[deptId];
-                var keys = Array.isArray(perms) ? perms : Object.keys(perms || {}).filter(function (k) { return perms[k]; });
-                setDeptKeys(deptId, keys);
-            });
-        }
-
-        function collectMatrixForSave() {
-            flushUIToActiveDept();
-            var out = {};
-            Object.keys(permMatrix).forEach(function (deptId) {
-                var keys = matrixKeysForDept(deptId);
-                if (keys.length) out[deptId] = keys;
-            });
-            return out;
         }
 
         function syncGroupCheckAllStates() {
@@ -397,6 +316,25 @@ $firstDeptId = !empty($departments) ? (int)$departments[0]['id'] : 0;
                 items.forEach(function (cb) { if (!cb.checked) allOn = false; });
                 toggle.checked = allOn;
             });
+        }
+
+        function loadDepartmentPermissions() {
+            if (!activeDeptId) return;
+            fetch('/permission/action?action=load&department_id=' + activeDeptId, { credentials: 'same-origin' })
+                .then(function (r) {
+                    if (!r.ok) throw new Error('Server returned ' + r.status);
+                    return r.json();
+                })
+                .then(function (data) {
+                    if (!data.ok) {
+                        showStatus(data.message || 'Failed to load', false);
+                        return;
+                    }
+                    permissionKeys = Array.isArray(data.permissions) ? data.permissions : [];
+                    applyPermissionsToUI();
+                    document.getElementById('legacyNote').classList.toggle('hidden', !!data.configured);
+                })
+                .catch(function (err) { showStatus(err.message || 'Could not load permissions.', false); });
         }
 
         document.querySelectorAll('.perm-item').forEach(function (cb) {
@@ -414,95 +352,69 @@ $firstDeptId = !empty($departments) ? (int)$departments[0]['id'] : 0;
         });
 
         $('#deptSelect').on('change', function () {
-            flushUIToActiveDept();
             activeDeptId = parseInt($(this).val(), 10) || 0;
+            document.getElementById('statusAlert').classList.add('hidden');
+            permissionKeys = [];
             updateEditingLabel();
             updateActiveDeptLabel();
             syncPanelVisibility();
-        });
-
-        $('#adminUserSelect').on('change', function () {
-            var opt = $(this).find('option:selected');
-            selectedUserId = parseInt($(this).val(), 10) || 0;
-            document.getElementById('statusAlert').classList.add('hidden');
-            permMatrix = {};
-            updateEditingLabel();
-            syncPanelVisibility();
-
-            if (!selectedUserId) {
-                applyActiveDeptToUI();
-                return;
+            if (activeDeptId > 0) {
+                loadDepartmentPermissions();
+            } else {
+                applyPermissionsToUI();
             }
-
-            fetch('/permission/action.php?action=load&user_id=' + selectedUserId, { credentials: 'same-origin' })
-                .then(function (r) {
-                    if (!r.ok) {
-                        throw new Error('Server returned ' + r.status);
-                    }
-                    return r.json();
-                })
-                .then(function (data) {
-                    if (!data.ok) {
-                        showStatus(data.message || 'Failed to load', false);
-                        return;
-                    }
-                    normalizeLoadedMatrix(data.permissions || {});
-                    applyActiveDeptToUI();
-                    document.getElementById('legacyNote').classList.toggle('hidden', !!data.configured);
-                })
-                .catch(function () { showStatus('Could not load permissions.', false); });
         });
 
         document.getElementById('savePermsBtn')?.addEventListener('click', function () {
-            if (!panelReady()) {
-                showStatus('Pumili muna ng department at admin.', false);
+            if (!activeDeptId) {
+                showStatus('Pumili muna ng department.', false);
                 return;
             }
             var fd = new FormData();
             fd.append('action', 'save');
-            fd.append('user_id', String(selectedUserId));
-            fd.append('permissions', JSON.stringify(collectMatrixForSave()));
+            fd.append('department_id', String(activeDeptId));
+            fd.append('permissions', JSON.stringify(collectPermissionKeys()));
 
-            fetch('/permission/action.php', { method: 'POST', body: fd, credentials: 'same-origin' })
+            fetch('/permission/action', { method: 'POST', body: fd, credentials: 'same-origin' })
                 .then(function (r) {
-                    if (!r.ok) {
-                        throw new Error('Server returned ' + r.status);
-                    }
+                    if (!r.ok) throw new Error('Server returned ' + r.status);
                     return r.json();
                 })
                 .then(function (data) {
                     showStatus(data.message || (data.ok ? 'Saved.' : 'Error'), !!data.ok);
-                    if (data.ok) document.getElementById('legacyNote').classList.add('hidden');
+                    if (data.ok) {
+                        permissionKeys = collectPermissionKeys();
+                        document.getElementById('legacyNote').classList.add('hidden');
+                    }
                 })
                 .catch(function (err) { showStatus(err.message || 'Save failed.', false); });
         });
 
-        document.getElementById('clearUserPermsBtn')?.addEventListener('click', function () {
-            if (!selectedUserId) {
-                showStatus('Pumili muna ng admin.', false);
+        document.getElementById('clearDeptPermsBtn')?.addEventListener('click', function () {
+            if (!activeDeptId) {
+                showStatus('Pumili muna ng department.', false);
                 return;
             }
-            if (!confirm('Alisin lahat ng restrictions? Full access ulit ang admin.')) return;
+            if (!confirm('Alisin lahat ng restrictions para sa department na ito? Full access ulit ang lahat ng admin.')) return;
             var fd = new FormData();
             fd.append('action', 'save');
-            fd.append('user_id', String(selectedUserId));
-            fd.append('permissions', JSON.stringify({}));
+            fd.append('department_id', String(activeDeptId));
+            fd.append('permissions', JSON.stringify([]));
 
-            fetch('/permission/action.php', { method: 'POST', body: fd, credentials: 'same-origin' })
+            fetch('/permission/action', { method: 'POST', body: fd, credentials: 'same-origin' })
                 .then(function (r) {
-                    if (!r.ok) {
-                        throw new Error('Server returned ' + r.status);
-                    }
+                    if (!r.ok) throw new Error('Server returned ' + r.status);
                     return r.json();
                 })
                 .then(function (data) {
                     showStatus(data.message || (data.ok ? 'Cleared.' : 'Error'), !!data.ok);
                     if (data.ok) {
-                        permMatrix = {};
-                        applyActiveDeptToUI();
+                        permissionKeys = [];
+                        applyPermissionsToUI();
                         document.getElementById('legacyNote').classList.remove('hidden');
                     }
-                });
+                })
+                .catch(function (err) { showStatus(err.message || 'Save failed.', false); });
         });
     })();
     </script>

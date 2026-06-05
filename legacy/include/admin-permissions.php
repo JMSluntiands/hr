@@ -1,7 +1,8 @@
 <?php
 /**
- * Department-scoped approval permissions for admin users.
- * If a user has no rows in admin_user_permissions, they retain full approve access (legacy).
+ * Department-scoped approval permissions.
+ * Permissions are stored per department (department_permissions).
+ * If a department has no saved permissions, all admins retain full approve access for that department.
  */
 
 require_once __DIR__ . '/mysqli-stmt-fetch.php';
@@ -343,14 +344,174 @@ if (!function_exists('adminUserHasDepartmentPermission')) {
     }
 }
 
+if (!function_exists('ensureDepartmentPermissionsTable')) {
+    function ensureDepartmentPermissionsTable($conn): bool
+    {
+        if (!$conn) {
+            return false;
+        }
+        $sql = "CREATE TABLE IF NOT EXISTS `department_permissions` (
+            `id` int(11) NOT NULL AUTO_INCREMENT,
+            `department_id` int(11) NOT NULL,
+            `permission_key` varchar(64) NOT NULL,
+            `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (`id`),
+            UNIQUE KEY `uniq_dept_perm` (`department_id`, `permission_key`),
+            KEY `idx_department_id` (`department_id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
+        if (!$conn->query($sql)) {
+            return false;
+        }
+
+        adminMigrateLegacyUserPermissionsToDepartment($conn);
+
+        return true;
+    }
+}
+
+if (!function_exists('adminMigrateLegacyUserPermissionsToDepartment')) {
+    function adminMigrateLegacyUserPermissionsToDepartment($conn): void
+    {
+        if (!$conn) {
+            return;
+        }
+        ensureAdminUserPermissionsTable($conn);
+        $countRes = $conn->query('SELECT COUNT(*) AS c FROM department_permissions');
+        if (!$countRes) {
+            return;
+        }
+        $countRow = $countRes->fetch_assoc();
+        if ((int)($countRow['c'] ?? 0) > 0) {
+            return;
+        }
+        $conn->query(
+            'INSERT IGNORE INTO department_permissions (department_id, permission_key)
+             SELECT DISTINCT department_id, permission_key FROM admin_user_permissions'
+        );
+    }
+}
+
+if (!function_exists('departmentHasConfiguredPermissions')) {
+    function departmentHasConfiguredPermissions($conn, int $departmentId): bool
+    {
+        if (!$conn || $departmentId <= 0) {
+            return false;
+        }
+        ensureDepartmentPermissionsTable($conn);
+        $stmt = $conn->prepare('SELECT 1 FROM department_permissions WHERE department_id = ? LIMIT 1');
+        if (!$stmt) {
+            return false;
+        }
+        $stmt->bind_param('i', $departmentId);
+        $stmt->execute();
+        $row = hr_stmt_fetch_one_assoc($stmt);
+        $stmt->close();
+        return !empty($row);
+    }
+}
+
+if (!function_exists('departmentHasPermission')) {
+    function departmentHasPermission($conn, int $departmentId, string $permissionKey): bool
+    {
+        if (!$conn || $departmentId <= 0 || $permissionKey === '') {
+            return false;
+        }
+        ensureDepartmentPermissionsTable($conn);
+        $stmt = $conn->prepare(
+            'SELECT 1 FROM department_permissions WHERE department_id = ? AND permission_key = ? LIMIT 1'
+        );
+        if (!$stmt) {
+            return false;
+        }
+        $stmt->bind_param('is', $departmentId, $permissionKey);
+        $stmt->execute();
+        $row = hr_stmt_fetch_one_assoc($stmt);
+        $stmt->close();
+        return !empty($row);
+    }
+}
+
+if (!function_exists('adminGetDepartmentPermissionKeys')) {
+    /** @return string[] */
+    function adminGetDepartmentPermissionKeys($conn, int $departmentId): array
+    {
+        if (!$conn || $departmentId <= 0) {
+            return [];
+        }
+        ensureDepartmentPermissionsTable($conn);
+        $stmt = $conn->prepare('SELECT permission_key FROM department_permissions WHERE department_id = ? ORDER BY permission_key');
+        if (!$stmt) {
+            return [];
+        }
+        $stmt->bind_param('i', $departmentId);
+        $stmt->execute();
+        $keys = [];
+        foreach (hr_stmt_fetch_all_assoc($stmt) as $row) {
+            $key = trim((string)($row['permission_key'] ?? ''));
+            if ($key !== '') {
+                $keys[] = $key;
+            }
+        }
+        $stmt->close();
+        return $keys;
+    }
+}
+
+if (!function_exists('adminSaveDepartmentPermissions')) {
+    /** @param string[] $permissionKeys */
+    function adminSaveDepartmentPermissions($conn, int $departmentId, array $permissionKeys): bool
+    {
+        if (!$conn || $departmentId <= 0) {
+            return false;
+        }
+        ensureDepartmentPermissionsTable($conn);
+        $definitions = adminPermissionDefinitions();
+        $keys = array_values(array_unique(array_filter(array_map('strval', $permissionKeys), function ($key) use ($definitions) {
+            return $key !== '' && isset($definitions[$key]);
+        })));
+
+        $conn->begin_transaction();
+        try {
+            $del = $conn->prepare('DELETE FROM department_permissions WHERE department_id = ?');
+            if (!$del) {
+                throw new RuntimeException('Failed to clear department permissions');
+            }
+            $del->bind_param('i', $departmentId);
+            if (!$del->execute()) {
+                throw new RuntimeException('Failed to clear department permissions');
+            }
+            $del->close();
+
+            if ($keys !== []) {
+                $ins = $conn->prepare(
+                    'INSERT INTO department_permissions (department_id, permission_key) VALUES (?, ?)'
+                );
+                if (!$ins) {
+                    throw new RuntimeException('Failed to prepare department permission insert');
+                }
+                foreach ($keys as $key) {
+                    $ins->bind_param('is', $departmentId, $key);
+                    if (!$ins->execute()) {
+                        throw new RuntimeException('Failed to save department permission');
+                    }
+                }
+                $ins->close();
+            }
+
+            $conn->commit();
+            return true;
+        } catch (Throwable $e) {
+            $conn->rollback();
+            return false;
+        }
+    }
+}
+
 if (!function_exists('adminCanApproveEmployee')) {
     function adminCanApproveEmployee($conn, int $userId, string $permissionKey, int $employeeId): bool
     {
-        if (!$conn || $userId <= 0 || $employeeId <= 0) {
+        if (!$conn || $employeeId <= 0 || $permissionKey === '') {
             return false;
-        }
-        if (!adminUserHasConfiguredPermissions($conn, $userId)) {
-            return true;
         }
         $deptName = adminGetEmployeeDepartmentName($conn, $employeeId);
         if ($deptName === null) {
@@ -360,7 +521,10 @@ if (!function_exists('adminCanApproveEmployee')) {
         if ($departmentId === null) {
             return false;
         }
-        return adminUserHasDepartmentPermission($conn, $userId, $permissionKey, $departmentId);
+        if (!departmentHasConfiguredPermissions($conn, $departmentId)) {
+            return true;
+        }
+        return departmentHasPermission($conn, $departmentId, $permissionKey);
     }
 }
 

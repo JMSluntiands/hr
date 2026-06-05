@@ -20,7 +20,9 @@ class LegacyProxyController extends Controller
             $relativePath = 'index.php';
         }
         if (! str_contains(basename($relativePath), '.')) {
-            $relativePath = rtrim($relativePath, '/').'/index.php';
+            $asPhp = rtrim($relativePath, '/').'.php';
+            $phpFile = $base.DIRECTORY_SEPARATOR.str_replace('/', DIRECTORY_SEPARATOR, $asPhp);
+            $relativePath = is_file($phpFile) ? $asPhp : rtrim($relativePath, '/').'/index.php';
         }
         $full = $base.DIRECTORY_SEPARATOR.str_replace('/', DIRECTORY_SEPARATOR, $relativePath);
 

@@ -18,42 +18,57 @@ if (!$conn) {
     exit;
 }
 
+ensureDepartmentPermissionsTable($conn);
+
 $action = (string)($_GET['action'] ?? $_POST['action'] ?? '');
 
 if ($action === 'load' && $_SERVER['REQUEST_METHOD'] === 'GET') {
-    $userId = (int)($_GET['user_id'] ?? 0);
-    if ($userId <= 0) {
-        echo json_encode(['ok' => false, 'message' => 'Invalid user']);
+    $departmentId = (int)($_GET['department_id'] ?? 0);
+    if ($departmentId <= 0) {
+        echo json_encode(['ok' => false, 'message' => 'Please select a department.']);
         exit;
     }
-    $matrix = adminGetUserPermissionsMatrix($conn, $userId);
-    $configured = adminUserHasConfiguredPermissions($conn, $userId);
+
+    $stmt = $conn->prepare('SELECT id FROM departments WHERE id = ? LIMIT 1');
+    if (!$stmt) {
+        echo json_encode(['ok' => false, 'message' => 'Database error.']);
+        exit;
+    }
+    $stmt->bind_param('i', $departmentId);
+    $stmt->execute();
+    $deptRow = hr_stmt_fetch_one_assoc($stmt);
+    $stmt->close();
+    if (!$deptRow) {
+        echo json_encode(['ok' => false, 'message' => 'Invalid department.']);
+        exit;
+    }
+
     echo json_encode([
         'ok' => true,
-        'configured' => $configured,
-        'permissions' => $matrix,
+        'configured' => departmentHasConfiguredPermissions($conn, $departmentId),
+        'permissions' => adminGetDepartmentPermissionKeys($conn, $departmentId),
     ]);
     exit;
 }
 
 if ($action === 'save' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-    $userId = (int)($_POST['user_id'] ?? 0);
-    if ($userId <= 0) {
-        echo json_encode(['ok' => false, 'message' => 'Please select an admin user.']);
+    $departmentId = (int)($_POST['department_id'] ?? 0);
+    if ($departmentId <= 0) {
+        echo json_encode(['ok' => false, 'message' => 'Please select a department.']);
         exit;
     }
 
-    $stmt = $conn->prepare("SELECT id FROM user_login WHERE id = ? AND LOWER(role) = 'admin' LIMIT 1");
+    $stmt = $conn->prepare('SELECT id FROM departments WHERE id = ? LIMIT 1');
     if (!$stmt) {
         echo json_encode(['ok' => false, 'message' => 'Database error.']);
         exit;
     }
-    $stmt->bind_param('i', $userId);
+    $stmt->bind_param('i', $departmentId);
     $stmt->execute();
-    $userRow = hr_stmt_fetch_one_assoc($stmt);
+    $deptRow = hr_stmt_fetch_one_assoc($stmt);
     $stmt->close();
-    if (!$userRow) {
-        echo json_encode(['ok' => false, 'message' => 'Selected user is not an admin account.']);
+    if (!$deptRow) {
+        echo json_encode(['ok' => false, 'message' => 'Invalid department.']);
         exit;
     }
 
@@ -67,24 +82,14 @@ if ($action === 'save' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $decoded = [];
     }
 
-    $permissionsByDept = [];
-    foreach ($decoded as $deptId => $keys) {
-        $deptId = (int)$deptId;
-        if ($deptId <= 0) {
-            continue;
-        }
-        if (!is_array($keys)) {
-            continue;
-        }
-        $permissionsByDept[$deptId] = array_values(array_unique(array_map('strval', $keys)));
-    }
+    $permissionKeys = array_values(array_unique(array_map('strval', $decoded)));
 
-    if (!adminSaveUserPermissions($conn, $userId, $permissionsByDept)) {
-        echo json_encode(['ok' => false, 'message' => 'Failed to save permissions. Check database connection and admin_user_permissions table.']);
+    if (!adminSaveDepartmentPermissions($conn, $departmentId, $permissionKeys)) {
+        echo json_encode(['ok' => false, 'message' => 'Failed to save permissions. Check department_permissions table.']);
         exit;
     }
 
-    echo json_encode(['ok' => true, 'message' => 'Permissions saved successfully.']);
+    echo json_encode(['ok' => true, 'message' => 'Department permissions saved successfully.']);
     exit;
 }
 
