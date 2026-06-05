@@ -49,7 +49,6 @@ yarn-error.log
 **/.htaccess
 !/.htaccess
 !public/.htaccess
-!public/inventory/.htaccess
 document/
 .env.laravel.new
 composer.laravel.json
