@@ -26,6 +26,7 @@ class AdminLayoutComposer
             ], $pendingCounts),
             'sidebarRestricted' => $this->permissions->isSidebarRestricted($userId),
             'sidebarCan' => fn (string $key): bool => $this->permissions->canAccessSidebar($userId, $key),
+            'permCan' => fn (string $key): bool => $this->permissions->can($userId, $key),
         ]);
     }
 }

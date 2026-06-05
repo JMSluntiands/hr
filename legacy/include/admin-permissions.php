@@ -252,34 +252,91 @@ if (!function_exists('adminResolveDepartmentIdByName')) {
     }
 }
 
+if (!function_exists('adminGetUserDepartmentId')) {
+    function adminGetUserDepartmentId($conn, int $userId): ?int
+    {
+        if (!$conn || $userId <= 0) {
+            return null;
+        }
+        $stmt = $conn->prepare('SELECT email FROM user_login WHERE id = ? LIMIT 1');
+        if (!$stmt) {
+            return null;
+        }
+        $stmt->bind_param('i', $userId);
+        $stmt->execute();
+        $row = hr_stmt_fetch_one_assoc($stmt);
+        $stmt->close();
+        $email = trim((string)($row['email'] ?? ''));
+        if ($email === '') {
+            return null;
+        }
+        $deptName = adminGetEmployeeDepartmentNameByEmail($conn, $email);
+        if ($deptName === null) {
+            return null;
+        }
+        return adminResolveDepartmentIdByName($conn, $deptName);
+    }
+}
+
+if (!function_exists('adminGetEmployeeDepartmentNameByEmail')) {
+    function adminGetEmployeeDepartmentNameByEmail($conn, string $email): ?string
+    {
+        if (!$conn || $email === '') {
+            return null;
+        }
+        $stmt = $conn->prepare('SELECT department FROM employees WHERE email = ? LIMIT 1');
+        if (!$stmt) {
+            return null;
+        }
+        $stmt->bind_param('s', $email);
+        $stmt->execute();
+        $row = hr_stmt_fetch_one_assoc($stmt);
+        $stmt->close();
+        $name = trim((string)($row['department'] ?? ''));
+        return $name !== '' ? $name : null;
+    }
+}
+
 if (!function_exists('adminCanAccessSidebar')) {
     /**
-     * Sidebar link visible if user has this permission in any department.
-     * No saved permissions = full access (all sidebar links).
+     * Sidebar visible based on the logged-in admin's department permissions.
+     * No saved permissions for that department = full access.
      */
     function adminCanAccessSidebar($conn, int $userId, string $permissionKey): bool
     {
         if (!$conn || $userId <= 0 || $permissionKey === '') {
             return false;
         }
-        if (!adminUserHasConfiguredPermissions($conn, $userId)) {
+        ensureDepartmentPermissionsTable($conn);
+        $departmentId = adminGetUserDepartmentId($conn, $userId);
+        if ($departmentId === null || !departmentHasConfiguredPermissions($conn, $departmentId)) {
             return true;
         }
-        ensureAdminUserPermissionsTable($conn);
-        $stmt = $conn->prepare(
-            'SELECT 1 FROM admin_user_permissions WHERE user_id = ? AND permission_key = ? LIMIT 1'
-        );
-        if (!$stmt) {
-            return false;
-        }
-        $stmt->bind_param('is', $userId, $permissionKey);
-        $stmt->execute();
-        $row = $stmt->get_result()->fetch_assoc();
-        $stmt->close();
-        if (!empty($row)) {
+        if (departmentHasPermission($conn, $departmentId, $permissionKey)) {
             return true;
         }
-
+        $cardAliases = [
+            'inventory_dashboard' => ['inventory_card_dashboard'],
+            'inventory_items_list' => ['inventory_card_items_list'],
+            'inventory_items_add' => ['inventory_card_items_form'],
+            'inventory_items_history' => ['inventory_card_items_history'],
+            'inventory_allocation' => ['inventory_card_allocation'],
+            'inventory_nav_requests' => ['inventory_card_requests'],
+            'inventory_nav_decommission' => ['inventory_card_decommission'],
+            'inventory_report' => ['inventory_card_report'],
+            'inventory_messages' => ['inventory_card_messages'],
+            'hr_nav_leave_requests' => ['hr_card_leave_requests'],
+            'hr_nav_documents' => ['hr_card_documents'],
+            'hr_nav_document_uploads' => ['hr_card_document_uploads'],
+            'hr_nav_bank_requests' => ['hr_card_bank_requests'],
+            'hr_nav_reimbursements' => ['hr_card_reimbursements'],
+            'hr_nav_document_archive' => ['hr_card_document_archive'],
+        ];
+        foreach ($cardAliases[$permissionKey] ?? [] as $cardKey) {
+            if (departmentHasPermission($conn, $departmentId, $cardKey)) {
+                return true;
+            }
+        }
         $aliases = [
             'hr_nav_leave_requests' => ['approve_leave'],
             'hr_nav_documents' => ['approve_document_request'],
@@ -291,7 +348,7 @@ if (!function_exists('adminCanAccessSidebar')) {
             'inventory_nav_decommission' => ['inventory_approve_decommission'],
         ];
         foreach ($aliases[$permissionKey] ?? [] as $legacyKey) {
-            if (adminUserHasAnyDepartmentPermission($conn, $userId, $legacyKey)) {
+            if (departmentHasPermission($conn, $departmentId, $legacyKey)) {
                 return true;
             }
         }

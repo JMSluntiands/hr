@@ -11,6 +11,8 @@
     Inventory tables are not ready. Ensure the database is configured and refresh this page.
 </div>
 @else
+@php $perm = $permCan ?? fn () => true; @endphp
+@if($perm('inventory_card_dashboard'))
 <section class="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
     <h2 class="text-lg font-semibold text-slate-800 mb-2">Inventory Overview</h2>
     <p class="text-slate-600 text-sm mb-6">Total count per item category.</p>
@@ -31,7 +33,9 @@
         @endforeach
     </div>
 </section>
+@endif
 
+@if($perm('inventory_card_messages'))
 <section class="bg-white rounded-xl shadow-sm border border-slate-100 p-6 mt-6">
     <div class="flex items-center justify-between mb-4">
         <div>
