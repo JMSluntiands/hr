@@ -38,10 +38,16 @@
                     @else — @endif
                 </td>
                 <td class="px-4 py-3">
-                    @if($can)
-                    <form method="POST" action="{{ route('admin.reimbursements.approve', $r->id) }}" class="inline">@csrf<button class="text-emerald-600 text-sm">Approve</button></form>
-                    <button type="button" class="text-red-600 text-sm ml-2" onclick="openReimDecline({{ $r->id }})">Decline</button>
-                    @endif
+                    <div class="flex flex-wrap items-center gap-2">
+                        @if($can)
+                        <form method="POST" action="{{ route('admin.reimbursements.approve', $r->id) }}" class="inline">@csrf
+                            <x-hr-btn type="submit" variant="approve">Approve</x-hr-btn>
+                        </form>
+                        <x-hr-btn type="button" variant="decline" onclick="openReimDecline({{ $r->id }})">Decline</x-hr-btn>
+                        @elseif($r->status === 'Pending')
+                        <span class="text-xs text-slate-400">No access</span>
+                        @endif
+                    </div>
                 </td>
             </tr>
             @empty

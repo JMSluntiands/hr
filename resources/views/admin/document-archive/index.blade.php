@@ -46,17 +46,11 @@
                             @if($can)
                             <form method="POST" action="{{ route('admin.document-archive.approve', $p->id) }}" class="inline"
                                   onsubmit="return confirm('Approve removal? File will be kept in archive only.');">@csrf
-                                <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-                                    Approve
-                                </button>
+                                <x-hr-btn type="submit" variant="approve">Approve</x-hr-btn>
                             </form>
                             <form method="POST" action="{{ route('admin.document-archive.reject', $p->id) }}" class="inline"
                                   onsubmit="return confirm('Reject request? Employee will keep the document.');">@csrf
-                                <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-200 bg-white hover:bg-red-50 text-red-700 text-xs font-semibold">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-                                    Reject
-                                </button>
+                                <x-hr-btn type="submit" variant="decline">Reject</x-hr-btn>
                             </form>
                             @else
                             <span class="text-xs text-slate-400" title="No department permission">No access</span>
@@ -99,11 +93,7 @@
                     </td>
                     <td class="px-4 py-3 text-slate-600">{{ $a->archived_by_name ?? '—' }}</td>
                     <td class="px-4 py-3">
-                        <a href="{{ route('admin.document-archive.file', $a->id) }}" target="_blank" rel="noopener"
-                           class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FA9800] hover:bg-[#e8870a] text-white text-xs font-semibold">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14 3h7v7m0-7L10 14m-4-4H5a2 2 0 00-2 2v7a2 2 0 002 2h7a2 2 0 002-2v-1"/></svg>
-                            Open
-                        </a>
+                        <x-hr-btn-link href="{{ route('admin.document-archive.file', $a->id) }}" target="_blank" rel="noopener">Open</x-hr-btn-link>
                     </td>
                 </tr>
                 @endforeach

@@ -20,13 +20,21 @@
                 <td class="px-4 py-3">{{ $r->document_type }}</td>
                 <td class="px-4 py-3">{{ $r->status }}</td>
                 <td class="px-4 py-3">
-                    @if($can)
-                    <form method="POST" action="{{ route('admin.documents.approve', $r->id) }}" class="inline">@csrf<button class="text-emerald-600 text-sm">Approve</button></form>
-                    <form method="POST" action="{{ route('admin.documents.decline', $r->id) }}" class="inline ml-2">@csrf<button class="text-red-600 text-sm">Decline</button></form>
-                    @endif
-                    @if($r->status === 'Approved')
-                    <a href="{{ url('/legacy/admin/request-document.php') }}" class="text-[#FA9800] text-sm ml-2">Issue (legacy)</a>
-                    @endif
+                    <div class="flex flex-wrap items-center gap-2">
+                        @if($can)
+                        <form method="POST" action="{{ route('admin.documents.approve', $r->id) }}" class="inline">@csrf
+                            <x-hr-btn type="submit" variant="approve">Approve</x-hr-btn>
+                        </form>
+                        <form method="POST" action="{{ route('admin.documents.decline', $r->id) }}" class="inline">@csrf
+                            <x-hr-btn type="submit" variant="decline">Decline</x-hr-btn>
+                        </form>
+                        @elseif($r->status === 'Pending')
+                        <span class="text-xs text-slate-400">No access</span>
+                        @endif
+                        @if($r->status === 'Approved')
+                        <x-hr-btn-link href="{{ url('/legacy/admin/request-document.php') }}">Issue</x-hr-btn-link>
+                        @endif
+                    </div>
                 </td>
             </tr>
             @endforeach

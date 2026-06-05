@@ -55,13 +55,9 @@
                         <div class="flex items-center gap-2">
                             @if($can)
                             <form method="POST" action="{{ route('admin.bank-requests.approve', $r->id) }}" class="inline">@csrf
-                                <button type="submit" class="p-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition-colors" title="Approve">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                                </button>
+                                <x-hr-btn type="submit" variant="approve">Approve</x-hr-btn>
                             </form>
-                            <button type="button" class="decline-bank-btn p-2 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors" data-id="{{ $r->id }}" title="Decline">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                            </button>
+                            <x-hr-btn type="button" variant="decline" class="decline-bank-btn" data-id="{{ $r->id }}">Decline</x-hr-btn>
                             @else
                             <span class="text-xs text-slate-400 px-2" title="No department permission">No access</span>
                             @endif

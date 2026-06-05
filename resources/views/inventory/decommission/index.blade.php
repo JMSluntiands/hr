@@ -102,14 +102,14 @@
                                             <input type="hidden" name="request_id" value="{{ (int) $row->id }}">
                                             <input type="hidden" name="new_status" value="approved">
                                             <textarea name="resolution_remark" rows="2" class="w-full border border-slate-300 rounded-lg px-2 py-1 text-xs" placeholder="Optional note"></textarea>
-                                            <button type="submit" class="w-full px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-600 text-white hover:opacity-90">Approve</button>
+                                            <x-hr-btn type="submit" variant="approve" class="w-full">Approve</x-hr-btn>
                                         </form>
                                         <form method="POST" action="{{ route('inventory.decommission.update-status') }}" class="space-y-1">
                                             @csrf
                                             <input type="hidden" name="request_id" value="{{ (int) $row->id }}">
                                             <input type="hidden" name="new_status" value="declined">
                                             <textarea name="resolution_remark" rows="2" class="w-full border border-slate-300 rounded-lg px-2 py-1 text-xs" placeholder="Optional reason"></textarea>
-                                            <button type="submit" class="w-full px-3 py-1.5 rounded-lg text-xs font-medium bg-red-600 text-white hover:opacity-90">Decline</button>
+                                            <x-hr-btn type="submit" variant="decline" class="w-full">Decline</x-hr-btn>
                                         </form>
                                     </div>
                                 @else

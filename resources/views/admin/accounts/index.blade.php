@@ -46,20 +46,16 @@
                             @if(!$a->has_account)
                             <form method="POST" action="{{ route('admin.accounts.create-employee') }}" class="inline" onsubmit="return confirm('Create employee account and generate random password now?');">@csrf
                                 <input type="hidden" name="employee_id" value="{{ $a->employee_id }}">
-                                <button type="submit" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium">Create account</button>
+                                <x-hr-btn type="submit" variant="approve">Create account</x-hr-btn>
                             </form>
                             @else
                             @if(strtolower($a->role) === 'employee')
                             <form method="POST" action="{{ route('admin.accounts.reset-password', $a->id) }}" class="inline" onsubmit="return confirm('Generate a new random password for this employee account?');">@csrf
-                                <button type="submit" class="p-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white" title="Reset password">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 1.657-1.343 3-3 3S6 12.657 6 11s1.343-3 3-3 3 1.343 3 3zm0 0V9a4 4 0 118 0v2m-6 0h6a2 2 0 012 2v5a2 2 0 01-2 2h-6a2 2 0 01-2-2v-5a2 2 0 012-2z"/></svg>
-                                </button>
+                                <x-hr-btn type="submit" variant="secondary">Reset password</x-hr-btn>
                             </form>
                             @endif
-                            <button type="button" class="edit-role-btn p-2 rounded-lg bg-[#FA9800] hover:bg-[#e8870a] text-white" title="Edit role"
-                                data-id="{{ $a->id }}" data-email="{{ $a->email }}" data-role="{{ strtolower($a->role) }}">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                            </button>
+                            <x-hr-btn type="button" variant="primary" class="edit-role-btn"
+                                data-id="{{ $a->id }}" data-email="{{ $a->email }}" data-role="{{ strtolower($a->role) }}">Edit role</x-hr-btn>
                             @endif
                         </div>
                     </td>

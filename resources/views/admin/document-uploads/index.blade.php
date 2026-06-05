@@ -37,19 +37,13 @@
                         <span class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">Pending</span>
                     </td>
                     <td class="px-4 py-3">
-                        <div class="flex items-center gap-2">
-                            <a href="{{ route('admin.document-uploads.file', $u->id) }}" target="_blank" rel="noopener" class="p-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors" title="View">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.008 9.963 7.181.07.207.07.43 0 .637C20.573 16.49 16.64 19.5 12 19.5c-4.64 0-8.577-3.008-9.964-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                            </a>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <x-hr-btn-link href="{{ route('admin.document-uploads.file', $u->id) }}" variant="view" target="_blank" rel="noopener">View</x-hr-btn-link>
                             @if($can)
                             <form method="POST" action="{{ route('admin.document-uploads.approve', $u->id) }}" class="inline">@csrf
-                                <button type="submit" class="p-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition-colors" title="Approve">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                                </button>
+                                <x-hr-btn type="submit" variant="approve">Approve</x-hr-btn>
                             </form>
-                            <button type="button" class="decline-upload-btn p-2 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors" data-id="{{ $u->id }}" title="Decline">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                            </button>
+                            <x-hr-btn type="button" variant="decline" class="decline-upload-btn" data-id="{{ $u->id }}">Decline</x-hr-btn>
                             @else
                             <span class="text-xs text-slate-400 px-2" title="No department permission">No access</span>
                             @endif

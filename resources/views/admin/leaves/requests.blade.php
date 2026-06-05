@@ -58,13 +58,9 @@
                             @include('admin.leaves.partials.view-button', ['r' => $r, 'compact' => true])
                             @if($r['can_approve'])
                             <form method="POST" action="{{ route('admin.leave-requests.approve', $r['id']) }}" class="inline">@csrf
-                                <button type="submit" class="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg" title="Approve">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                                </button>
+                                <x-hr-btn type="submit" variant="approve">Approve</x-hr-btn>
                             </form>
-                            <button type="button" class="decline-leave-btn p-2 text-red-600 hover:bg-red-50 rounded-lg" title="Decline" data-id="{{ $r['id'] }}">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                            </button>
+                            <x-hr-btn type="button" variant="decline" class="decline-leave-btn" data-id="{{ $r['id'] }}">Decline</x-hr-btn>
                             @else
                             <span class="text-xs text-slate-400">No access</span>
                             @endif

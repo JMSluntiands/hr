@@ -93,16 +93,16 @@
                         <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold {{ $statusClass }}">{{ $status }}</span>
                     </td>
                     <td class="px-4 py-3">
-                        <div class="flex flex-wrap gap-2">
-                            <a href="{{ $editUrlBase }}?id={{ (int) $r->id }}" class="inline-flex px-2.5 py-1 rounded bg-amber-600 text-white text-xs font-medium hover:bg-amber-700">Edit</a>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <x-hr-btn-link href="{{ $editUrlBase }}?id={{ (int) $r->id }}">Edit</x-hr-btn-link>
                             @if($status === 'Pending')
                             <form method="post" action="{{ route('admin.incident-reports.approve', $r->id) }}" class="inline" onsubmit="return confirm('Approve this incident?');">
                                 @csrf
-                                <button type="submit" class="inline-flex px-2.5 py-1 rounded border border-emerald-300 text-emerald-700 text-xs font-medium hover:bg-emerald-50">Approve</button>
+                                <x-hr-btn type="submit" variant="approve">Approve</x-hr-btn>
                             </form>
                             <form method="post" action="{{ route('admin.incident-reports.decline', $r->id) }}" class="inline" onsubmit="return confirm('Decline this incident?');">
                                 @csrf
-                                <button type="submit" class="inline-flex px-2.5 py-1 rounded border border-red-300 text-red-700 text-xs font-medium hover:bg-red-50">Decline</button>
+                                <x-hr-btn type="submit" variant="decline">Decline</x-hr-btn>
                             </form>
                             @endif
                         </div>

@@ -14,9 +14,7 @@
         </span>
         <form method="POST" action="{{ route('inventory.messages.mark-all-read') }}">
             @csrf
-            <button type="submit" class="px-4 py-2 rounded-lg text-sm font-medium bg-[#FA9800] text-white hover:opacity-90">
-                Mark All as Read
-            </button>
+            <x-hr-btn type="submit">Mark All as Read</x-hr-btn>
         </form>
     </div>
     @endif
@@ -72,9 +70,7 @@
                                     <form method="POST" action="{{ route('inventory.messages.mark-read') }}">
                                         @csrf
                                         <input type="hidden" name="allocation_id" value="{{ (int) $row->id }}">
-                                        <button type="submit" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-[#FA9800] text-white hover:opacity-90">
-                                            Mark as Read
-                                        </button>
+                                        <x-hr-btn type="submit">Mark as Read</x-hr-btn>
                                     </form>
                                 @else
                                     <span class="text-xs text-slate-400">—</span>
