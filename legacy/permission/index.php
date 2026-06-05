@@ -5,13 +5,13 @@ header('Expires: 0');
 session_start();
 
 if (!isset($_SESSION['user_id'])) {
-    header('Location: ../index.php');
+    header('Location: ' . (defined('HR_LEGACY_EMBEDDED') && HR_LEGACY_EMBEDDED ? '/login' : '../index.php'));
     exit;
 }
 require_once __DIR__ . '/../controller/session_timeout.php';
 
 if (strtolower((string)($_SESSION['role'] ?? '')) !== 'admin') {
-    header('Location: ../employee/index.php');
+    header('Location: ' . (defined('HR_LEGACY_EMBEDDED') && HR_LEGACY_EMBEDDED ? '/' : '../employee/index.php'));
     exit;
 }
 

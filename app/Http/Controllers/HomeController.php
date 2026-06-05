@@ -26,7 +26,7 @@ class HomeController extends Controller
             return match ($module) {
                 'inventory' => $this->redirectInventoryHome($userId),
                 'workforce' => redirect()->route('admin.workforce.building'),
-                'permission' => redirect('/legacy/permission/index.php'),
+                'permission' => redirect('/permission/index.php'),
                 'hr' => $this->redirectHrHome($userId),
                 default => redirect()->route('admin.module-select'),
             };

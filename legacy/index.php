@@ -14,17 +14,18 @@
 
         if ($role === 'admin') {
           $selectedModule = $_SESSION['admin_module'] ?? '';
+          $embedded = defined('HR_LEGACY_EMBEDDED') && HR_LEGACY_EMBEDDED;
 
           if ($selectedModule === 'inventory') {
-            header('Location: inventory/index.php');
+            header('Location: ' . ($embedded ? '/inventory' : 'inventory/index.php'));
           } elseif ($selectedModule === 'workforce') {
-            header('Location: workforce/index.php');
+            header('Location: ' . ($embedded ? '/admin/workforce' : 'workforce/index.php'));
           } elseif ($selectedModule === 'permission') {
-            header('Location: permission/index.php');
+            header('Location: ' . ($embedded ? '/permission/index.php' : 'permission/index.php'));
           } elseif ($selectedModule === 'hr') {
-            header('Location: admin/index.php');
+            header('Location: ' . ($embedded ? '/admin/dashboard' : 'admin/index.php'));
           } else {
-            header('Location: admin/module-select.php');
+            header('Location: ' . ($embedded ? '/admin/module-select' : 'admin/module-select.php'));
           }
           exit;
         }
