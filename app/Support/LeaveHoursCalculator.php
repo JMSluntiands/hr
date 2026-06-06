@@ -10,6 +10,8 @@ class LeaveHoursCalculator
     public const HOURS_PER_DAY = 8;
 
     /**
+     * Compute leave from start until return (when the employee is back at work).
+     *
      * @return array{total_hours: float, total_days: int, calendar_days: int, label: string}
      */
     public static function compute(
@@ -19,15 +21,25 @@ class LeaveHoursCalculator
         string $endTime,
     ): array {
         $start = Carbon::parse($startDate.' '.$startTime, 'Asia/Manila');
-        $end = Carbon::parse($endDate.' '.$endTime, 'Asia/Manila');
+        $return = Carbon::parse($endDate.' '.$endTime, 'Asia/Manila');
 
-        if ($end->lte($start)) {
+        if ($return->lte($start)) {
             throw new InvalidArgumentException('Return date & time must be after start date & time.');
         }
 
-        $minutes = $start->diffInMinutes($end);
-        $hours = round($minutes / 60, 2);
-        $calendarDays = $start->copy()->startOfDay()->diffInDays($end->copy()->startOfDay()) + 1;
+        $startDay = $start->copy()->startOfDay();
+        $returnDay = $return->copy()->startOfDay();
+        $calendarSpan = (int) $startDay->diffInDays($returnDay);
+        $calendarDays = $calendarSpan + 1;
+
+        if ($calendarSpan === 0) {
+            $hours = round($start->diffInMinutes($return) / 60, 2);
+            $hours = min((float) self::HOURS_PER_DAY, $hours);
+        } else {
+            // Each calendar day from start date up to (but not including) return date counts as one workday.
+            $hours = round($calendarSpan * self::HOURS_PER_DAY, 2);
+        }
+
         $dayEquivalents = max(1, (int) ceil($hours / self::HOURS_PER_DAY));
 
         return [

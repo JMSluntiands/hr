@@ -27,5 +27,101 @@
 
     @include('admin.staff.partials.show-hero')
     @include('admin.staff.partials.show-info')
+    @include('employee.profile.partials.documents')
 </div>
 @endsection
+@push('scripts')
+<script>
+(function () {
+    var pendingRemoval = { docId: null, docName: '' };
+    var csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+    document.querySelectorAll('.upload-doc-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            document.getElementById('uploadDocType').value = btn.dataset.docType || '';
+            document.getElementById('uploadDocTypeDisplay').value = btn.dataset.docType || '';
+            document.getElementById('documentFile').value = '';
+            document.getElementById('uploadMessage').className = 'hidden';
+            document.getElementById('uploadModal').classList.remove('hidden');
+        });
+    });
+
+    function closeUploadModal() {
+        document.getElementById('uploadModal').classList.add('hidden');
+    }
+    document.getElementById('closeUploadModal')?.addEventListener('click', closeUploadModal);
+    document.getElementById('cancelUpload')?.addEventListener('click', closeUploadModal);
+
+    document.getElementById('uploadForm')?.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var form = e.target;
+        var btn = form.querySelector('button[type="submit"]');
+        var msg = document.getElementById('uploadMessage');
+        btn.disabled = true;
+        msg.className = 'hidden';
+
+        fetch('{{ route('employee.documents.upload') }}', {
+            method: 'POST',
+            body: new FormData(form),
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+        }).then(function (r) { return r.json(); }).then(function (res) {
+            if (res.status === 'success') {
+                msg.className = 'bg-emerald-50 text-emerald-700 border border-emerald-200 px-4 py-2 rounded-lg text-sm';
+                msg.textContent = res.message;
+                setTimeout(function () { location.reload(); }, 1200);
+            } else {
+                msg.className = 'bg-red-50 text-red-700 border border-red-200 px-4 py-2 rounded-lg text-sm';
+                msg.textContent = res.message || 'Upload failed';
+                btn.disabled = false;
+            }
+        }).catch(function () {
+            msg.className = 'bg-red-50 text-red-700 border border-red-200 px-4 py-2 rounded-lg text-sm';
+            msg.textContent = 'Upload failed. Please try again.';
+            btn.disabled = false;
+        });
+    });
+
+    document.querySelectorAll('.request-doc-removal-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            pendingRemoval.docId = btn.dataset.docId;
+            pendingRemoval.docName = btn.dataset.docName || 'Document';
+            document.getElementById('removalDocName').textContent = pendingRemoval.docName;
+            document.getElementById('removalModal').classList.remove('hidden');
+            document.getElementById('removalModal').classList.add('flex');
+        });
+    });
+
+    function closeRemovalModal() {
+        document.getElementById('removalModal').classList.add('hidden');
+        document.getElementById('removalModal').classList.remove('flex');
+    }
+    document.getElementById('cancelRemovalBtn')?.addEventListener('click', closeRemovalModal);
+
+    document.getElementById('confirmRemovalBtn')?.addEventListener('click', function () {
+        if (!pendingRemoval.docId) return;
+        var btn = document.getElementById('confirmRemovalBtn');
+        btn.disabled = true;
+        fetch('{{ url('/employee/documents') }}/' + pendingRemoval.docId + '/request-removal', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrf,
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({})
+        }).then(function (r) { return r.json(); }).then(function (res) {
+            if (res.status === 'success') {
+                location.reload();
+            } else {
+                alert(res.message || 'Could not submit request.');
+                btn.disabled = false;
+            }
+        }).catch(function () {
+            alert('Something went wrong. Please try again.');
+            btn.disabled = false;
+        });
+    });
+})();
+</script>
+@endpush

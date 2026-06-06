@@ -333,7 +333,7 @@ class IncidentReportService
         }
 
         $ext = strtolower($file->getClientOriginalExtension());
-        if (! in_array($ext, ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'], true)) {
+        if (! in_array($ext, ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx'], true)) {
             throw new \RuntimeException('Invalid file type.');
         }
 
@@ -346,6 +346,52 @@ class IncidentReportService
         $file->move($dir, $basename);
 
         return 'uploads/incident_reports/'.$basename;
+    }
+
+    public function resolveAttachmentPath(?string $relativePath): ?string
+    {
+        $relativePath = trim((string) $relativePath);
+        if ($relativePath === '' || ! str_starts_with($relativePath, 'uploads/incident_reports/')) {
+            return null;
+        }
+
+        $candidates = [
+            base_path($relativePath),
+            base_path('legacy/'.$relativePath),
+        ];
+
+        foreach ($candidates as $full) {
+            if (is_file($full)) {
+                return $full;
+            }
+        }
+
+        return null;
+    }
+
+    public function attachmentMime(string $absolutePath): string
+    {
+        $ext = strtolower(pathinfo($absolutePath, PATHINFO_EXTENSION));
+
+        return match ($ext) {
+            'pdf' => 'application/pdf',
+            'jpg', 'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+            'doc' => 'application/msword',
+            'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'xls' => 'application/vnd.ms-excel',
+            'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            default => 'application/octet-stream',
+        };
+    }
+
+    public function canAccessAttachment(object $report, int $userId, string $role, bool $adminContext): bool
+    {
+        if ($adminContext && strtolower($role) === 'admin') {
+            return true;
+        }
+
+        return (int) ($report->submitted_by_user_id ?? 0) === $userId;
     }
 
     /**

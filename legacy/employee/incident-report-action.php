@@ -93,13 +93,13 @@ if (!empty($_FILES['attachment']['name']) && (int) ($_FILES['attachment']['error
         exit;
     }
     $ext = strtolower(pathinfo($f['name'], PATHINFO_EXTENSION));
-    $okExt = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'];
+    $okExt = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx'];
     if (!in_array($ext, $okExt, true)) {
         $_SESSION['incident_report_flash'] = 'Invalid file type.';
         header('Location: ' . $redirect);
         exit;
     }
-    $dir = __DIR__ . '/../uploads/incident_reports/';
+    $dir = dirname(__DIR__, 2) . '/uploads/incident_reports/';
     if (!is_dir($dir)) {
         mkdir($dir, 0755, true);
     }

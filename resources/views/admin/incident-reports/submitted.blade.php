@@ -70,6 +70,7 @@
                     <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Employee (form)</th>
                     <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Submitted by</th>
                     <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Status</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">File</th>
                     <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Actions</th>
                 </tr>
             </thead>
@@ -93,6 +94,13 @@
                         <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold {{ $statusClass }}">{{ $status }}</span>
                     </td>
                     <td class="px-4 py-3">
+                        @if(!empty($r->attachment_path))
+                        <a href="{{ route('admin.incident-reports.attachment', $r->id) }}" target="_blank" rel="noopener" class="text-amber-700 hover:underline text-xs font-medium">View proof</a>
+                        @else
+                        <span class="text-slate-400">—</span>
+                        @endif
+                    </td>
+                    <td class="px-4 py-3">
                         <div class="flex flex-wrap items-center gap-2">
                             <x-hr-btn-link href="{{ $editUrlBase }}?id={{ (int) $r->id }}">Edit</x-hr-btn-link>
                             @if($status === 'Pending')
@@ -110,7 +118,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="7" class="px-4 py-8 text-center text-slate-500">No reports match your filters.</td>
+                    <td colspan="8" class="px-4 py-8 text-center text-slate-500">No reports match your filters.</td>
                 </tr>
                 @endforelse
             </tbody>

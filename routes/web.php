@@ -31,6 +31,8 @@ use App\Http\Controllers\Employee\ModuleSelectController as EmployeeModuleSelect
 use App\Http\Controllers\Employee\ProfileController;
 use App\Http\Controllers\Employee\ReimbursementController as EmployeeReimbursementController;
 use App\Http\Controllers\Employee\RequestHubController;
+use App\Http\Controllers\Employee\DocumentController;
+use App\Http\Controllers\Employee\IncidentReportAttachmentController;
 use App\Http\Controllers\Employee\LegacyPageController;
 use App\Http\Controllers\Employee\TimekeepingBuildingController;
 use App\Http\Controllers\Employee\TimeoffController;
@@ -114,6 +116,7 @@ Route::middleware(['hr.session', 'hr.auth'])->group(function () {
         Route::get('/incident-reports/submitted', [IncidentReportController::class, 'submitted'])->name('incident-reports.submitted');
         Route::post('/incident-reports/{id}/approve', [IncidentReportController::class, 'approve'])->name('incident-reports.approve')->whereNumber('id');
         Route::post('/incident-reports/{id}/decline', [IncidentReportController::class, 'decline'])->name('incident-reports.decline')->whereNumber('id');
+        Route::get('/incident-reports/{id}/attachment', [IncidentReportController::class, 'attachment'])->name('incident-reports.attachment')->whereNumber('id');
         Route::get('/progressive-discipline', [ProgressiveDisciplineController::class, 'index'])->name('progressive-discipline.index');
         Route::post('/progressive-discipline', [ProgressiveDisciplineController::class, 'store'])->name('progressive-discipline.store');
         Route::post('/progressive-discipline/{id}/status', [ProgressiveDisciplineController::class, 'updateStatus'])->name('progressive-discipline.update-status')->whereNumber('id');
@@ -224,6 +227,11 @@ Route::middleware(['hr.session', 'hr.auth'])->group(function () {
         Route::get('/timekeeping', TimekeepingBuildingController::class)->name('timekeeping.building');
         Route::get('/dashboard', EmployeeDashboardController::class)->name('dashboard');
         Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
+        Route::post('/documents/upload', [DocumentController::class, 'upload'])->name('documents.upload');
+        Route::get('/documents/{id}/view', [DocumentController::class, 'view'])->name('documents.view')->whereNumber('id');
+        Route::get('/documents/{id}/download', [DocumentController::class, 'download'])->name('documents.download')->whereNumber('id');
+        Route::post('/documents/{id}/request-removal', [DocumentController::class, 'requestRemoval'])->name('documents.request-removal')->whereNumber('id');
+        Route::get('/incident-reports/{id}/attachment', [IncidentReportAttachmentController::class, 'show'])->name('incident-reports.attachment')->whereNumber('id');
         Route::get('/timeoff', [TimeoffController::class, 'index'])->name('timeoff.index');
         Route::post('/leaves', [EmployeeLeaveRequestController::class, 'store'])->name('leaves.store');
         Route::get('/reimbursements', [EmployeeReimbursementController::class, 'index'])->name('reimbursements.index');

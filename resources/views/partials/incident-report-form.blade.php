@@ -151,11 +151,14 @@
                     <div class="sm:col-span-2">
                         <label class="{{ $labelBase }}" for="ir_attachment">Attachment</label>
                         <div class="rounded-xl border border-dashed border-slate-300 bg-slate-50/80 px-4 py-4 transition hover:border-amber-300/80 hover:bg-amber-50/30">
-                            <input id="ir_attachment" type="file" name="attachment" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" class="block w-full cursor-pointer text-sm text-slate-600 file:mr-4 file:cursor-pointer file:rounded-lg file:border-0 file:bg-[#FA9800] file:px-4 file:py-2.5 file:text-sm file:font-semibold file:text-white file:shadow-sm hover:file:bg-amber-600">
+                            <input id="ir_attachment" type="file" name="attachment" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx" class="block w-full cursor-pointer text-sm text-slate-600 file:mr-4 file:cursor-pointer file:rounded-lg file:border-0 file:bg-[#FA9800] file:px-4 file:py-2.5 file:text-sm file:font-semibold file:text-white file:shadow-sm hover:file:bg-amber-600">
+                            <p class="mt-2 text-xs text-slate-500">Optional. PDF, images, Word, or Excel — max 5MB.</p>
                             <p class="mt-2 text-xs text-slate-500">PDF, Word, or images up to 5 MB.</p>
                         </div>
-                        @if(!empty($record['attachment_path']))
-                            <p class="mt-2 text-xs text-slate-600">Current file: <a class="font-medium text-amber-700 underline decoration-amber-300 underline-offset-2 hover:text-amber-800" href="{{ asset($record['attachment_path']) }}" target="_blank" rel="noopener">Open attachment</a><span class="text-slate-500"> — leave empty above to keep this file.</span></p>
+                        @if(!empty($record['attachment_path']) && !empty($record['id']))
+                            <p class="mt-2 text-xs text-slate-600">Current file: <a class="font-medium text-amber-700 underline decoration-amber-300 underline-offset-2 hover:text-amber-800" href="{{ route('admin.incident-reports.attachment', $record['id']) }}" target="_blank" rel="noopener">Open attachment</a><span class="text-slate-500"> — leave empty above to keep this file.</span></p>
+                        @elseif(!empty($record['attachment_path']))
+                            <p class="mt-2 text-xs text-slate-600">Current file on record — save to keep or replace using the field above.</p>
                         @endif
                     </div>
                 </div>

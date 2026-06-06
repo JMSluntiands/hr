@@ -9,6 +9,7 @@ use App\Services\IncidentReportService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class IncidentReportController extends Controller
 {
@@ -208,6 +209,31 @@ class IncidentReportController extends Controller
         }
 
         return $this->flashToSubmitted('Incident not found or already updated.');
+    }
+
+    public function attachment(int $id): BinaryFileResponse|RedirectResponse
+    {
+        if (! $this->incidentReports->isTableReady()) {
+            abort(404);
+        }
+
+        $report = \Illuminate\Support\Facades\DB::table('incident_reports')->where('id', $id)->first();
+        if (! $report) {
+            abort(404);
+        }
+
+        $full = $this->incidentReports->resolveAttachmentPath($report->attachment_path ?? null);
+        if ($full === null) {
+            abort(404);
+        }
+
+        $mime = $this->incidentReports->attachmentMime($full);
+        $filename = basename($full);
+
+        return response()->file($full, [
+            'Content-Type' => $mime,
+            'Content-Disposition' => 'inline; filename="'.addslashes($filename).'"',
+        ]);
     }
 
     private function flashToSubmitted(string $message): RedirectResponse

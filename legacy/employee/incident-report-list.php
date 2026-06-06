@@ -24,6 +24,13 @@ $irListHref = $irEmbedded && $irAppBase !== ''
 $irCreateHref = $irEmbedded && $irAppBase !== ''
     ? $irAppBase.'/employee/incident-reports/create'
     : 'incident-report-add.php';
+$irAttachmentHref = static function (int $reportId) use ($irEmbedded, $irAppBase): string {
+    if ($irEmbedded && $irAppBase !== '') {
+        return $irAppBase.'/employee/incident-reports/'.$reportId.'/attachment';
+    }
+
+    return 'incident-report-attachment.php?id='.$reportId;
+};
 
 $tableReady = $conn && ensureIncidentReportsTable($conn);
 
@@ -201,7 +208,7 @@ if ($tableReady) {
                                             <td class="px-4 py-3 text-slate-600"><?php echo !empty($r['created_at']) ? htmlspecialchars(date('M j, Y g:i A', strtotime($r['created_at']))) : '—'; ?></td>
                                             <td class="px-4 py-3">
                                                 <?php if (!empty($r['attachment_path'])): ?>
-                                                    <a class="text-amber-700 hover:underline" href="../<?php echo htmlspecialchars($r['attachment_path']); ?>" target="_blank" rel="noopener">View</a>
+                                                    <a class="text-amber-700 hover:underline" href="<?php echo htmlspecialchars($irAttachmentHref((int)$r['id']), ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener">View</a>
                                                 <?php else: ?>
                                                     <span class="text-slate-400">—</span>
                                                 <?php endif; ?>

@@ -180,10 +180,17 @@
         }
 
         var minutes = Math.round((end - start) / 60000);
-        var hours = Math.round(minutes / 60 * 100) / 100;
         var startDay = new Date(start.getFullYear(), start.getMonth(), start.getDate());
-        var endDay = new Date(end.getFullYear(), end.getMonth(), end.getDate());
-        var calendarDays = Math.round((endDay - startDay) / 86400000) + 1;
+        var returnDay = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+        var calendarSpan = Math.round((returnDay - startDay) / 86400000);
+        var calendarDays = calendarSpan + 1;
+        var hours;
+        if (calendarSpan === 0) {
+            hours = Math.round(minutes / 60 * 100) / 100;
+            hours = Math.min(HOURS_PER_DAY, hours);
+        } else {
+            hours = Math.round(calendarSpan * HOURS_PER_DAY * 100) / 100;
+        }
         var dayEquiv = Math.max(1, Math.ceil(hours / HOURS_PER_DAY));
 
         $value.text(hours.toFixed(2) + ' hours');
